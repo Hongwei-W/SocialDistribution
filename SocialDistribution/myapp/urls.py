@@ -6,6 +6,6 @@ app_name = 'myapp'
 urlpatterns = [
     # ex: /polls/
     path('login/', views.login, name='login'),
-    path('login/', views.signup, name='signup'),
+    path('signup/', views.signup, name='signup'),
 
 ]
