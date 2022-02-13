@@ -1,0 +1,31 @@
+.poster-font {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.text-font {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.note-font {
+    font-family:'Courier New', Courier, monospace;
+}
+
+.light-yellow {
+    color: #F6BD60;
+}
+
+.cream {
+    color: #F7EDE2;
+}
+
+.light-pink {
+    color: #F5CAC3;
+}
+
+.greenish-something {
+    color: #84A59D;
+}
+
+.logo-color {
+    color: #F28482;
+}
