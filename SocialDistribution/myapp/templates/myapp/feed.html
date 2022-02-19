@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Pacifico&display=swap" rel="stylesheet">
+        <script src="https://kit.fontawesome.com/b239db17ad.js" crossorigin="anonymous"></script>
+        <style>
+            .column {
+                float: left;
+                background-color: #FBFBFB;
+                /* border: black; */
+                /* display: table-cell; */
+            }
+
+            .colContainer {
+                display: table; /* Make the container element behave like a table */
+                width: 100%; /* Set full-width to expand the whole page */
+            }
+
+            .left {
+                width: 18%;
+                margin-left: 100px;
+                margin-top: 75px;
+                height: 500px;
+            }
+
+            .right {
+                width: 20%;
+                margin-left: 50px;
+                margin-right: 75px;
+                margin-top: 75px;
+            }
+
+            .middle {
+                margin-left: 50px;
+                width: 40%;
+                margin-top: 30px;
+                
+            }
+            .posterFont {
+                font-family: 'Pacifico', cursive;
+                color: #F28482;
+                margin-top: 0;
+                margin-left:5px;
+            }
+            #logo {
+                font-size: 70px;
+            }
+
+            .options{
+                font-family: 'Lato', sans-serif;
+                color: #F5CAC3;
+                font-size: 35px;
+            }
+        </style>
+    </head>
+
+
+    <body>
+        <div class="colContainer">
+            <div class="column left">
+                <h1 class="posterFont" id="logo">H</h1>
+                <div>
+                    <h2 class="options"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</h2>
+                    <h2 class="options"><i class="fa-solid fa-at"></i>&ensp;1-to-1</h2>
+                    <h2 class="options"><i class="fa-solid fa-envelope-open"></i>&ensp;Notification</h2>
+                    <h2 class="options"><i class="fa-solid fa-user"></i>&ensp;Profile</h2>
+                </div>
+            </div>
+            <div class="column middle"><h1>Col middle</h1></div>
+            <div class="column right"><h1>Col right</h1></div>
+        </div>
+    </body>
+</html>
