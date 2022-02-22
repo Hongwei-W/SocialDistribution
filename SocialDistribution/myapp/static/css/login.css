@@ -1,0 +1,29 @@
+body{
+    background-color: #E5E5E5;
+    margin-top: 300px;
+    justify-items: center;
+    display: inline-block;
+}
+/* input, textarea{
+    border-radius: 5px;
+    border: 2px solid;
+    padding: 20px;
+
+} */
+
+.form{
+    border-radius: 5px;
+    /* border: 2px solid; */
+    /* padding: 20px; */
+
+}
+
+div.title{
+    max-width: 304px;
+    color: rgba(242, 132, 130, 1);
+    font-size: 36px;
+    line-height: 0px;
+    letter-spacing: 0%;
+    text-align: left;
+    /* font-family: Pacifico, sans-serif; */
+}
