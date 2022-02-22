@@ -1,5 +1,7 @@
-SocialDistribution/SocialDistribution/__pycache__/
 .vscode/settings.json
 SocialDistribution/.vscode/settings.json
-SocialDistribution/myapp/__pycache__/__init__.cpython-38.pyc
-SocialDistribution/myapp/__pycache__/apps.cpython-38.pyc
+SocialDistribution/db.sqlite3
+__pycache__/
+SocialDistribution/myapp/__pycache__/models.cpython-38.pyc
+.gitignore
+SocialDistribution/db.sqlite3
