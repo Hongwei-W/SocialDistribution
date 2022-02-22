@@ -8,3 +8,6 @@ def login(request):
 def signup(request):
     return HttpResponse("You're looking at signup page.")
     # render(request, 'myapp/signup.html')
+def feed(request):
+    # return HttpResponse("You're looking at feed page.")
+    return render(request, 'myapp/feed.html')
