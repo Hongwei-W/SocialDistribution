@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post
+from .models import Post, Comment
 
 # Reference: https://www.youtube.com/watch?v=USVjTtApVDM&list=PLPSM8rIid1a3TkwEmHyDALNuHhqiUiU5A&index=2
 class PostForm(forms.ModelForm):
@@ -22,3 +22,19 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title','description','visibility']
+
+
+class CommentForm(forms.ModelForm):
+    comment = forms.CharField(label='comment', 
+        widget=forms.Textarea(attrs={
+            'placeholder': 'Type in your comment here...',
+            # 'rows':5,
+            # 'columns':50,
+            'rows':1,
+            'style': 'width: 85%;'
+        })
+    )
+
+    class Meta:
+        model = Comment
+        fields = ['comment']

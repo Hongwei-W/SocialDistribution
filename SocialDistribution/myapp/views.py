@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import Post
-from .forms import PostForm
+from .forms import PostForm, CommentForm
 
 # Create your views here.
 def login(request):
@@ -52,3 +52,17 @@ class NewPostView(View):
         # }
         # return render(request,'myapp/newpost.html', context)
         return redirect('myapp:postList')
+
+
+class PostDetailView(View):
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.get(id=pk)
+        form = CommentForm()
+
+        context = {
+            'post': post,
+            'form': form
+        }
+
+        return render(request, 'myapp/postDetail.html', context)
+

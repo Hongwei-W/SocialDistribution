@@ -36,11 +36,14 @@ class FriendFollowRequest(models.Model):
 
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    ### TO-DO: ADD AUTHOR
+    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
     contentType = models.CharField(max_length=200)
-    published = models.DateField()
-    id = models.CharField(unique=True, max_length=200, primary_key=True)
+    # published = models.DateField()
+    published = models.DateTimeField(default=localtime, blank=True, editable=False)
+    # id = models.CharField(unique=True, max_length=200, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
 
 
 class Post(models.Model):
