@@ -18,7 +18,7 @@ body{
 
 }
 
-div.title{
+.title{
     max-width: 304px;
     color: rgba(242, 132, 130, 1);
     font-size: 36px;

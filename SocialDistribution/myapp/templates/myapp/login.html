@@ -2,23 +2,99 @@
 {% load static %}
 
 <!-- {% block css %} -->
-<link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
+
 <!-- {% endblock %} -->
 
 {% block title%}Login{% endblock %}
 
 {% block content %} 
 
-<div class="main">
-    <div class="title">
-        <h1>Happy Tree Friends</h1>
-    </div>
-    <div id="box">
-        <form method="POST">
-            {% csrf_token %}
-            {{form}}
-            <input type="submit" value="Login">
-        </form>
+<div class="container" style="margin-top:2rem">
+    <div class="row justify-content-center mx-auto">
+        <!-- <div class="col-8 justify-content-center"> -->
+            <div class="col-3 my-auto">
+                <img src="https://static.themoscowtimes.com/image/article_1360/91/85D5C757-B7DE-4045-BFF9-AF690F946D81.jpeg" alt="htf-cover">
+            </div>
+
+            <div class="col-4 rounded" style="background-color: #FBFBFB;">
+                <div class="text-center title poster-font" style="margin-bottom: 2rem;">
+                    <h1>Happy Tree Friends</h1>
+                </div>
+                <div>
+                    <div class="text-center login-form spacer">
+                        <form method="POST" >
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label class="text-font text-left" for="username">Username</label>
+                                {{form.username}}
+                            </div>
+                            <div class="form-group">
+                                <label class="text-font text-left" for="password1">Password</label>
+                                {{form.password}}
+                            </div>
+                            <div>
+                                <input type="submit" class="submit btn submit-button text-center" value="Login">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-font text-center">
+                        Dont have an account? <a href="signup.html" class="greenish-something"><u>Signup</u></a>
+                    </div>
+                </div>
+            </div>
+        <!-- </div> -->
     </div>
 </div>
+
+
+<style>
+    .title{
+    color: rgba(242, 132, 130, 1);
+    font-size: 0.8rem !important;
+    }
+
+    /* img {
+        max-width: 300px;
+        max-height: 300px
+    } */
+
+    .form-group {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* label {
+        display: block;   
+    } */
+
+    .text-center, .form-group {
+        margin-top: 1rem;
+    }
+
+    .submit-button {
+        align-self: center;
+        background-color: #F5CAC3;
+        outline-color: pink;
+        color: white;
+    }
+
+    .submit-button:hover {
+        background-color: pink;
+        color: white;
+        outline-color: pink;
+    }
+
+    .row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display:         flex;
+        flex-wrap: wrap;
+    }
+    .row > [class*='col-'] {
+        display: flex;
+        flex-direction: column;
+    }
+
+</style>
+
 {% endblock %}
