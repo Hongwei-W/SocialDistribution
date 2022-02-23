@@ -73,6 +73,10 @@
             a:hover {
                 text-decoration: underline;
             }
+            a:visited {
+                text-decoration: none;
+                color: #F5CAC3;
+            }
 
             #postBar {
                 background-color: #e9e9e9;
@@ -272,15 +276,15 @@
                 </div>
             </div>
             <div class="column middle">
-                <div id="postDiv">
-                    <a href="{% url 'myapp:postList' %}" class="btn"> Back To Feed </a>                  
+                <div>
+                    <a href="{% url 'myapp:postList' %}" class="btn btn-light"> Back To Feed </a>                  
                 </div>
-                <div id="postHolder">
+                <div>
                     <div class="singlePost">
                         <div class="postTitle">{{ post.title }}</div> 
                         <div class="postBody">{{ post.description }}</div>
                         <div class="postTime">{{ post.published }}<div class="postVis">Visibility: {{ post.visibility}}</div></div>  
-                        <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="google.com"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>                       
+                        <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>                       
                     </div>
                     <form method="POST">
                         {% csrf_token %}
@@ -293,6 +297,12 @@
                             <button class="btnShare">Share</button>
                         </div>
                     </form>
+                    {% for comment in comments %}
+                    <div class="singlePost position-relative"> 
+                        <div class="postBody">{{ comment.comment }}</div>
+                        <div class="postTime">{{ comment.published }}</div>                       
+                    </div>                   
+                    {% endfor %}
                 </div>
             </div>
             <div class="column right">

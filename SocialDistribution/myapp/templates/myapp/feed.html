@@ -107,7 +107,7 @@
                 z-index: 2;
             }
 
-            input[id^="postBar"]::placeholder { 
+            input[id^="postBar"]{ 
                 font-family: 'Pacifico', cursive;
                 color: #F28482;
                 font-size: 25px;
@@ -260,19 +260,19 @@
             </div>
             <div class="column middle">
                 <div id="postDiv">
-                    <form class="example" action="action_page.php">
-                        <input id="postBar" type="text" placeholder="What's on your mind?">
+                    <form action="{% url 'myapp:newpost' %}">
+                        <input id="postBar" type="submit" value="What's on your mind?">
                     </form>
                     <div id="prompt"><h3>Let's post something!</h3></div>                   
                 </div>
                 <div id="postHolder">
-                    <div class="singlePost">
+                    <!-- <div class="singlePost">
                         <div class="authorName">{name}</div>
                         <div class="postTitle">Title</div>
                         <div class="postBody">body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...</div>
                         <div class="postTime">2022-02-19 2:14PM<div class="postVis">Visibility: Public</div></div>
                         <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="google.com"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>
-                    </div>
+                    </div> -->
                     {% for post in postList %}
                     <div class="singlePost position-relative">
                         <div class="postTitle">{{ post.title }}</div> 

@@ -34,16 +34,6 @@ class FriendFollowRequest(models.Model):
                                related_name='%(class)s_request_receiver')
 
 
-class Comment(models.Model):
-    type = models.CharField(default='comment', max_length=200)
-    ### TO-DO: ADD AUTHOR
-    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    comment = models.TextField()
-    contentType = models.CharField(max_length=200)
-    # published = models.DateField()
-    published = models.DateTimeField(default=localtime, blank=True, editable=False)
-    # id = models.CharField(unique=True, max_length=200, primary_key=True)
-    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
 
 
 class Post(models.Model):
@@ -69,6 +59,18 @@ class Post(models.Model):
     visibility = models.CharField(max_length=7, choices=VISIBILITY_CHOICES, default="PUBLIC")
     # unlisted = models.BooleanField()
 
+
+class Comment(models.Model):
+    type = models.CharField(default='comment', max_length=200)
+    ### TO-DO: ADD AUTHOR
+    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    comment = models.TextField()
+    contentType = models.CharField(max_length=200)
+    # published = models.DateField()
+    published = models.DateTimeField(default=localtime, blank=True, editable=False)
+    # id = models.CharField(unique=True, max_length=200, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    post = models.ForeignKey(to=Post,on_delete=models.CASCADE)
 
 class Like(models.Model):
     type = models.CharField(default='Like', max_length=200)

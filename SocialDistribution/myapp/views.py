@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import Post
+from .models import Post, Comment
 from .forms import PostForm, CommentForm
 
 # Create your views here.
@@ -20,7 +20,7 @@ def signup(request):
 
 class PostListView(View):
     def get(self, request, *args, **kwargs):
-        posts = Post.objects.all()
+        posts = Post.objects.all().order_by('-published')
         # form = PostForm()
         context = {
             'postList': posts,
@@ -58,10 +58,32 @@ class PostDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
         form = CommentForm()
+        comments = Comment.objects.filter(post=post).order_by('-published')
 
         context = {
             'post': post,
-            'form': form
+            'form': form,
+            'comments':comments,
+        }
+
+        return render(request, 'myapp/postDetail.html', context)
+    
+    def post(self, request, pk, *args, **kwargs):
+        post = Post.objects.get(id=pk)
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            newComment = form.save(commit=False)
+            # newComment.author = request.user
+            newComment.post = post
+            newComment.save()
+
+        comments = Comment.objects.filter(post=post).order_by('-published')
+
+        context = {
+            'post': post,
+            'form': form,
+            'comments':comments,
         }
 
         return render(request, 'myapp/postDetail.html', context)
