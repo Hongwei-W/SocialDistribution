@@ -17,7 +17,7 @@
                     <div class="text-center poster-font">Happy Tree Friends</div>
                 </div>
                 <div class="col-6">
-                    <div class="text-center poster-font light-pink">Welcome Friend {username}</div>
+                    <div class="text-center poster-font secondary-color">Welcome Friend {username}</div>
                     <!-- TODO: Darren Need to dynamically update field -->
                 </div>
             </div>
@@ -68,7 +68,7 @@
                 <div class="col-12">
                     <div class="redirect text-center">
                         <span>
-                            Already have an account?&nbsp;<a href="login.html" class="link">Login</a> <br>
+                            Already have an account?&nbsp;<a href="{% url 'login' %}" class="link">Login</a> <br>
                         </span>
                         <a href="{% url 'password_reset' %}" class="link">Forgot password?</a>
                     </div>
