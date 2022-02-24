@@ -1,0 +1,33 @@
+.img {
+    display: block;
+    height: 200px;
+    width: 200px;
+    object-fit: cover;
+}
+
+.submit-button {
+    align-self: center;
+    background-color: #F5CAC3;
+    outline-color: pink;
+    color: white;
+}
+
+.submit-button:hover {
+    background-color: pink;
+    color: white;
+    outline-color: pink;
+}
+
+input,
+label {
+    display: block;
+    margin-bottom: 0px !important;
+}
+
+.form-group {
+    margin-bottom: 0.5rem !important;
+}
+
+.container {
+    margin-top:2rem !important;
+}
