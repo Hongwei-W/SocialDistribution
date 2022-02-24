@@ -1,0 +1,37 @@
+.title{
+color: rgba(242, 132, 130, 1);
+font-size: 0.8rem !important;
+}
+
+.form-group {
+    margin-bottom: 0.5rem !important;
+}
+
+.text-center, .form-group {
+    margin-top: 1rem;
+}
+
+.submit-button {
+    align-self: center;
+    background-color: #F5CAC3;
+    outline-color: pink;
+    color: white;
+}
+
+.submit-button:hover {
+    background-color: pink;
+    color: white;
+    outline-color: pink;
+}
+
+.row {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display:         flex;
+    flex-wrap: wrap;
+}
+.row > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
+}
