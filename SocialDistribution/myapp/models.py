@@ -1,4 +1,7 @@
+from email.policy import default
 from django.db import models
+from django.contrib.auth import get_user_model
+
 
 
 # Create your models here.
@@ -8,7 +11,7 @@ class Author(models.Model):
     host = models.CharField(max_length=200)
     displayName = models.CharField(max_length=200)
     github = models.TextField()
-    profileImage = models.TextField()
+    profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
 
 
 class Authors(models.Model):
@@ -76,3 +79,19 @@ class Inbox(models.Model):
     type = models.CharField(default='inbox', max_length=200)
     author = models.ForeignKey(to=Authors, on_delete=models.CASCADE)
     items = models.ManyToManyField(to=Post)
+
+#User = get_user_model()
+# class Profile(models.Model):
+#     author = models.ForeignKey(Author, on_delete=models.CASCADE)
+#     name = models.CharField(max_length=100)
+#     profileImg = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
+    
+#     def __str__(self):
+#         return self.user.username 
+
+class FollowerCount(models.Model):
+    follower = models.CharField(max_length=100)
+    user = models.CharField(max_length=100)
+    def __str__(self):
+        print("hahahhahahah model.py: ", self.user)
+        return self.user
