@@ -14,5 +14,6 @@ urlpatterns = [
     path('feed/', views.feed, name='feed'),
     # path('', views.LoginView.as_view(), name='login'),
     path('signup/', views.signup, name='signup'),
+    path('feed/', views.feed, name='feed'),
 
 ]
