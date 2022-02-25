@@ -7,6 +7,8 @@ from .forms import PostForm, CommentForm
 
 from .forms import LoginForm
 
+from .forms import LoginForm
+
 # Create your views here.
 class PostListView(View):
     def get(self, request, *args, **kwargs):

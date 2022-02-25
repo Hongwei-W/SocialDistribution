@@ -13,5 +13,4 @@ urlpatterns = [
     path('newpost/', NewPostView.as_view(), name='newpost'),
     path('feed/',PostListView.as_view(), name='postList'),
     path('post/<uuid:pk>',PostDetailView.as_view(), name='postDetail'),
-
 ]
