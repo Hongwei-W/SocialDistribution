@@ -10,15 +10,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+STATIC_URL = '/static/'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
+
+STATICFILES_DIR = [
+    BASE_DIR / "static",
+]
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'qyb0(d(ay@v&^+w!ly3!#@e0vxgpeo9u$q#5$&92r1w-rhma7g'
@@ -32,6 +37,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'accounts.apps.AccountsConfig',
     'myapp.apps.MyappConfig',
     #
     #   Admin
@@ -59,7 +65,7 @@ ROOT_URLCONF = 'SocialDistribution.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'SocialDistribution/templates/')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

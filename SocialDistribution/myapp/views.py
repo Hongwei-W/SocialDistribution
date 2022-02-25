@@ -61,7 +61,12 @@ def follow(request):
         return redirect('/')
 
 
+def search(request):
+    name_list = Author.objects.all()
+    arr = ['Mingwei', 'Lucas', 'Kiana', 'Darren', 'Hongwei', 'Zihan']
+    return render(request, 'myapp/feed.html', {'name_list':arr})
 
-# def display_image(request, user_id):
-#     current_author_info = get_object_or_404(Author, pk=user_id)
-#     avatar = {'avatar': current_author_info.profileImage}
+def getuser(request):
+    userName = request.GET['username']
+    return HttpResponse(userName)
+
