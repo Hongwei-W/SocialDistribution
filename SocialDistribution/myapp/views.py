@@ -20,7 +20,7 @@ class PostListView(View):
             'postList': posts,
             # 'form': form,
         }
-        return render(request,'myapp/feed.html', context)
+        return render(request,'feed.html', context)
 
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
@@ -28,7 +28,7 @@ class NewPostView(View):
         context = {
             'form': form,
         }
-        return render(request,'myapp/newpost.html', context)
+        return render(request,'newpost.html', context)
     
     def post(self, request, *args, **kwargs):
         posts = Post.objects.all()
@@ -60,7 +60,7 @@ class PostDetailView(View):
             'comments':comments,
         }
 
-        return render(request, 'myapp/postDetail.html', context)
+        return render(request, 'postDetail.html', context)
     
     def post(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -80,7 +80,7 @@ class PostDetailView(View):
             'comments':comments,
         }
 
-        return render(request, 'myapp/postDetail.html', context)
+        return render(request, 'postDetail.html', context)
 
 def profile(request, user_id):
     print("------user id: ", user_id)
@@ -104,7 +104,7 @@ def profile(request, user_id):
         'github_username': github_username
         }
 
-    return render(request, 'myapp/profile.html', context)
+    return render(request, 'profile.html', context)
 
 def follow(request):
     print("follow is working")
@@ -127,7 +127,7 @@ def follow(request):
 
 def search(request):
     author_list = Author.objects.all()
-    return render(request, 'myapp/feed.html', {'author_list':author_list})
+    return render(request, 'feed.html', {'author_list':author_list})
 
 def getuser(request):
     username = request.GET['username']

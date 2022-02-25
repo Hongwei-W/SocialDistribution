@@ -39,6 +39,7 @@ LOGIN_REDIRECT_URL = 'myapp:postList'
 
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
+    'common.apps.CommonConfig',
     'myapp.apps.MyappConfig',
     #
     #   Admin
