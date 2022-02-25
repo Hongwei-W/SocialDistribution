@@ -3,3 +3,14 @@ SocialDistribution/SocialDistribution/__pycache__/
 SocialDistribution/.vscode/settings.json
 SocialDistribution/myapp/__pycache__/__init__.cpython-38.pyc
 SocialDistribution/myapp/__pycache__/apps.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/__init__.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/admin.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/apps.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/forms.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/models.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/urls.cpython-38.pyc
+SocialDistribution/accounts/__pycache__/views.cpython-38.pyc
+SocialDistribution/accounts/migrations/__pycache__/__init__.cpython-38.pyc
+SocialDistribution/myapp/__pycache__/forms.cpython-38.pyc
+SocialDistribution/myapp/__pycache__/urls.cpython-38.pyc
+SocialDistribution/myapp/__pycache__/views.cpython-38.pyc
