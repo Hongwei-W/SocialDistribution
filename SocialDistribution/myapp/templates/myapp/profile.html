@@ -301,7 +301,7 @@
                     <!-- <img scr="../images/avatar1.jpg", alt="user avatar", class="avatar"> -->
                     <form action="/myapp/follow" method="POST">
                         {% csrf_token %}
-                        <img scr="{{ profile.profileImg.url }}" class='avatar'/>
+                        <img scr="/Users/suzihan/Documents/CMPUT404/projver2/SocialDistribution/media/profile_images/avatar1.jpg" class='avatar'/>
                         <div class="userInfo">user id: {{ current_author_info.id }}</a></div>
                         <div class="userInfo">name: {{ current_author_info.displayName }}</a></div>
                     <!-- <button class="followerButton">Follower</button> -->
