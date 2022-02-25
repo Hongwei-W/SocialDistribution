@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title%}New Post{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'css/newpost.css' %}">
+    <body>
+        <div class="colContainer">
+            <div class="column left">
+                <h1 class="posterFont" id="logo">H</h1>
+                <div>
+                    <div class="options"><a href="google.com"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</a></div>
+                    <div class="options"><a href="google.com"><i class="fa-solid fa-at"></i>&ensp;1-to-1</a></div>
+                    <div class="options"><a href="google.com"><i class="fa-solid fa-envelope-open"></i>&ensp;Notification</a></div>
+                    <div class="options"><a href="google.com"><i class="fa-solid fa-user"></i>&ensp;Profile</a></div>
+                </div>
+            </div>
+            <div class="column middle">
+                <div>
+                    <div>
+                        <a href="{% url 'myapp:postList' %}" class="btn btn-light"> Back To Feed </a>                  
+                    </div>
+                    <div id="newPostContainer">
+                        <div class="posterFont" id="newPostText">New Post</div>
+                        <hr>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <!-- {{ form.as_table }} -->
+                            <div class="postDetail">
+                                <!-- <label for="title">Title:</label> -->
+                                {{ form.title }}
+                            </div>
+                            <div class="postDetail">
+                                <!-- <label for="description">Description:</label> -->
+                                {{ form.description }}
+                            </div>
+                            <div class="postDetail">
+                                <!-- <label for="visibility">Visibility:</label> -->
+                                {{ form.visibility }}
+                            </div>
+                            <div class="postDetail">
+                                <button class="btnShare">Share</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="column right">
+                <div>
+                    <form class="example" action="action_page.php">
+                        <input id="searchBar" type="text" placeholder="Search">
+                        <button type="submit" id="searchButton"><i class="fa fa-search"></i></button>
+                    </form>
+                </div>
+                <div>
+                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
+                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
+                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
+                </div>
+                
+            </div>
+        </div>
+
+        {% endblock %}

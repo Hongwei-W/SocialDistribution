@@ -23,7 +23,6 @@ STATIC_URL = 'static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'SocialDistribution/static',
-
 ]
 
 # SECURITY WARNING: keep the secret key used in production secret!

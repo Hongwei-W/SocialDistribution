@@ -1,4 +1,6 @@
+import uuid
 from django.db import models
+from django.utils.timezone import localtime
 
 
 # Create your models here.
@@ -32,31 +34,37 @@ class FriendFollowRequest(models.Model):
                                related_name='%(class)s_request_receiver')
 
 
-class Comment(models.Model):
-    type = models.CharField(default='comment', max_length=200)
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    comment = models.TextField()
-    contentType = models.CharField(max_length=200)
-    published = models.DateField()
-    id = models.CharField(unique=True, max_length=200, primary_key=True)
-
-
 class Post(models.Model):
     type = models.CharField(default='post', max_length=200)
     title = models.CharField(max_length=200)
-    id = models.CharField(unique=True, max_length=200, primary_key=True)
-    source = models.CharField(max_length=200)
-    origin = models.CharField(max_length=200)
+    # id = models.CharField(unique=True, max_length=200, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4,
+                          editable=False,
+                          unique=True,
+                          primary_key=True)
+    # source = models.CharField(max_length=200)
+    # origin = models.CharField(max_length=200)
     description = models.TextField()
-    contentType = models.CharField(max_length=200)
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    categories = models.TextField()
-    count = models.IntegerField()
-    comments = models.TextField()
-    commentsSrc = models.ForeignKey(to=Comment, on_delete=models.CASCADE)
-    published = models.DateField()
-    visiblity = models.CharField(max_length=200)
-    unlisted = models.BooleanField()
+    # contentType = models.CharField(max_length=200)
+    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    # categories = models.TextField()
+    # count = models.IntegerField()
+    # comments = models.TextField()
+    # commentsSrc = models.ForeignKey(to=Comment, on_delete=models.CASCADE)
+    # published = models.DateField()
+    ### If we want time regardless of timezone, use now; otherwise use localtime
+    # published = models.DateTimeField(default=now, editable=False)
+    published = models.DateTimeField(default=localtime,
+                                     blank=True,
+                                     editable=False)
+    # TO-DO: check if "private" is needed
+    VISIBILITY_CHOICES = [("PUBLIC", "Public"), ("FRIENDS", "Friends"),
+                          ("PRIVATE", "Specific friend")]
+    visibility = models.CharField(max_length=7,
+                                  choices=VISIBILITY_CHOICES,
+                                  default="PUBLIC")
+    # unlisted = models.BooleanField()
+
 
 
 class Like(models.Model):
@@ -65,6 +73,22 @@ class Like(models.Model):
     content = models.TextField()
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
+
+
+class Comment(models.Model):
+    type = models.CharField(default='comment', max_length=200)
+    # TODO: ADD AUTHOR
+    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    comment = models.TextField()
+    contentType = models.CharField(max_length=200)
+    published = models.DateTimeField(default=localtime,
+                                     blank=True,
+                                     editable=False)
+    id = models.UUIDField(default=uuid.uuid4,
+                          editable=False,
+                          unique=True,
+                          primary_key=True)
+    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, default=None)
 
 
 class Liked(models.Model):
