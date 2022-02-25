@@ -315,8 +315,8 @@
                         <input list="usernames" id="search-query" class="form-search" type="text" placeholder="Search" name="username" />
                         <button class="searchButton" type="submit"><i class="fa fa-search"></i></button>
                         <datalist id="usernames">
-                            {% for name in name_list %}
-                            <option value="{{name}}">{{name}}</option>
+                            {% for author in author_list %}
+                            <option value="{{author.displayName}}"></option>
                             {% endfor %}
                             <!-- <option value="Mingwei"></option>
                             <option value="Lucas"></option>

@@ -1,4 +1,5 @@
 from ast import Delete
+import re
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Author, Post, FollowerCount
@@ -27,6 +28,8 @@ def profile(request, user_id):
     follower = request.user.username
     user = user_id
 
+    github_username = current_author_info.github.split("/")[-1]
+
     if FollowerCount.objects.filter(follower=follower, user=user).first():
         button_text = 'Unfollow'
     else:
@@ -38,6 +41,7 @@ def profile(request, user_id):
         'button_text': button_text,
         'count_followers': count_followers,
         'count_following': count_following,
+        'github_username': github_username
         }
 
     return render(request, 'myapp/profile.html', context)
@@ -62,11 +66,14 @@ def follow(request):
 
 
 def search(request):
-    name_list = Author.objects.all()
-    arr = ['Mingwei', 'Lucas', 'Kiana', 'Darren', 'Hongwei', 'Zihan']
-    return render(request, 'myapp/feed.html', {'name_list':arr})
+    author_list = Author.objects.all()
+    return render(request, 'myapp/feed.html', {'author_list':author_list})
 
 def getuser(request):
-    userName = request.GET['username']
-    return HttpResponse(userName)
+    username = request.GET['username']
+    # current_author_info = Author.objects.get(displayName = username)
+    current_author_info = get_object_or_404(Author, displayName = username)
+    user_id = current_author_info.id
+    return redirect('/myapp/feed/' + user_id)
+    
 

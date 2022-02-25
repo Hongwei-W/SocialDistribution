@@ -15,6 +15,9 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Pacifico&display=swap" rel="stylesheet">
         <script src="https://kit.fontawesome.com/b239db17ad.js" crossorigin="anonymous"></script>
+
+        <link rel="stylesheet"  href="https://unpkg.com/github-calendar@latest/dist/github-calendar-responsive.css"/>
+
         <style>
             .column {
                 float: left;
@@ -43,7 +46,7 @@
                 margin-left: 50px;
                 margin-right: 75px;
                 margin-top: 75px;
-                height: 600px;
+                height: auto;
             }
 
             .middle {
@@ -198,37 +201,41 @@
 
             }
 
-            #searchBar {
-                background-color: #e9e9e9;
-                height: 40px;
-                margin-left: 10%;
-                margin-top: 10%;
-                width:60%;
-                border:0;
-                border-radius: 5px;
-                /* position: fixed; */
-                
+            /* search form */
+            /* from https://codepen.io/usersnap/pen/ARZJwm */
+            #wrap{
+                text-align:center;
             }
-            input[id^="searchBar"]::placeholder { 
+            #nav-search {
+                margin-top: 1%;
+                margin-left: 1%;
+                position: relative;
+            }
+
+            #nav-search input{
                 font-family: 'Lato', sans-serif;
-                color: #F28482;
-                font-size: 25px;
-                position: relative;
-                left:20px;
-                top: 5px;
+                text-indent: 5%;
+                font-size: 28px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                width: 80%;
+                cursor: pointer;
+                color: rgb(102, 102, 102);
+                background-color: #e9e9e9;
+                border: none;
+                border-radius: 24px 24px 24px 24px;
+                box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2) inset;
             }
 
-            #searchButton {
+            #nav-search .searchButton {
+                position: relative;               
                 color: #F28482;
-                width: 20%;
-                height: 40px;
-                border: 0;
-                font-size: 25px;
-                background-color: #e9e9e9;
-                position: relative;
-                top: 5px;
-                padding: 1% 0 0 0;
-
+                margin-top: 10px;
+                border: none;
+                font-size: 28px;
+                background-color: #e9e9e900;
+                padding: 0 0 0 0;
+                cursor: pointer;
             }
 
             .users {
@@ -283,19 +290,14 @@
             <div class="column left">
                 <h1 class="posterFont" id="logo">H</h1>
                 <div>
-                    <div class="options"><a href="google.com"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</a></div>
+                    <div class="options"><a href="/myapp/feed/"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</a></div>
                     <div class="options"><a href="google.com"><i class="fa-solid fa-at"></i>&ensp;1-to-1</a></div>
                     <div class="options"><a href="google.com"><i class="fa-solid fa-envelope-open"></i>&ensp;Notification</a></div>
                     <div class="options"><a href="/myapp/feed/{{current_author_info.id}}/"><i class="fa-solid fa-user"></i>&ensp;Profile</a></div>
                 </div>
             </div>
             <div class="column middle">
-                <div id="postDiv">
-                    <form class="example" action="action_page.php">
-                        <input id="postBar" type="text" placeholder="What's in your mind?">
-                    </form>
-                    <div id="prompt"><h3>Let's post something!</h3></div>                   
-                </div>
+                
                 <div class="add-btn">
                     <!-- <img>{{ current_author_info.profileImage }}</a></img> -->
                     <!-- <img scr="../images/avatar1.jpg", alt="user avatar", class="avatar"> -->
@@ -318,6 +320,20 @@
                     </form>
                     <!-- <button class="followerButton">Following</button> -->
                     <div class="userInfo">github info: {{ current_author_info.github }}</a></div>
+                    
+                    <!-- reference: https://github.com/Bloggify/github-calendar -->
+                    <!-- Optionally, include the theme (if you don't want to struggle to write the CSS) -->
+                    <script src="https://cdn.rawgit.com/IonicaBizau/github-calendar/gh-pages/dist/github-calendar.min.js"></script>
+                    <div class="calendar">
+                        <!-- Loading stuff -->
+                        Loading the data just for you.
+                    </div>
+
+                    <script>
+                        new GitHubCalendar(".calendar", "{{ github_username }}");
+                        var calendar = document.getElementsByClassName("calendar");
+                        calendar[0].style.border = "none";
+                    </script>
 
                     <div class="singlePost">
                         <div class="authorName">{name}</div>
@@ -337,16 +353,23 @@
                 </div>
             </div>
             <div class="column right">
-                <div>
-                    <form class="example" action="action_page.php">
-                        <input id="searchBar" type="text" placeholder="Search">
-                        <button type="submit" id="searchButton"><i class="fa fa-search"></i></button>
+                <div id="wrap">
+                    <form id="nav-search" class="form-search" action="{% url 'myapp:getuser' %}" method="GET">
+                        <input list="usernames" id="search-query" class="form-search" type="text" placeholder="Search" name="username" />
+                        <button class="searchButton" type="submit"><i class="fa fa-search"></i></button>
+                        <datalist id="usernames">
+                            {% for author in author_list %}
+                            <option value="{{author.displayName}}"></option>
+                            {% endfor %}
+                            <!-- <option value="Mingwei"></option>
+                            <option value="Lucas"></option>
+                            <option value="Kiana"></option>
+                            <option value="Darren"></option>
+                            <option value="Hongwei"></option>
+                            <option value="Zihan"></option>
+                            <option value="Happy tree friend"></option> -->
+                        </datalist>
                     </form>
-                </div>
-                <div>
-                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
-                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
-                    <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name</div>
                 </div>
                 
             </div>
