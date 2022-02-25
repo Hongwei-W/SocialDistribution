@@ -13,4 +13,8 @@ urlpatterns = [
     path('newpost/', NewPostView.as_view(), name='newpost'),
     path('feed/',PostListView.as_view(), name='postList'),
     path('post/<uuid:pk>',PostDetailView.as_view(), name='postDetail'),
+    path('feed/<str:user_id>/', views.profile, name='profile'),
+    path('follow', views.follow, name='follow'),
+    path('feed/', views.search),
+    path('', views.getuser, name='getuser'),
 ]

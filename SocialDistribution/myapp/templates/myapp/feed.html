@@ -6,6 +6,8 @@
 {% load static %}
 
 <link rel="stylesheet" type="text/css" href="{% static 'css/feed.css' %}">
+
+
 <div class="colContainer">
     <div class="column left">
         <h1 class="posterFont" id="logo">H</h1>
@@ -48,21 +50,26 @@
                 </div>
                 {% endfor %}
                 </div>
+            </div>
+            <div class="column right">
+               <div id="wrap">
+                    <form id="nav-search" class="form-search" action="{% url 'myapp:getuser' %}" method="GET">
+                        <input list="usernames" id="search-query" class="form-search" type="text" placeholder="Search" name="username" />
+                        <button class="searchButton" type="submit"><i class="fa fa-search"></i></button>
+                        <datalist id="usernames">
+                            {% for author in author_list %}
+                            <option value="{{author.displayName}}"></option>
+                            {% endfor %}
+                            <!-- <option value="Mingwei"></option>
+                            <option value="Lucas"></option>
+                            <option value="Kiana"></option>
+                            <option value="Darren"></option>
+                            <option value="Hongwei"></option>
+                            <option value="Zihan"></option>
+                            <option value="Happy tree friend"></option> -->
+                        </datalist>
+                    </form>
                 </div>
-                <div class="column right">
-                    <div>
-                        <form class="example" action="action_page.php">
-                            <input id="searchBar" type="text" placeholder="Search">
-                            <button type="submit" id="searchButton"><i class="fa fa-search"></i></button>
-                        </form>
-                    </div>
-                    <div>
-            <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name
-            </div>
-            <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name
-            </div>
-            <div class="users"><img src="https://www.w3schools.com/images/lamp.jpg" alt="Lamp" width="32" height="32">&ensp;Name
-            </div>
         </div>
     </div>
     </div>
