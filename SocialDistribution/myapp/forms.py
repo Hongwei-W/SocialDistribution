@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post, Comment
+from .models import Post, Comment, Author
 
 # Reference: https://www.youtube.com/watch?v=USVjTtApVDM&list=PLPSM8rIid1a3TkwEmHyDALNuHhqiUiU5A&index=2
 class PostForm(forms.ModelForm):
@@ -39,7 +39,7 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ['comment']
 
-class LoginForm(forms.Form):
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.PasswordInput())
-
+# class AuthorForm(forms.ModelForm):
+#     class Meta:
+#         model = Author
+#         field = ('id', 'host', 'displayname', 'github', 'profileImage')

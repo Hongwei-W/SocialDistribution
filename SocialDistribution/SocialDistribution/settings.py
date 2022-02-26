@@ -39,6 +39,7 @@ LOGIN_REDIRECT_URL = 'myapp:postList'
 
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
+    'common.apps.CommonConfig',
     'myapp.apps.MyappConfig',
     #
     #   Admin
@@ -128,3 +129,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
+
+STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

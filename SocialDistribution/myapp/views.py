@@ -4,10 +4,12 @@ from django.shortcuts import render, redirect
 from django.views import View
 from .models import Post, Comment
 from .forms import PostForm, CommentForm
-
-from .forms import LoginForm
-
-from .forms import LoginForm
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Author, Post, FollowerCount
+from django.views import View
+from django.contrib.auth.models import User, auth
+from ast import Delete
+import re
 
 # Create your views here.
 class PostListView(View):
@@ -18,7 +20,7 @@ class PostListView(View):
             'postList': posts,
             # 'form': form,
         }
-        return render(request,'myapp/feed.html', context)
+        return render(request,'feed.html', context)
 
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
@@ -26,7 +28,7 @@ class NewPostView(View):
         context = {
             'form': form,
         }
-        return render(request,'myapp/newpost.html', context)
+        return render(request,'newpost.html', context)
     
     def post(self, request, *args, **kwargs):
         posts = Post.objects.all()
@@ -58,7 +60,7 @@ class PostDetailView(View):
             'comments':comments,
         }
 
-        return render(request, 'myapp/postDetail.html', context)
+        return render(request, 'postDetail.html', context)
     
     def post(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -78,5 +80,58 @@ class PostDetailView(View):
             'comments':comments,
         }
 
-        return render(request, 'myapp/postDetail.html', context)
+        return render(request, 'postDetail.html', context)
 
+def profile(request, user_id):
+    print("------user id: ", user_id)
+    current_author_info = get_object_or_404(Author, pk=user_id)
+    follower = request.user.username
+    user = user_id
+
+    github_username = current_author_info.github.split("/")[-1]
+
+    if FollowerCount.objects.filter(follower=follower, user=user).first():
+        button_text = 'Unfollow'
+    else:
+        button_text = 'Follow'
+    count_followers = len(FollowerCount.objects.filter(user=user_id))
+    count_following = len(FollowerCount.objects.filter(follower=user_id))
+    context = {
+        'current_author_info': current_author_info,
+        'button_text': button_text,
+        'count_followers': count_followers,
+        'count_following': count_following,
+        'github_username': github_username
+        }
+
+    return render(request, 'profile.html', context)
+
+def follow(request):
+    print("follow is working")
+    if request.method == 'POST':
+        follower = request.POST['follower']
+        user = request.POST['user']
+        # why user is empty?
+        print("!!!!!!!!!______", "request.POST: ", request.POST, "user: ", user, "follower: ", follower)
+        if FollowerCount.objects.filter(follower=follower, user=user).first():
+            delete_follower = FollowerCount.objects.get(follower=follower, user=user)
+            delete_follower.delete()
+            return redirect('/myapp/feed/'+user)
+        else:
+            new_follower = FollowerCount.objects.create(follower=follower, user=user)
+            new_follower.save()
+            return redirect('/myapp/feed/'+user)
+    else:
+        return redirect('/')
+
+
+def search(request):
+    author_list = Author.objects.all()
+    return render(request, 'feed.html', {'author_list':author_list})
+
+def getuser(request):
+    username = request.GET['username']
+    # current_author_info = Author.objects.get(displayName = username)
+    current_author_info = get_object_or_404(Author, displayName = username)
+    user_id = current_author_info.id
+    return redirect('/myapp/feed/' + user_id)

@@ -1,0 +1,38 @@
+.left {
+    width: 18%;
+    margin-left: 100px;
+    margin-top: 75px;
+    padding: 2.5rem;
+    height: 500px;
+    background-color: #FBFBFB;
+    float: left;
+}
+
+.column {
+    background-color: #FBFBFB;
+    float: left;
+}
+
+#logo {
+    font-size: 70px;
+}
+
+.options{
+    font-family: 'Lato', sans-serif;
+    color: #F5CAC3;
+    font-size: 35px;
+    padding: 0 0 15% 0;
+}
+
+a:link {
+    text-decoration: none;
+    color: #F5CAC3;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    text-decoration: none;
+    color: #F5CAC3;
+}
