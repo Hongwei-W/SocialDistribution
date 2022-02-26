@@ -21,7 +21,7 @@
     /* height: auto; */
     background-color: white;
     /* overflow: auto; */
-    
+    float: left;
 }
 
 /*a:link {*/
@@ -46,7 +46,7 @@
     border:0;
     border-radius: 25px;
     /* position: fixed; */
-    
+
 }
 
 #prompt {
@@ -66,7 +66,7 @@
     z-index: 2;
 }
 
-input[id^="postBar"]{ 
+input[id^="postBar"]{
     font-family: 'Pacifico', cursive;
     color: #F28482;
     font-size: 25px;
@@ -80,7 +80,7 @@ input[id^="postBar"]{
     height: 100%;
     width: 100%;
     /* background-color: black; */
-    
+
 }
 
 .singlePost {
