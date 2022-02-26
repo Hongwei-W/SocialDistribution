@@ -27,6 +27,10 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     #
+    #   Feed
+    #
+    #path('', include('myapp.urls', 'postList')),
+    #
     #   Admin
     #
     path('admin/', admin.site.urls),

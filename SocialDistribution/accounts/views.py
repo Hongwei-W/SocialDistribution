@@ -6,17 +6,16 @@ from accounts.forms import SignUpForm, UserCreationForm
 
 
 def signup(request):
-    if request.user.is_authenticated:
-        return redirect('accounts_home')  # TODO: Redirect to account page
+    # if request.user.is_authenticated:
+    #     return redirect('myapp/postList')  # TODO: Redirect to account page
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            # also log the user in at the same time
-            user = form.save()
-            login(request,
-                  user,
-                  backend='django.contrib.auth.backends.ModelsBackend')
-            return redirect('accounts_home')  # TODO: Redirect to feed page
+            # user need to go back to log in
+            form.save()
+            # user = form.save()
+            # login(request, user, backend='django.contrib.auth.backends.ModelsBackend')
+            return redirect('login')
     else:
         form = SignUpForm()
 

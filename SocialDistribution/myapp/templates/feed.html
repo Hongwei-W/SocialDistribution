@@ -3,6 +3,9 @@
 {% block title %}Feed{% endblock %}
 
 {% block content %}
+
+    {% if user.is_authenticated %}
+
     {% load static %}
 
     <link rel="stylesheet" type="text/css" href="{% static 'css/feed.css' %}">
@@ -47,4 +50,9 @@
         </div>
         {% include "sidebarRight.html" %}
     </div>
+
+    {% else %}
+    <p>You are not logged in</p>
+    <a href="{% url 'login' %}">Log In</a>
+    {% endif %}
 {% endblock %}
