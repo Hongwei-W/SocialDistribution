@@ -4,11 +4,13 @@
     margin-top: 75px;
     padding: 2.5rem;
     height: 500px;
+    background-color: #FBFBFB;
+    float: left;
 }
 
 .column {
-    float: left;
     background-color: #FBFBFB;
+    float: left;
 }
 
 #logo {

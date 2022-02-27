@@ -20,3 +20,12 @@ SocialDistribution/myapp/__pycache__/models.cpython-38.pyc
 .gitignore
 SocialDistribution/db.sqlite3
 SocialDistribution/myapp/__pycache__/models.cpython-38.pyc
+
+**/__pycache__
+**/__pycache__/**
+*.pyc
+*.sqlite3
+db.sqlite3
+**/.idea/workspace.xml 
+**/.idea/tasks.xml
+**/.idea
