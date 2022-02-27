@@ -8,11 +8,16 @@ from django.contrib.auth import get_user_model
 
 # Create your models here.
 class Author(models.Model):
-    type = models.CharField(default="author", max_length=200)
+    type = models.CharField(default="author", max_length=200)   
     id = models.CharField(unique=True, max_length=200, primary_key=True)
+
+    # id = models.UUIDField(default=uuid.uuid4,
+    #                       editable=False,
+    #                       unique=True,
+    #                       primary_key=True)
     host = models.CharField(max_length=200)
     displayName = models.CharField(max_length=200)
-    github = models.TextField()
+    github = models.TextField(default=None, null=True)
     profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
 
 
@@ -49,14 +54,11 @@ class Post(models.Model):
     # origin = models.CharField(max_length=200)
     description = models.TextField()
     # contentType = models.CharField(max_length=200)
-    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE, default=None)
     # categories = models.TextField()
     # count = models.IntegerField()
     # comments = models.TextField()
     # commentsSrc = models.ForeignKey(to=Comment, on_delete=models.CASCADE)
-    # published = models.DateField()
-    ### If we want time regardless of timezone, use now; otherwise use localtime
-    # published = models.DateTimeField(default=now, editable=False)
     published = models.DateTimeField(default=localtime,
                                      blank=True,
                                      editable=False)
@@ -81,7 +83,7 @@ class Like(models.Model):
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
     # TODO: ADD AUTHOR
-    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE, default=None)
     comment = models.TextField()
     contentType = models.CharField(max_length=200)
     published = models.DateTimeField(default=localtime,

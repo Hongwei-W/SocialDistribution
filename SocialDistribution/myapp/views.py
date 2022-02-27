@@ -36,7 +36,7 @@ class NewPostView(View):
 
         if form.is_valid():
             newPost = form.save(commit=False)
-            # newPost.author = request.user.username
+            newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
         
         # posts = Post.objects.all()
@@ -68,7 +68,7 @@ class PostDetailView(View):
 
         if form.is_valid():
             newComment = form.save(commit=False)
-            # newComment.author = request.user
+            newComment.author = Author.objects.get(id=request.user.username)
             newComment.post = post
             newComment.save()
 
