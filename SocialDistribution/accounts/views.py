@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate
 from django.shortcuts import redirect, render
 
 from accounts.forms import SignUpForm, UserCreationForm
-from myapp.models import Author
+from myapp.models import Author, Inbox
 
 
 def signup(request):
@@ -16,8 +16,10 @@ def signup(request):
             form.save()
             user = form.save()
             # login(request, user, backend='django.contrib.auth.backends.ModelsBackend')
-            author = Author(id=user.username, host="http://127.0.0.1:5454/", displayName=user.username)
+            author = Author(id=user.username, host="http://127.0.0.1:5454/", displayName=user.username)          
             author.save()
+            inbox = Inbox(author=author)
+            inbox.save()
             return redirect('login')
     else:
         form = SignUpForm()

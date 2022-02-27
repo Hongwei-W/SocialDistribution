@@ -31,10 +31,12 @@
                                                         <div class="postTime">2022-02-19 2:14PM<div class="postVis">Visibility: Public</div></div>
                                                         <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="google.com"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>
                                                     </div> -->
-                {% for post in postList %}
+                <!-- Reference: https://stackoverflow.com/questions/6540032/sorting-related-items-in-a-django-template -->
+                <!-- https://docs.djangoproject.com/en/dev/ref/templates/builtins/#std:templatefilter-dictsort -->
+                {% for post in postList.all|dictsortreversed:"published"%}
                     <div class="singlePost position-relative">
-                        <div class="postTitle">{{ post.title }}</div>
                         <div class="authorName">Author: {{ post.author.id }}</div>
+                        <div class="postTitle">{{ post.title }}</div>                        
                         <div class="postBody">{{ post.description }}</div>
                         <div class="postTime">{{ post.published }}
                             <div class="postVis">Visibility: {{ post.visibility }}</div>
