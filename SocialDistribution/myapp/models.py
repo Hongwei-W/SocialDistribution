@@ -17,7 +17,7 @@ class Author(models.Model):
     #                       primary_key=True)
     host = models.CharField(max_length=200)
     displayName = models.CharField(max_length=200)
-    github = models.TextField(default=None, null=True)
+    github = models.TextField(default="https://github.com/KianaLiu1", null=True)
     profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
 
 
@@ -54,7 +54,7 @@ class Post(models.Model):
     # origin = models.CharField(max_length=200)
     description = models.TextField()
     # contentType = models.CharField(max_length=200)
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE, default=None)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     # categories = models.TextField()
     # count = models.IntegerField()
     # comments = models.TextField()
@@ -83,7 +83,7 @@ class Like(models.Model):
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
     # TODO: ADD AUTHOR
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE, default=None)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
     contentType = models.CharField(max_length=200)
     published = models.DateTimeField(default=localtime,
@@ -93,7 +93,7 @@ class Comment(models.Model):
                           editable=False,
                           unique=True,
                           primary_key=True)
-    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, default=None)
+    post = models.ForeignKey(to=Post, on_delete=models.CASCADE)
 
 
 class Liked(models.Model):
@@ -103,7 +103,7 @@ class Liked(models.Model):
 
 class Inbox(models.Model):
     type = models.CharField(default='inbox', max_length=200)
-    author = models.ForeignKey(to=Authors, on_delete=models.CASCADE)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     items = models.ManyToManyField(to=Post)
 
 class FollowerCount(models.Model):

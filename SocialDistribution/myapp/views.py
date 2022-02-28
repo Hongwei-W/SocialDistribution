@@ -2,7 +2,7 @@ from http.client import HTTPResponse
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import Post, Comment
+from .models import Post, Comment, Inbox
 from .forms import PostForm, CommentForm
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Author, Post, FollowerCount
@@ -14,7 +14,8 @@ import re
 # Create your views here.
 class PostListView(View):
     def get(self, request, *args, **kwargs):
-        posts = Post.objects.all().order_by('-published')
+        # posts = Post.objects.all().order_by('-published')
+        posts = Inbox.objects.filter(author_id=request.user.username)[0].items
         # form = PostForm()
         context = {
             'postList': posts,
@@ -38,6 +39,10 @@ class NewPostView(View):
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
+            Inbox.objects.filter(author_id=request.user.username)[0].items.add(newPost)
+            followersID = FollowerCount.objects.filter(user=request.user.username)
+            for followerID in followersID:
+                Inbox.objects.filter(author_id=followerID.follower)[0].items.add(newPost)
         
         # posts = Post.objects.all()
         # context = {
