@@ -10,6 +10,8 @@ from django.views import View
 from django.contrib.auth.models import User, auth
 from ast import Delete
 import re
+from django.views.generic.edit import UpdateView, DeleteView
+from django.urls import reverse_lazy
 
 # Create your views here.
 class PostListView(View):
@@ -76,6 +78,8 @@ class PostDetailView(View):
             newComment.author = Author.objects.get(id=request.user.username)
             newComment.post = post
             newComment.save()
+            post.count += 1
+            post.save()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
 
@@ -140,3 +144,17 @@ def getuser(request):
     current_author_info = get_object_or_404(Author, displayName = username)
     user_id = current_author_info.id
     return redirect('/myapp/feed/' + user_id)
+
+class PostEditView(UpdateView):
+    model = Post
+    fields = ['title','description','visibility']
+    template_name = 'postEdit.html'
+
+    def get_success_url(self):
+        pk = self.kwargs['pk']
+        return reverse_lazy('myapp:postDetail', kwargs={'pk':pk})
+
+class PostDeleteView(DeleteView):
+    model = Post
+    template_name = 'postDelete.html'
+    success_url = reverse_lazy('myapp:postList')
