@@ -32,6 +32,9 @@
                     <div class="singlePost position-relative">
                         <div class="postTitle">{{ post.title }}</div>
                         <div class="postBody">{{ post.description }}</div>
+                        {% if post.post_image %}
+                        <img src="{{ post.post_image.url }}" width="500">
+                        {% endif %}
                         <div class="postTime">{{ post.published }}
                             <div class="postVis">Visibility: {{ post.visibility }}</div>
                         </div>

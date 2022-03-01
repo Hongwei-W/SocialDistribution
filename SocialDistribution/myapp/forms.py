@@ -18,10 +18,10 @@ class PostForm(forms.ModelForm):
             'style': 'height: 30%; width: 85%;'
         })
     )
-
+    
     class Meta:
         model = Post
-        fields = ['title','description','visibility']
+        fields = ['title','description','visibility', 'post_image']
 
 
 class CommentForm(forms.ModelForm):

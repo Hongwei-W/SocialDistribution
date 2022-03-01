@@ -36,7 +36,7 @@ class NewPostView(View):
     
     def post(self, request, *args, **kwargs):
         posts = Post.objects.all()
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, request.FILES)
 
         if form.is_valid():
             newPost = form.save(commit=False)
