@@ -18,7 +18,7 @@ class Author(models.Model):
     host = models.CharField(max_length=200)
     displayName = models.CharField(max_length=200)
     github = models.TextField(default="https://github.com/KianaLiu1", null=True)
-    profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
+    # profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
 
 
 class Authors(models.Model):
@@ -26,9 +26,9 @@ class Authors(models.Model):
     items = models.ManyToManyField(to=Author)
 
 
-class Followers(models.Model):
-    type = models.CharField(default='followers', max_length=200)
-    items = models.ManyToManyField(to=Author)
+# class Followers(models.Model):
+#     type = models.CharField(default='followers', max_length=200)
+#     items = models.ManyToManyField(to=Author)
 
 
 class FriendFollowRequest(models.Model):
@@ -47,7 +47,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     # id = models.CharField(unique=True, max_length=200, primary_key=True)
     id = models.UUIDField(default=uuid.uuid4,
-                          editable=False,
+                          editable=True,
                           unique=True,
                           primary_key=True)
     # source = models.CharField(max_length=200)
@@ -107,8 +107,8 @@ class Inbox(models.Model):
     items = models.ManyToManyField(to=Post)
 
 class FollowerCount(models.Model):
+    # follower is who logged in now
     follower = models.CharField(max_length=100)
     user = models.CharField(max_length=100)
     def __str__(self):
-        print("hahahhahahah model.py: ", self.user)
         return self.user

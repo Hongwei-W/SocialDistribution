@@ -43,7 +43,16 @@ urlpatterns = [
     #
     #   API
     #
-    path('service/authors/', views.authorsAPI.as_view()),
+    path('service/authors/', views.AuthorsAPIView.as_view(), name='service-authors'),
+    path('service/authors/<str:id>/', views.AuthorAPIView.as_view(), name='service-author'),
+    path('service/authors/<str:author>/followers/', views.FollowersAPIView.as_view(), name='service-followers'),
+    path('service/authors/<str:author>/followers/<str:another_author>/', views.FollowerAPIView.as_view(), name='service-follower'),
+    # TODO write the FollowRequest
+    path('service/authors/<str:author>/posts/<slug:pk>/', views.PostAPIView.as_view(), name='service-post'),
+    path('service/authors/<str:author>/posts/', views.PostsAPIView.as_view(), name='service-posts'),
+    # TODO write comments wthen author is linked
+    # path('service/authors/<str:author>/posts/<slug:post>/comments/', views.CommentsAPIView.as_view(), name='service-comments')
+
 ]
 
 if settings.DEBUG:
