@@ -1,14 +1,21 @@
 from http.client import HTTPResponse
+
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
 from django.views import View
-from .models import Post, Comment, Inbox
-from .forms import PostForm, CommentForm
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Author, Post, FollowerCount
-from django.views import View
 from django.contrib.auth.models import User, auth
+
+from .forms import PostForm, CommentForm
+from .models import Author, Post, FollowerCount, Comment, Inbox
+from .serializers import AuthorSerializer
+from .pagination import CustomPageNumberPagination
+
 from ast import Delete
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 import re
 
 # Create your views here.
@@ -140,3 +147,12 @@ def getuser(request):
     current_author_info = get_object_or_404(Author, displayName = username)
     user_id = current_author_info.id
     return redirect('/myapp/feed/' + user_id)
+
+class authorsAPI(APIView):
+
+    # pagination_class = CustomPageNumberPagination
+
+    def get(self, request):
+        author1 = Author.objects.all()
+        serializer = AuthorSerializer(author1, many=True)
+        return Response(serializer.data)

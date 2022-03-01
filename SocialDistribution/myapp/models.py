@@ -83,7 +83,7 @@ class Like(models.Model):
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
     # TODO: ADD AUTHOR
-    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
     contentType = models.CharField(max_length=200)
     published = models.DateTimeField(default=localtime,

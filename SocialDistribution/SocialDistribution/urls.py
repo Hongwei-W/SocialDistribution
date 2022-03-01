@@ -16,8 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.conf.urls import url
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+from rest_framework.urlpatterns import format_suffix_patterns
+
+from myapp import views
 
 
 urlpatterns = [
@@ -35,6 +40,10 @@ urlpatterns = [
     #
     path('admin/', admin.site.urls),
     path('myapp/', include('myapp.urls')),
+    #
+    #   API
+    #
+    path('service/authors/', views.authorsAPI.as_view()),
 ]
 
 if settings.DEBUG:
