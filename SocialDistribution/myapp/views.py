@@ -92,13 +92,18 @@ class PostDetailView(View):
         return render(request, 'postDetail.html', context)
 
 def profile(request, user_id):
-    print("------user id: ", user_id)
+    # get basic info
     current_author_info = get_object_or_404(Author, pk=user_id)
     follower = request.user.username
     user = user_id
-
+    # get github info
     github_username = current_author_info.github.split("/")[-1]
-
+    # get posts
+    try:
+        posts = Inbox.objects.filter(author_id=user_id)[0].items
+    except:
+        posts = []
+    # get follow
     if FollowerCount.objects.filter(follower=follower, user=user).first():
         button_text = 'Unfollow'
     else:
@@ -110,7 +115,8 @@ def profile(request, user_id):
         'button_text': button_text,
         'count_followers': count_followers,
         'count_following': count_following,
-        'github_username': github_username
+        'github_username': github_username,
+        'posts': posts,
         }
 
     return render(request, 'profile.html', context)

@@ -28,7 +28,7 @@
                     <span class="userInfo" style="padding: 50px;"><b>{{ count_followers }}  Followers</b></span>
                     <input type="hidden" value="{{ user.username }}" name="follower"/>
                     <input type="hidden" value="{{ current_author_info.id }}" name="user"/>
-                    {% if current_author_info.displayName == user.username %}
+                    {% if current_author_info.id == user.username %}
                         <a href="/settings" data-ripple="">Edit Account</a>
                     {% else %}
                         <a data-ripple="">
@@ -62,33 +62,22 @@
                 </script>
 
                 {# TODO: replace placeholders#}
-                <div class="singlePost">
-                    <div class="authorName">{name}</div>
-                    <div class="postTitle">Title</div>
-                    <div class="postBody">
-                        body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...
+                {% for post in posts.all%}
+                    <div class="singlePost position-relative">
+                        <div class="authorName">Author: {{ post.author.id }}</div>
+                        <div class="postTitle">{{ post.title }}</div>                        
+                        <div class="postBody">{{ post.description }}</div>
+                        <div class="postTime">{{ post.published }}
+                            <div class="postVis">Visibility: {{ post.visibility }}</div>
+                        </div>
+                        <!-- <div>UUID: {{ post.id }}</div> -->
+                        <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a
+                                href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a
+                                href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
+                        </div>
+                        <a href="{% url 'myapp:postDetail' post.id %}" class="stretched-link"></a>
                     </div>
-                    <div class="postTime">2022-02-19 2:14PM
-                        <div class="postVis">Visability: Public</div>
-                    </div>
-                    <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a
-                            href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="google.com"><i
-                            class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>
-                </div>
-                <div class="singlePost">
-                    <div class="authorName">{name}</div>
-                    <div class="postTitle">Title</div>
-                    <div class="postBody">
-                        body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...body...
-                    </div>
-                    <div class="postTime">2022-02-19 2:14PM
-                        <div class="postVis">Visability: Friends</div>
-                    </div>
-                    <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a
-                            href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="google.com"><i
-                            class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>
-
-                </div>
+                {% endfor %}
             </div>
         </div>
         {% include "sidebarRight.html" %}
