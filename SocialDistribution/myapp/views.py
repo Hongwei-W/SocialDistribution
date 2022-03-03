@@ -128,7 +128,6 @@ class SharedPostView(View):
             categories = 'categories',
             visibility = original_post.visibility, 
             )
-        print(new_post.source)
         new_post.save()
         Inbox.objects.filter(author_id=request.user.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=request.user.username)
@@ -139,8 +138,8 @@ class SharedPostView(View):
             'original_post': original_post,
             'form': form,
         }
-        # return redirect('myapp:postList')
-        return render(request, 'share.html', context)
+        return redirect('myapp:postList')
+        #return render(request, 'share.html', context)
 
 def like(request):
     username = request.user.username

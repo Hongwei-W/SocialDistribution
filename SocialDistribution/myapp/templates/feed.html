@@ -36,8 +36,12 @@
                 {% for post in postList.all|dictsortreversed:"published"%}
                     <div class="singlePost position-relative">
                         <div class="authorName">Author: {{ post.author.id }}</div>
-                        <div class="postTitle">{{ post.title }}</div>                        
-                        <div class="postBody">{{ post.description }}</div>
+                        <div class="postTitle">{{ post.title }}</div>   
+                        {% if post.type == 'share'%}                     
+                            <div class="postBody"><a href="{{ post.description }}">Check Shared Post</a></div>
+                        {% else %}
+                            <div class="postBody">{{ post.description }}</div>
+                        {% endif %}
                         <div class="postTime">{{ post.published }}
                             <div class="postVis">Visibility: {{ post.visibility }}</div>
                         </div>
@@ -46,7 +50,7 @@
                                 href="/myapp/like?post_id={{post.id}}"><i class="fa-solid fa-heart"></i>&ensp;{{post.likes}}</a>&emsp;<a
                                 href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
                         </div>
-                        <a href="{% url 'myapp:postDetail' post.id %}" class="stretched-link"></a>
+                        <!-- <a href="{% url 'myapp:postDetail' post.id %}" class="stretched-link"></a> -->
                     </div>
                 {% endfor %}
             </div>

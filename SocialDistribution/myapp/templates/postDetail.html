@@ -20,14 +20,18 @@
                             <a href="{% url 'myapp:postEdit' post.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
                             <a href="{% url 'myapp:postDelete' post.id %}"><i class="fa-solid fa-trash-can"></i></a>
                         {% endif%}
-                        <div class="postBody">{{ post.description }}</div>
+                        {% if post.type == 'share'%}                     
+                            <div class="postBody"><a href="{{ post.description }}">Shared Post</a></div>
+                        {% else %}
+                            <div class="postBody">{{ post.description }}</div>
+                        {% endif %}
                         <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
                         <!-- <div class="postBody">{{ post.contentType }}</div> -->
-                        <div class="postBody">{{ post.count }}</div>
+                        <!-- <div class="postBody">{{ post.count }}</div> -->
                         <div class="postTime">{{ post.published }}<div class="postVis">Visibility: {{ post.visibility}}</div></div>  
-                        <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
+                        <div class="postActions"><a href="{% url 'myapp:sharePost' post.id %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
                             <a href="{% url 'myapp:liked' post.id %}"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;
-                            <a href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>                       
+                            <a href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>                       
                     </div>
                     <form method="POST">
                         {% csrf_token %}
