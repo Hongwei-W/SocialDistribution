@@ -45,18 +45,20 @@ class FriendFollowRequest(models.Model):
 class Post(models.Model):
     type = models.CharField(default='post', max_length=200)
     title = models.CharField(max_length=200)
-    # id = models.CharField(unique=True, max_length=200, primary_key=True)
     id = models.UUIDField(default=uuid.uuid4,
                           editable=True,
                           unique=True,
                           primary_key=True)
+    # TODO: source and origin for webservices??
     # source = models.CharField(max_length=200)
     # origin = models.CharField(max_length=200)
     description = models.TextField()
-    # contentType = models.CharField(max_length=200)
+    contentType = models.CharField(max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    # categories = models.TextField()
-    # count = models.IntegerField()
+    # TODO: categories as a list of strings
+    categories = models.TextField()
+    count = models.IntegerField(default=0)
+    # TODO: comments for webservice??
     # comments = models.TextField()
     # commentsSrc = models.ForeignKey(to=Comment, on_delete=models.CASCADE)
     published = models.DateTimeField(default=localtime,
@@ -83,8 +85,7 @@ class Like(models.Model):
 
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
-    # TODO: ADD AUTHOR
-    # author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+    author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
     contentType = models.CharField(max_length=200)
     published = models.DateTimeField(default=localtime,

@@ -6,7 +6,8 @@ from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User, auth
 from django.forms.models import model_to_dict
-from rest_framework.renderers import JSONRenderer
+from django.views.generic.edit import UpdateView, DeleteView
+from django.urls import reverse_lazy
 
 from .forms import PostForm, CommentForm
 from .models import Author, Post, FollowerCount, Comment, Inbox
@@ -21,7 +22,10 @@ from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpda
     RetrieveAPIView, RetrieveDestroyAPIView
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
+from rest_framework.renderers import JSONRenderer
+
 import re
+
 
 # Create your views here.
 class PostListView(View):
@@ -93,6 +97,8 @@ class PostDetailView(View):
             newComment.author = Author.objects.get(id=request.user.username)
             newComment.post = post
             newComment.save()
+            post.count += 1
+            post.save()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
 
@@ -149,11 +155,6 @@ def follow(request):
     else:
         return redirect('/')
 
-
-# def search(request):
-#     author_list = Author.objects.all()
-#     return render(request, 'feed.html', {'author_list':author_list})
-
 def getuser(request):
     username = request.GET['username']
     # current_author_info = Author.objects.get(displayName = username)
@@ -161,6 +162,19 @@ def getuser(request):
     user_id = current_author_info.id
     return redirect('/myapp/feed/' + user_id)
 
+class PostEditView(UpdateView):
+    model = Post
+    fields = ['title','description','visibility']
+    template_name = 'postEdit.html'
+
+    def get_success_url(self):
+        pk = self.kwargs['pk']
+        return reverse_lazy('myapp:postDetail', kwargs={'pk':pk})
+
+class PostDeleteView(DeleteView):
+    model = Post
+    template_name = 'postDelete.html'
+    success_url = reverse_lazy('myapp:postList')
 
 # API
 
