@@ -12,12 +12,12 @@
             <div class="column middle">
                 <div>
                     <div>
-                        <a href="{% url 'myapp:postList' %}" class="btn btn-light"> Back To Feed </a>                  
+                        <a href="{% url 'myapp:postDetail' object.id %}" class="btn btn-light"> Back To Post </a>                  
                     </div>
                     <div id="newPostContainer">
-                        <div class="poster-font logo-color" id="newPostText">New Post</div>
+                        <div class="poster-font logo-color" id="newPostText">Update Post</div>
                         <hr>
-                        <form method="POST" enctype="multipart/form-data">
+                        <form method="POST">
                             {% csrf_token %}
                             <!-- {{ form.as_table }} -->
                             <div class="postDetail">
@@ -28,23 +28,20 @@
                                 <!-- <label for="description">Description:</label> -->
                                 {{ form.description }}
                             </div>
-                            <div class="postDetail">
-                                <!-- <label for="description">Description:</label> -->
+                            <!-- <div class="postDetail">
+                                <label for="contentType">Content Type:</label>
                                 {{ form.contentType }}
                             </div>
                             <div class="postDetail">
-                                <!-- <label for="description">Description:</label> -->
+                                <label for="description">Description:</label>
                                 {{ form.categories }}
-                            </div>                           
+                            </div> -->
                             <div class="postDetail">
                                 <!-- <label for="visibility">Visibility:</label> -->
                                 {{ form.visibility }}
                             </div>
-                            <div class="postImage">
-                                {{ form.post_image }}
-                            </div>
                             <div class="postDetail">
-                                <button class="btnShare">Share</button>
+                                <button class="btnShare">Submit</button>
                             </div>
                         </form>
                     </div>
