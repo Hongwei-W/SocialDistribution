@@ -1,8 +1,9 @@
 from http.client import HTTPResponse
+from urllib import request
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import Post, Comment, Inbox
+from .models import Post, Comment, Inbox, Like
 from .forms import PostForm, CommentForm
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Author, Post, FollowerCount
@@ -60,11 +61,13 @@ class PostDetailView(View):
         post = Post.objects.get(id=pk)
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
+        likes = Like.objects.filter(object=post)
 
         context = {
             'post': post,
             'form': form,
             'comments':comments,
+            'likes': likes,
         }
 
         return render(request, 'postDetail.html', context)
@@ -82,14 +85,55 @@ class PostDetailView(View):
             post.save()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
+        likes = Like.objects.filter(object=post)
+        likes_count = len(Like.objects.filter(object=post))
 
         context = {
             'post': post,
             'form': form,
             'comments':comments,
+            'likes': likes,
+            'likes_count': likes_count,
         }
 
         return render(request, 'postDetail.html', context)
+
+def like(request):
+    username = request.user.username
+    author = Author.objects.get(id=username)
+    post_id = request.GET.get('post_id')
+    post = Post.objects.get(id=post_id)
+    summary = username + ' Likes your post'
+    like_filter = Like.objects.filter(object=post, author=author).first()
+    if like_filter == None:
+        print(post, author)
+        new_like = Like.objects.create(author=author, object=post)
+        new_like.save()
+        # like_text = 'Liked'
+        post.likes += 1
+        post.save()
+        print("successfullt like")
+        return redirect('/myapp/feed/')
+        # return render(request, 'feed.html',{'summary': summary})
+    else:
+        (print('successfullt unlike'))
+        like_filter.delete()
+        # like_text='Like'
+        post.likes -= 1
+        post.save()
+        return redirect('/myapp/feed/')
+
+def liked(request, post_id):
+    post = Post.objects.get(id=post_id)
+    username = request.user.username
+    likes_list = Like.objects.filter(object=post)
+    context = {
+        'likes_list': likes_list
+    }
+    return render(request, 'liked.html', context)
+    # if 
+    # like_text = 'Like'
+
 
 def profile(request, user_id):
     # get basic info
@@ -126,8 +170,6 @@ def follow(request):
     if request.method == 'POST':
         follower = request.POST['follower']
         user = request.POST['user']
-        # why user is empty?
-        print("!!!!!!!!!______", "request.POST: ", request.POST, "user: ", user, "follower: ", follower)
         if FollowerCount.objects.filter(follower=follower, user=user).first():
             delete_follower = FollowerCount.objects.get(follower=follower, user=user)
             delete_follower.delete()

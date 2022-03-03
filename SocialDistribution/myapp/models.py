@@ -71,15 +71,18 @@ class Post(models.Model):
                                   choices=VISIBILITY_CHOICES,
                                   default="PUBLIC")
     # unlisted = models.BooleanField()
+    likes = models.IntegerField(default=0)
 
 
 
 class Like(models.Model):
     type = models.CharField(default='Like', max_length=200)
-    summary = models.TextField()
-    content = models.TextField()
+    # summary = models.TextField()
+    # content = models.TextField()
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
+    # def __str__(self):
+    #     return self.author
 
 
 class Comment(models.Model):
@@ -99,7 +102,7 @@ class Comment(models.Model):
 
 class Liked(models.Model):
     type = models.CharField(default='liked', max_length=200)
-    items = models.ManyToManyField(to=Post)
+    items = models.ManyToManyField(to=Like)
 
 
 class Inbox(models.Model):

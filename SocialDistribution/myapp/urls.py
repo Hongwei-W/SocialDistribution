@@ -16,8 +16,9 @@ urlpatterns = [
     path('post/<uuid:pk>',PostDetailView.as_view(), name='postDetail'),
     path('post/edit/<uuid:pk>',PostEditView.as_view(), name='postEdit'),
     path('post/delete/<uuid:pk>',PostDeleteView.as_view(), name='postDelete'),
-    # path('like-post', views.like-post, name='like-post'),
     path('feed/<str:user_id>/', views.profile, name='profile'),
     path('follow', views.follow, name='follow'),
+    path('like', views.like, name='like'),
+    path('liked/<uuid:post_id>', views.liked, name='liked'),
     path('', views.getuser, name='getuser'),
 ]

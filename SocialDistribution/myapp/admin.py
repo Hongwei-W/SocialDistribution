@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Author, FollowerCount, Post
+from .models import Author, FollowerCount, Post, Like, Liked
 from .models import Followers
 #from .models import Profile
 
@@ -8,4 +8,6 @@ from .models import Followers
 admin.site.register(Post)
 admin.site.register(Author)
 admin.site.register(FollowerCount)
+admin.site.register(Like)
+admin.site.register(Liked)
 #admin.site.register(Profile)
