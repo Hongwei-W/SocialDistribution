@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import Post, Comment, Inbox, Like
-from .forms import PostForm, CommentForm
+from .forms import PostForm, CommentForm, ShareForm
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Author, Post, FollowerCount
 from django.views import View
@@ -29,14 +29,17 @@ class PostListView(View):
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
         form = PostForm()
+        share_form = ShareForm()
         context = {
             'form': form,
+            'share_form': share_form,
         }
         return render(request,'newpost.html', context)
     
     def post(self, request, *args, **kwargs):
         posts = Post.objects.all()
         form = PostForm(request.POST)
+        share_form = ShareForm()
 
         if form.is_valid():
             newPost = form.save(commit=False)
@@ -97,6 +100,47 @@ class PostDetailView(View):
         }
 
         return render(request, 'postDetail.html', context)
+
+class SharedPostView(View):
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.get(id=pk)
+        form = ShareForm()
+
+        context = {
+            'post': post,
+            'form': form,
+        }
+        return render(request, 'share.html', context)
+
+    def post(self, request, pk, *args, **kwargs):
+        original_post = Post.objects.get(pk=pk)
+        form = ShareForm(request.POST)
+
+        if form.is_valid():
+            new_post = Post(
+            type = 'share',
+            title = self.request.POST.get('title'),
+            source = 'http://localhost:8000/myapp/post/'+str(pk),
+            origin = original_post.origin,
+            description = 'http://localhost:8000/myapp/post/'+str(pk),
+            contentType = 'text',
+            author = Author.objects.get(id=request.user.username),
+            categories = 'categories',
+            visibility = original_post.visibility, 
+            )
+        print(new_post.source)
+        new_post.save()
+        Inbox.objects.filter(author_id=request.user.username)[0].items.add(new_post)
+        followersID = FollowerCount.objects.filter(user=request.user.username)
+        for followerID in followersID:
+            Inbox.objects.filter(author_id=followerID.follower)[0].items.add(new_post)
+        context = {
+            'new_post': new_post,
+            'original_post': original_post,
+            'form': form,
+        }
+        # return redirect('myapp:postList')
+        return render(request, 'share.html', context)
 
 def like(request):
     username = request.user.username

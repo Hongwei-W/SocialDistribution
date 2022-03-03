@@ -50,8 +50,8 @@ class Post(models.Model):
                           unique=True,
                           primary_key=True)
     # TODO: source and origin for webservices??
-    # source = models.CharField(max_length=200)
-    # origin = models.CharField(max_length=200)
+    source = models.CharField(max_length=200)
+    origin = models.CharField(max_length=200)
     description = models.TextField()
     contentType = models.CharField(max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
@@ -72,6 +72,13 @@ class Post(models.Model):
                                   default="PUBLIC")
     # unlisted = models.BooleanField()
     likes = models.IntegerField(default=0)
+    # shared_note = models.TextField(blank=True, null=True)
+    # shared_date = models.DateTimeField(default=localtime,
+    #                                  blank=True,
+    #                                  editable=False)
+    # shared_author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
+
+
 
 
 
