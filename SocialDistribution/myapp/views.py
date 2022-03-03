@@ -114,7 +114,6 @@ def like(request):
         post.save()
         print("successfullt like")
         return redirect('/myapp/feed/')
-        # return render(request, 'feed.html',{'summary': summary})
     else:
         (print('successfullt unlike'))
         like_filter.delete()
