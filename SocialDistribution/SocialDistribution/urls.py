@@ -53,7 +53,7 @@ urlpatterns = [
     # TODO write comments wthen author is linked
     # path('service/authors/<str:author>/posts/<slug:post>/comments/', views.CommentsAPIView.as_view(), name='service-comments')
 
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()

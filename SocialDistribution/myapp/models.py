@@ -69,6 +69,7 @@ class Post(models.Model):
                                   choices=VISIBILITY_CHOICES,
                                   default="PUBLIC")
     # unlisted = models.BooleanField()
+    post_image = models.ImageField(null=True, blank=True, upload_to='images/')
 
 
 
