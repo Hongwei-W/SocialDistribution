@@ -13,8 +13,11 @@ from ast import Delete
 import re
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 # Create your views here.
+@method_decorator(login_required, name='dispatch')
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
@@ -25,6 +28,7 @@ class PostListView(View):
         }
         return render(request,'feed.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
         form = PostForm()
@@ -62,7 +66,7 @@ class NewPostView(View):
         # return render(request,'myapp/newpost.html', context)
         return redirect('myapp:postList')
 
-
+@method_decorator(login_required, name='dispatch')
 class PostDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -105,6 +109,7 @@ class PostDetailView(View):
 
         return render(request, 'postDetail.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -150,6 +155,7 @@ class SharedPostView(View):
         return redirect('myapp:postList')
         #return render(request, 'share.html', context)
 
+@login_required(login_url='/accounts/login')
 def like(request):
     username = request.user.username
     author = Author.objects.get(id=username)
@@ -174,6 +180,7 @@ def like(request):
         post.save()
         return redirect('/myapp/feed/')
 
+@method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -227,7 +234,7 @@ class ShareDetailView(View):
 
         return render(request, 'shareDetail.html', context)
 
-
+@login_required(login_url='/accounts/login')
 def liked(request, post_id):
     post = Post.objects.get(id=post_id)
     username = request.user.username
@@ -239,7 +246,7 @@ def liked(request, post_id):
     # if 
     # like_text = 'Like'
 
-
+@login_required(login_url='/accounts/login')
 def profile(request, user_id):
     # get basic info
     current_author_info = get_object_or_404(Author, pk=user_id)
@@ -270,6 +277,7 @@ def profile(request, user_id):
 
     return render(request, 'profile.html', context)
 
+@login_required(login_url='/accounts/login')
 def follow(request):
     print("follow is working")
     if request.method == 'POST':
@@ -286,11 +294,12 @@ def follow(request):
     else:
         return redirect('/')
 
-
+@login_required(login_url='/accounts/login')
 def search(request):
     author_list = Author.objects.all()
     return render(request, 'feed.html', {'author_list':author_list})
 
+@login_required(login_url='/accounts/login')
 def getuser(request):
     username = request.GET['username']
     # current_author_info = Author.objects.get(displayName = username)
@@ -298,6 +307,7 @@ def getuser(request):
     user_id = current_author_info.id
     return redirect('/myapp/feed/' + user_id)
 
+@method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
     fields = ['title','description','visibility']
@@ -307,6 +317,7 @@ class PostEditView(UpdateView):
         pk = self.kwargs['pk']
         return reverse_lazy('myapp:postDetail', kwargs={'pk':pk})
 
+@method_decorator(login_required, name='dispatch')
 class PostDeleteView(DeleteView):
     model = Post
     template_name = 'postDelete.html'

@@ -34,6 +34,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = 'myapp:postList'
+LOGIN_URL = '/accounts/login'
 
 # Application definition
 
