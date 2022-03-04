@@ -1,14 +1,12 @@
 import uuid
-from email.policy import default
 from django.db import models
 from django.utils.timezone import localtime
-from django.contrib.auth import get_user_model
 
 
 
 # Create your models here.
 class Author(models.Model):
-    type = models.CharField(default="author", max_length=200)   
+    type = models.CharField(default="author", max_length=200)
     id = models.CharField(unique=True, max_length=200, primary_key=True)
 
     # id = models.UUIDField(default=uuid.uuid4,
@@ -17,8 +15,9 @@ class Author(models.Model):
     #                       primary_key=True)
     host = models.CharField(max_length=200)
     displayName = models.CharField(max_length=200)
-    github = models.TextField(default="https://github.com/KianaLiu1", null=True)
-    profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
+    github = models.TextField(default="https://github.com/KianaLiu1",
+                              null=True)
+    profileImage = models.CharField(max_length=500, null=True, blank=True)
 
 
 class Authors(models.Model):
