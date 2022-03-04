@@ -31,7 +31,7 @@ import re
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
-        posts = Inbox.objects.filter(author_id=request.user.username)[0].items
+        posts = Inbox.objects.filter(author__id=request.user.username)[0].items
         author_list = Author.objects.all()
         # form = PostForm()
         context = {
@@ -59,10 +59,12 @@ class NewPostView(View):
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
-            Inbox.objects.filter(author_id=request.user.username)[0].items.add(newPost)
+            Inbox.objects.filter(
+                author__id=request.user.username)[0].items.add(newPost)
             followersID = FollowerCount.objects.filter(user=request.user.username)
             for followerID in followersID:
-                Inbox.objects.filter(author_id=followerID.follower)[0].items.add(newPost)
+                Inbox.objects.filter(
+                    author__id=followerID.follower)[0].items.add(newPost)
 
         # posts = Post.objects.all()
         # context = {

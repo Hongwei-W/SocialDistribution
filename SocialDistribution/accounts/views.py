@@ -8,43 +8,34 @@ from myapp.models import Author, Inbox
 
 def signup(request):
     if request.user.is_authenticated:
-        return redirect('myapp:postList')  # TODO: Redirect to account page
+        return redirect('/myapp/feed')  # TODO: Redirect to account page
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         author_form = AuthorInfoForm(request.POST)
-        if form.is_valid():
+        breakpoint()
+        if form.is_valid() and author_form.is_valid():
             # user need to go back to log in
             form.save()
             user = form.save()
-            author_form_valid = author_form.is_valid()
-            breakpoint()
-            if author_form_valid:
-                try:
-                    author = Author(
-                        id=user.username,
-                        host="http://127.0.0.1:5454/",
-                        displayName=user.username,
-                        profileImage=author_form.cleaned_data['profileImage'])
-                except Exception:
-                    author = Author(
-                        id=user.username,
-                        host="http://127.0.0.1:5454/",
-                        displayName=user.username,
-                        profileImage=
-                        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.jotform.com%2Fanswers%2F2036354-account-verify-email-invalid-link-error&psig=AOvVaw29n4Gez3oJoT7AQkM97mSR&ust=1646438612991000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCIiCxPiTq_YCFQAAAAAdAAAAABAD"
-                    )
-            else:
-                author = Author(id=user.username,
-                                host="http://127.0.0.1:5454/",
-                                displayName=user.username,
-                                profileImage="no image selected")
+
+            try:
+                profile_image_string = author_form.cleaned_data['profileImage']
+            except:
+                profile_image_string = 'https://www.ibm.com/support/pages/system/files/support/swg/rattech.nsf/0/a857b0395de747c085257bcf0037ccb6/Symptom/0.126.gif'
+
+            github = author_form.cleaned_data['github']
+            author = Author(id=user.username,
+                            host=request.get_host(),
+                            displayName=user.username,
+                            profileImage=profile_image_string,
+                            github=github)
+
             author.save()
-            # inbox = Inbox(author=author)
-            # inbox.save()
-            return redirect('login')
+            inbox = Inbox(author=author)
+            inbox.save()
+            return redirect('/accounts/login')
     else:
         form = SignUpForm()
         author_form = AuthorInfoForm()
     context = {'form': form, 'author_info_form': AuthorInfoForm}
     return render(request, 'registration/signup.html', context)
-

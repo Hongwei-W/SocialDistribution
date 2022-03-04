@@ -110,24 +110,21 @@
 <div id="myModal" class="modal">
 
     <!-- Modal content -->
-    <div class="modal-content">
+    <!-- <div class="modal-content">
         <div class="modal-header">
             <span class="mx-auto">Enter profile picture URL</span><span class="close"> &times;</span>
         </div>
         <div class="modal-body mx-auto">
-            <div class="form-group">
-                <label class="text-font" for="password2">Enter Image Url</label>
-                {{author_info_form.profileImage}}
-            </div>
+            
         </div>
         <div class="modal-footer mx-auto">
             <button class="close btn submit-button">Confirm</button>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <!-- Rest of the file -->
-<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 10%;">
+<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 5%;">
     <div class="row justify-content-center">
         <div class="col-8 justify-content-center">
             <!-- Row for Headers -->
@@ -153,7 +150,9 @@
                         </div>
                         <div class="text-font">
                             <span id="myBtn">replace</span> with your avatar
-                            {{ author_info_form.errors }}
+                            <form id="profile-pic-form">
+                            
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -166,8 +165,8 @@
                             {{form.username}}
                         </div>
                         <div class="form-group">
-                            <label class="text-font" for="email">Email</label>
-                            {{form.email}}
+                            <label class="text-font" for="email">GitHub URL</label>
+                            {{author_info_form.github}}
                         </div>
                         <div class="form-group">
                             <label class="text-font" for="password1">Password</label>
@@ -177,7 +176,11 @@
                             <label class="text-font" for="password2">Retype Password</label>
                             {{form.password2}}
                         </div>
-                        <div>
+                        <div class="form-group">
+                            <label class="text-font" for="password2">Enter Image Url</label>
+                            {{author_info_form.profileImage}}
+                        </div>
+                        <div class="" style="padding-bottom: 2em;">
                             {{form.errors}}
                         </div>
                         <div class="row justify-content-center">
@@ -213,7 +216,7 @@
 
     // When the user clicks the button, open the modal 
     btn.onclick = function () {
-        modal.style.display = "block";
+        modal.style.visbility = "visible";
     }
 
     // When the user clicks on <span> (x), close the modal
@@ -237,6 +240,10 @@
 
     input.addEventListener('input', function (event) {
         mirror.innerText = event.target.value.split('').join('');
+
+        submitForms = function () {
+            document.getElementById("profile-pic-form").submit();
+        }
     });
 </script>
 {% endblock %}

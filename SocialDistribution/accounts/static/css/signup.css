@@ -32,3 +32,7 @@ label {
     margin-top:2rem !important;
 }
 
+.form-errors {
+    padding-top:1em;
+    padding-bottom:1em;
+}

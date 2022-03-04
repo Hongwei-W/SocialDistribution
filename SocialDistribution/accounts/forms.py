@@ -11,9 +11,44 @@ from myapp.models import Author
 
 class AuthorInfoForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['github'].widget.attrs.update({
+            'class':
+            'form-control',
+            'required':
+            '',
+            'name':
+            'github',
+            'id':
+            'github',
+            'type':
+            'url',
+            'placeholder':
+            'https://github.com/cuddles'
+        })
+        self.fields['profileImage'].widget.attrs.update({
+            'class':
+            'form-control',
+            'required':
+            'true',
+            'name':
+            'profileImage',
+            'id':
+            'profileImage',
+            'type':
+            'text',
+            'placeholder':
+            'https://www.imgur.com/dj2kjdf',
+        })
+
+        #TODO: Add cleaned profilePIcture & github methods
     class Meta:
         model = Author
-        fields = ('profileImage', )
+        fields = (
+            'profileImage',
+            'github',
+        )
 
 
 class SignUpForm(UserCreationForm):
