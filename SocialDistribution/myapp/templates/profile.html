@@ -18,10 +18,10 @@
                 <!-- <img scr="../images/avatar1.jpg", alt="user avatar", class="avatar"> -->
                 <form action="/myapp/follow" method="POST">
                     {% csrf_token %}
-                    <img scr="/Users/suzihan/Documents/CMPUT404/projver2/SocialDistribution/media/profile_images/avatar1.jpg"
+                    <img src="{{ current_author_info.profileImage }}"
                          class='avatar'/>
-                    <div class="userInfo">user id: {{ current_author_info.id }}</a></div>
-                    <div class="userInfo">name: {{ current_author_info.displayName }}</a></div>
+                    <div class="userInfo">user id: {{ current_author_info.id }}</div>
+                    <div class="userInfo">name: {{ current_author_info.displayName }}</div>
                     <!-- <button class="followerButton">Follower</button> -->
                     <!-- <a href="#" class="followButton">Follower</a> -->
                     <span class="userInfo" style="padding: left;"><b>{{ count_following }}  Following</b></span>

@@ -114,6 +114,7 @@ class PostDetailView(View):
 
 def profile(request, user_id):
     print("------user id: ", user_id)
+    breakpoint()
     current_author_info = get_object_or_404(Author, pk=user_id)
     follower = request.user.username
     user = user_id
