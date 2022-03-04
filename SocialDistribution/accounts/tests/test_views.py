@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-import json
+from myapp.models import Author
 
 # Create your tests here.
 
@@ -8,7 +8,7 @@ class TestViews(TestCase):
 
     def setUp(self):
         self.c = Client()
-        self.signup_url = '/accounts/signup/'
+        self.signup_url = reverse('signup')
         self.login_url = '/accounts/login/'
 
         self.signup_correct_info = {
@@ -85,6 +85,12 @@ class SignupTest(TestViews):
         response = self.c.post(self.signup_url, self.signup_correct_info)
 
         self.assertEquals(response.status_code, 302)
+
+    def test_can_signup_retrieve_author_object(self):
+        self.c.post(self.signup_url, self.signup_correct_info)
+        author = Author.objects.first()
+
+        self.assertEquals(author.id, 'johnny')
 
 
 class LoginTest(TestViews):

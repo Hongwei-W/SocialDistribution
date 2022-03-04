@@ -4,6 +4,10 @@ from itertools import chain
 from django.http import HttpResponse
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
+
+from .models import Author, Post, FollowerCount
+from django.views import View
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, auth
 from django.forms.models import model_to_dict
 from django.views.generic.edit import UpdateView, DeleteView
@@ -28,6 +32,7 @@ import re
 
 
 # Create your views here.
+
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
@@ -40,6 +45,7 @@ class PostListView(View):
             # 'form': form,
         }
         return render(request,'feed.html', context)
+
 
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
