@@ -203,7 +203,7 @@ def like(request):
         post.save()
         return redirect('myapp:postList')
 
-# @method_decorator(login_required, name='dispatch')
+@method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
