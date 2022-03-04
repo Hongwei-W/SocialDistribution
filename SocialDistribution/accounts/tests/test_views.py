@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-import json
+from myapp.models import Author
 
 # Create your tests here.
 
@@ -8,7 +8,7 @@ class TestViews(TestCase):
 
     def setUp(self):
         self.c = Client()
-        self.signup_url = '/accounts/signup/'
+        self.signup_url = reverse('signup')
         self.login_url = '/accounts/login/'
 
         self.signup_correct_info = {
@@ -16,29 +16,39 @@ class TestViews(TestCase):
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
             'password2': 'qwonvwet23',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_short_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': '23we',
             'password2': '23we',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_not_follow_standard_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'johnny123',
             'password2': 'johnny123',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_missing_parts_form = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_unmatch_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
             'password2': 'qwonvwet243',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.login_correct_info = {
             'username': 'johnny',
@@ -85,6 +95,12 @@ class SignupTest(TestViews):
         response = self.c.post(self.signup_url, self.signup_correct_info)
 
         self.assertEquals(response.status_code, 302)
+
+    def test_can_signup_retrieve_author_object(self):
+        self.c.post(self.signup_url, self.signup_correct_info)
+        author = Author.objects.first()
+
+        self.assertEquals(author.id, 'johnny')
 
 
 class LoginTest(TestViews):

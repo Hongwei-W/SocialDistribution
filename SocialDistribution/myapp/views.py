@@ -8,6 +8,10 @@ from django.views import View
 from .models import Post, Comment, Inbox, Like
 from .forms import PostForm, CommentForm, ShareForm
 from django.shortcuts import render, get_object_or_404, redirect
+
+from .models import Author, Post, FollowerCount
+from django.views import View
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, auth
 from django.forms.models import model_to_dict
 from django.views.generic.edit import UpdateView, DeleteView
@@ -305,7 +309,7 @@ def profile(request, user_id):
 
 @login_required(login_url='/accounts/login')
 def follow(request):
-    print("follow is working")
+    # print("follow is working")
     if request.method == 'POST':
         follower = request.POST['follower']
         user = request.POST['user']

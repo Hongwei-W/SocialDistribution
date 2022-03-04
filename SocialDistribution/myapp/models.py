@@ -98,7 +98,8 @@ class Comment(models.Model):
                           editable=False,
                           unique=True,
                           primary_key=True)
-    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, default=True)
+    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, null=True)
+
 
 
 class Liked(models.Model):
