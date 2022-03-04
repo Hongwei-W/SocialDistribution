@@ -24,9 +24,11 @@
                         <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
                         <!-- <div class="postBody">{{ post.contentType }}</div> -->
                         <div class="postBody">{{ post.count }}</div>
-                        {% if post.post_image %}
-                        <img src="{{ post.post_image.url }}" width="500">
-                        {% endif %}
+                        <div class="postBody">
+                            {% if post.post_image %}
+                            <img src="{{ post.post_image.url }}" width=100%>
+                            {% endif %}
+                        </div>
                         <div class="postTime">{{ post.published }}<div class="postVis">Visibility: {{ post.visibility}}</div></div>
                         <div class="postActions"><a href="google.com"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a href="google.com"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;<a href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;Comment&emsp;</a></div>                       
                     </div>
