@@ -1,4 +1,5 @@
 from http.client import HTTPResponse
+from multiprocessing import context
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
@@ -139,7 +140,18 @@ def follow(request):
 
 def getuser(request):
     username = request.GET['username']
-    # current_author_info = Author.objects.get(displayName = username)
-    current_author_info = get_object_or_404(Author, displayName = username)
-    user_id = current_author_info.id
-    return redirect('/myapp/feed/' + user_id)
+    try:
+        current_author_info = Author.objects.get(displayName = username)
+    except:
+        current_author_info = None
+    if current_author_info == None:
+        author_list = Author.objects.all()
+        context = {
+            'username':username,
+            'author_list':author_list,
+        }
+        return render(request, 'profileNotFound.html', context)
+    # current_author_info = get_object_or_404(Author, displayName = username)
+    else:
+        user_id = current_author_info.id
+        return redirect('/myapp/feed/' + user_id)
