@@ -1,6 +1,5 @@
 from django.contrib import admin
 from .models import Author, FollowerCount, Post, Like, Liked
-from .models import Followers
 #from .models import Profile
 
 
