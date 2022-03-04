@@ -1,14 +1,11 @@
 import uuid
-from email.policy import default
 from django.db import models
 from django.utils.timezone import localtime
-from django.contrib.auth import get_user_model
-
 
 
 # Create your models here.
 class Author(models.Model):
-    type = models.CharField(default="author", max_length=200)   
+    type = models.CharField(default="author", max_length=200)
     id = models.CharField(unique=True, max_length=200, primary_key=True)
 
     # id = models.UUIDField(default=uuid.uuid4,
@@ -16,9 +13,9 @@ class Author(models.Model):
     #                       unique=True,
     #                       primary_key=True)
     host = models.CharField(max_length=200)
-    displayName = models.CharField(max_length=200)
-    github = models.TextField(default="https://github.com/KianaLiu1", null=True)
-    # profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
+    displayName = models.CharField(max_length=200, null=True)
+    github = models.CharField(max_length=200, null=True)
+    profileImage = models.CharField(max_length=500, null=True, blank=True)
 
 
 class Authors(models.Model):
@@ -78,7 +75,6 @@ class Post(models.Model):
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
 
 
-
 class Like(models.Model):
     type = models.CharField(default='Like', max_length=200)
     summary = models.TextField()
@@ -112,9 +108,11 @@ class Inbox(models.Model):
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     items = models.ManyToManyField(to=Post)
 
+
 class FollowerCount(models.Model):
     # follower is who logged in now
     follower = models.CharField(max_length=100)
     user = models.CharField(max_length=100)
+
     def __str__(self):
         return self.user

@@ -8,7 +8,123 @@
 {% load static %}
 <link rel="stylesheet" type="text/css" href = "{% static 'css/signup.css' %}">
 
-<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 10%;">
+<style>
+    /* The Modal (background) */
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        /* Stay in place */
+        z-index: 1;
+        /* Sit on top */
+        padding-top: 100px;
+        /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgb(0, 0, 0);
+        /* Fallback color */
+        background-color: rgba(0, 0, 0, 0.4);
+        /* Black w/ opacity */
+    }
+
+    /* Modal Content */
+    .modal-content {
+        position: relative;
+        background-color: #fefefe;
+        margin: auto;
+        padding: 0;
+        border: 1px solid #888;
+        width: 50%;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        -webkit-animation-name: animatetop;
+        -webkit-animation-duration: 0.4s;
+        animation-name: animatetop;
+        animation-duration: 0.4s
+    }
+
+    /* Add Animation */
+    @-webkit-keyframes animatetop {
+        from {
+            top: -300px;
+            opacity: 0
+        }
+
+        to {
+            top: 0;
+            opacity: 1
+        }
+    }
+
+    @keyframes animatetop {
+        from {
+            top: -300px;
+            opacity: 0
+        }
+
+        to {
+            top: 0;
+            opacity: 1
+        }
+    }
+
+    /* The Close Button */
+    .close {
+
+        background-color: pink;
+        color: white;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .modal-header {
+        height: 3em;
+        padding: 2px 16px;
+        background-color: pink;
+        color: white;
+    }
+
+    .modal-body {
+        padding: 2px 16px;
+    }
+
+    .modal-footer {
+        height: 4em;
+        padding: 2px 16px;
+        background-color: white;
+        color: white;
+    }
+
+    #myBtn {
+        color: blue;
+    }
+</style>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <!-- <div class="modal-content">
+        <div class="modal-header">
+            <span class="mx-auto">Enter profile picture URL</span><span class="close"> &times;</span>
+        </div>
+        <div class="modal-body mx-auto">
+            
+        </div>
+        <div class="modal-footer mx-auto">
+            <button class="close btn submit-button">Confirm</button>
+        </div>
+    </div> -->
+</div>
+
+<!-- Rest of the file -->
+<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 5%;">
     <div class="row justify-content-center">
         <div class="col-8 justify-content-center">
             <!-- Row for Headers -->
@@ -17,7 +133,7 @@
                     <div class="text-center poster-font">Happy Tree Friends</div>
                 </div>
                 <div class="col-6">
-                    <div class="text-center poster-font secondary-color">Welcome Friend {username}</div>
+                    <div class="text-center poster-font secondary-color">Welcome Friend <span id="updating_username"></span></div>
                     <!-- TODO: Darren Need to dynamically update field -->
                 </div>
             </div>
@@ -33,21 +149,24 @@
                                 alt="cuddles">
                         </div>
                         <div class="text-font">
-                            replace with your avatar
+                            <span id="myBtn">replace</span> with your avatar
+                            <form id="profile-pic-form">
+                            
+                            </form>
                         </div>
                     </div>
                 </div>
                 <div class="col-6" style="flex: 1;">
                     <form method="POST" action="." class="login-form spacer" id="signup-form">
                         {% csrf_token %}
-
+                        <!-- {{ form.as_p }} -->
                         <div class="form-group" style="">
                             <label class="text-font" for="username">Username</label>
                             {{form.username}}
                         </div>
                         <div class="form-group">
-                            <label class="text-font" for="email">Email</label>
-                            {{form.email}}
+                            <label class="text-font" for="email">GitHub URL</label>
+                            {{author_info_form.github}}
                         </div>
                         <div class="form-group">
                             <label class="text-font" for="password1">Password</label>
@@ -56,6 +175,13 @@
                         <div class="form-group">
                             <label class="text-font" for="password2">Retype Password</label>
                             {{form.password2}}
+                        </div>
+                        <div class="form-group">
+                            <label class="text-font" for="password2">Enter Image Url</label>
+                            {{author_info_form.profileImage}}
+                        </div>
+                        <div class="" style="padding-bottom: 2em;">
+                            {{form.errors}}
                         </div>
                         <div class="row justify-content-center">
                             <input type="submit" class="submit btn submit-button text-center" value="Create Account">
@@ -77,4 +203,47 @@
         </div>
     </div>
 </div>
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+    var closeButton = document.getElementsByClassName("close")[1];
+
+    // When the user clicks the button, open the modal 
+    btn.onclick = function () {
+        modal.style.visbility = "visible";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    closeButton.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    var input = document.getElementById('username');
+    var mirror = document.getElementById('updating_username');
+
+    input.addEventListener('input', function (event) {
+        mirror.innerText = event.target.value.split('').join('');
+
+        submitForms = function () {
+            document.getElementById("profile-pic-form").submit();
+        }
+    });
+</script>
 {% endblock %}

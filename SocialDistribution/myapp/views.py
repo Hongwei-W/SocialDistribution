@@ -31,6 +31,7 @@ import re
 # Create your views here.
 class PostListView(View):
     def get(self, request, *args, **kwargs):
+        # posts = Post.objects.all().order_by('-published')
         posts = Inbox.objects.filter(author__id=request.user.username)[0].items
         author_list = Author.objects.all()
         # form = PostForm()
