@@ -1,6 +1,54 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+
+from django.db import models
+from django.core.validators import URLValidator
+
+from myapp.models import Author
+
+
+class AuthorInfoForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['github'].widget.attrs.update({
+            'class':
+            'form-control',
+            'required':
+            '',
+            'name':
+            'github',
+            'id':
+            'github',
+            'type':
+            'url',
+            'placeholder':
+            'https://github.com/cuddles'
+        })
+        self.fields['profileImage'].widget.attrs.update({
+            'class':
+            'form-control',
+            'required':
+            'true',
+            'name':
+            'profileImage',
+            'id':
+            'profileImage',
+            'type':
+            'text',
+            'placeholder':
+            'https://www.imgur.com/dj2kjdf',
+        })
+
+        #TODO: Add cleaned profilePIcture & github methods
+    class Meta:
+        model = Author
+        fields = (
+            'profileImage',
+            'github',
+        )
 
 
 class SignUpForm(UserCreationForm):
@@ -27,9 +75,9 @@ class SignUpForm(UserCreationForm):
             'id':
             'email',
             'type':
-            'email',
+            'text',
             'placeholder':
-            'cuddles69@mail.com',
+            'user@email.com',
         })
         self.fields['password1'].widget.attrs.update({
             'class': 'form-control',
@@ -53,7 +101,15 @@ class SignUpForm(UserCreationForm):
         })
 
         username = forms.CharField(max_length=20, label=False)
-        email = forms.EmailField(max_length=100)
+        email = forms.CharField(max_length=100)
+
+        def clean_username(self, *args, **kwargs):
+            try:
+                user = User.objects.get(
+                    username=self.clean_data.get('username'))
+                print(user)
+            except Exception:
+                raise ValidationError("Username already in use.")
 
     class Meta:
         model = User

@@ -3,9 +3,7 @@
     margin-left: 50px;
     margin-right: 75px;
     margin-top: 75px;
-    height: 600px;
-    /*background-color: #FBFBFB;*/
-    /*float: left;*/
+    height: auto;
 }
 
 #nav-search {

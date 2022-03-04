@@ -17,7 +17,7 @@
                     <div id="newPostContainer">
                         <div class="poster-font logo-color" id="newPostText">New Post</div>
                         <hr>
-                        <form method="POST">
+                        <form method="POST" enctype="multipart/form-data">
                             {% csrf_token %}
                             <!-- {{ form.as_table }} -->
                             <div class="postDetail">
@@ -39,6 +39,9 @@
                             <div class="postDetail">
                                 <!-- <label for="visibility">Visibility:</label> -->
                                 {{ form.visibility }}
+                            </div>
+                            <div class="postDetail">
+                                {{ form.post_image }}
                             </div>
                             <div class="postDetail">
                                 <button class="btnShare">Share</button>

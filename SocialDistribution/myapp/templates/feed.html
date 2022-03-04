@@ -33,17 +33,20 @@
                                                     </div> -->
                 <!-- Reference: https://stackoverflow.com/questions/6540032/sorting-related-items-in-a-django-template -->
                 <!-- https://docs.djangoproject.com/en/dev/ref/templates/builtins/#std:templatefilter-dictsort -->
-                {% for post in postList.all|dictsortreversed:"published"%}   
+                {% for post in postList.all|dictsortreversed:"published"%}
                     <div class="singlePost position-relative">
-                        {% if post.type == 'share'%}   
+                        {% if post.type == 'share'%}
                             <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.id}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div>
                             <div class="postBody">Share note: {{post.title}}</div>
                             <div class="postBody">Original Post: {{post.description}}</div>
-                            <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div> 
+                            <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div>
                         {% else %}
                             <div class="authorName">Author: {{ post.author.id }}</div>
-                            <div class="postTitle">{{ post.title }}</div>   
+                            <div class="postTitle">{{ post.title }}</div>
                             <div class="postBody">{{ post.description }}</div>
+                            {% if post.post_image %}
+                            <img src="{{ post.post_image.url }}" width="100%">
+                            {% endif %}
                         {% endif %}
                         <div class="postTime">{{ post.published }}
                             <div class="postVis">Visibility: {{ post.visibility }}</div>

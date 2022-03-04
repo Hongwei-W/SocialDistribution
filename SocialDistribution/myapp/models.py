@@ -1,5 +1,4 @@
 import uuid
-from email.policy import default
 from django.db import models
 from django.utils.timezone import localtime
 from django.contrib.auth import get_user_model
@@ -8,7 +7,7 @@ from django.contrib.auth import get_user_model
 
 # Create your models here.
 class Author(models.Model):
-    type = models.CharField(default="author", max_length=200)   
+    type = models.CharField(default="author", max_length=200)
     id = models.CharField(unique=True, max_length=200, primary_key=True)
 
     # id = models.UUIDField(default=uuid.uuid4,
@@ -16,9 +15,9 @@ class Author(models.Model):
     #                       unique=True,
     #                       primary_key=True)
     host = models.CharField(max_length=200)
-    displayName = models.CharField(max_length=200)
-    github = models.TextField(default="https://github.com/KianaLiu1", null=True)
-    profileImage = models.ImageField(upload_to='profile_images', default='profile_images/avatar1.png', blank=True)
+    displayName = models.CharField(max_length=200, null=True)
+    github = models.CharField(max_length=200, null=True)
+    profileImage = models.CharField(max_length=500, null=True, blank=True)
 
 
 class Authors(models.Model):
@@ -26,9 +25,9 @@ class Authors(models.Model):
     items = models.ManyToManyField(to=Author)
 
 
-class Followers(models.Model):
-    type = models.CharField(default='followers', max_length=200)
-    items = models.ManyToManyField(to=Author)
+# class Followers(models.Model):
+#     type = models.CharField(default='followers', max_length=200)
+#     items = models.ManyToManyField(to=Author)
 
 
 class FriendFollowRequest(models.Model):
@@ -46,14 +45,18 @@ class Post(models.Model):
     type = models.CharField(default='post', max_length=200)
     title = models.CharField(max_length=200)
     id = models.UUIDField(default=uuid.uuid4,
-                          editable=False,
+                          editable=True,
                           unique=True,
                           primary_key=True)
     # TODO: source and origin for webservices??
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
     description = models.TextField()
-    contentType = models.CharField(max_length=200)
+    CONTENT_CHOICES = [("md", "text/markdown"), ("plain", "text/plain"),
+                          ("app", "application/base64"), ("png", "image/png;base64"), ("jpeg","image/jpeg;base64")]
+    contentType = models.CharField(max_length=30,
+                                  choices=CONTENT_CHOICES,
+                                  default="md")
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     # TODO: categories as a list of strings
     categories = models.TextField()
@@ -72,14 +75,7 @@ class Post(models.Model):
                                   default="PUBLIC")
     # unlisted = models.BooleanField()
     likes = models.IntegerField(default=0)
-    # shared_note = models.TextField(blank=True, null=True)
-    # shared_date = models.DateTimeField(default=localtime,
-    #                                  blank=True,
-    #                                  editable=False)
-    # shared_author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-
-
-
+    post_image = models.ImageField(null=True, blank=True, upload_to='images/')
 
 
 class Like(models.Model):
@@ -88,8 +84,6 @@ class Like(models.Model):
     # content = models.TextField()
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
-    # def __str__(self):
-    #     return self.author
 
 
 class Comment(models.Model):
@@ -104,7 +98,7 @@ class Comment(models.Model):
                           editable=False,
                           unique=True,
                           primary_key=True)
-    post = models.ForeignKey(to=Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, default=True)
 
 
 class Liked(models.Model):
@@ -117,9 +111,11 @@ class Inbox(models.Model):
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     items = models.ManyToManyField(to=Post)
 
+
 class FollowerCount(models.Model):
+    # follower is who logged in now
     follower = models.CharField(max_length=100)
     user = models.CharField(max_length=100)
+
     def __str__(self):
-        print("hahahhahahah model.py: ", self.user)
         return self.user
