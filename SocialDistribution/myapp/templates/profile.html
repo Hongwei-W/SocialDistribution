@@ -29,7 +29,8 @@
                     <input type="hidden" value="{{ user.username }}" name="follower"/>
                     <input type="hidden" value="{{ current_author_info.id }}" name="user"/>
                     {% if current_author_info.displayName == user.username %}
-                        <a href="/settings" data-ripple="">Edit Account</a>
+{#                        <a href="/settings" data-ripple="">Edit Account</a>#}
+                        <a href="" data-ripple="">Edit Account</a>
                     {% else %}
                         <a data-ripple="">
                             <button type="submit"
