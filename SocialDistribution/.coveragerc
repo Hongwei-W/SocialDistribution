@@ -1,0 +1,6 @@
+[run]
+source=accounts/,myapp/,
+omit=
+    */migrations/*
+    */tests/*
+    */__init__.py
