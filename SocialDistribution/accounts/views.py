@@ -8,7 +8,7 @@ from myapp.models import Author, Inbox
 
 def signup(request):
     if request.user.is_authenticated:
-        return redirect('/myapp/feed')  # TODO: Redirect to account page
+        return redirect('myapp:postList')  # TODO: Redirect to account page
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         author_form = AuthorInfoForm(request.POST)

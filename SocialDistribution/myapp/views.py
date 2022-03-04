@@ -114,7 +114,6 @@ class PostDetailView(View):
 
 def profile(request, user_id):
     print("------user id: ", user_id)
-    breakpoint()
     current_author_info = get_object_or_404(Author, pk=user_id)
     follower = request.user.username
     user = user_id
@@ -149,11 +148,11 @@ def follow(request):
         if FollowerCount.objects.filter(follower=follower, user=user).first():
             delete_follower = FollowerCount.objects.get(follower=follower, user=user)
             delete_follower.delete()
-            return redirect('/myapp/feed/'+user)
+            return redirect('myapp:profile', user_id=user)
         else:
             new_follower = FollowerCount.objects.create(follower=follower, user=user)
             new_follower.save()
-            return redirect('/myapp/feed/'+user)
+            return redirect('myapp:profile', user_id=user)
     else:
         return redirect('/')
 
@@ -173,7 +172,7 @@ def getuser(request):
     # current_author_info = get_object_or_404(Author, displayName = username)
     else:
         user_id = current_author_info.id
-        return redirect('/myapp/feed/' + user_id)
+        return redirect('myapp:profile', user_id=user_id)
 
 class PostEditView(UpdateView):
     model = Post
