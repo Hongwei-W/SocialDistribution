@@ -1,6 +1,7 @@
 from http.client import HTTPResponse
 from itertools import chain
 
+from multiprocessing import context
 from django.http import HttpResponse
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
@@ -30,7 +31,6 @@ import re
 # Create your views here.
 class PostListView(View):
     def get(self, request, *args, **kwargs):
-        # posts = Post.objects.all().order_by('-published')
         posts = Inbox.objects.filter(author__id=request.user.username)[0].items
         author_list = Author.objects.all()
         # form = PostForm()
@@ -106,7 +106,7 @@ class PostDetailView(View):
             'post': post,
             'form': form,
             'comments': comments,
-            'author_list':author_list,
+            'author_list': author_list,
         }
 
         return render(request, 'postDetail.html', context)
@@ -157,10 +157,21 @@ def follow(request):
 
 def getuser(request):
     username = request.GET['username']
-    # current_author_info = Author.objects.get(displayName = username)
-    current_author_info = get_object_or_404(Author, displayName = username)
-    user_id = current_author_info.id
-    return redirect('/myapp/feed/' + user_id)
+    try:
+        current_author_info = Author.objects.get(displayName = username)
+    except:
+        current_author_info = None
+    if current_author_info == None:
+        author_list = Author.objects.all()
+        context = {
+            'username':username,
+            'author_list':author_list,
+        }
+        return render(request, 'profileNotFound.html', context)
+    # current_author_info = get_object_or_404(Author, displayName = username)
+    else:
+        user_id = current_author_info.id
+        return redirect('/myapp/feed/' + user_id)
 
 class PostEditView(UpdateView):
     model = Post
