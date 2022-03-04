@@ -70,8 +70,8 @@ class NewPostView(View):
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
             if newPost.type == 'post':
-                newPost.source = 'http://localhost:8000/myapp/post/'+str(newPost.id)
-                newPost.origin = 'http://localhost:8000/myapp/post/'+str(newPost.id)
+                newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
+                newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
             newPost.save()
 
             Inbox.objects.filter(author__id=request.user.username)[0].items.add(newPost)
@@ -156,7 +156,7 @@ class SharedPostView(View):
             new_post = Post(
             type = 'share',
             title = self.request.POST.get('title'),
-            source = 'http://localhost:8000/myapp/post/'+str(pk),
+            source = 'http://localhost:8000/post/'+str(pk),
             origin = original_post.origin,
             description = Post.objects.get(pk=pk).description,
             contentType = 'text',
@@ -165,10 +165,10 @@ class SharedPostView(View):
             visibility = original_post.visibility, 
             )
         new_post.save()
-        Inbox.objects.filter(author_id=request.user.username)[0].items.add(new_post)
+        Inbox.objects.filter(author__id=request.user.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=request.user.username)
         for followerID in followersID:
-            Inbox.objects.filter(author_id=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
         context = {
             'new_post': new_post,
             # 'source_post': source_post,
@@ -194,16 +194,16 @@ def like(request):
         post.likes += 1
         post.save()
         print("successfullt like")
-        return redirect('/myapp/feed/')
+        return redirect('myapp:postList')
     else:
         (print('successfullt unlike'))
         like_filter.delete()
         # like_text='Like'
         post.likes -= 1
         post.save()
-        return redirect('/myapp/feed/')
+        return redirect('myapp:postList')
 
-@method_decorator(login_required, name='dispatch')
+# @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
@@ -279,7 +279,7 @@ def profile(request, user_id):
     github_username = current_author_info.github.split("/")[-1]
     # get posts
     try:
-        posts = Inbox.objects.filter(author_id=user_id)[0].items
+        posts = Post.objects.filter(author__id=user_id).order_by('-published')
     except:
         posts = []
     # get follow
