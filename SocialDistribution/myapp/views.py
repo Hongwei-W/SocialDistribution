@@ -153,6 +153,10 @@ class SharedPostView(View):
 
     def post(self, request, pk, *args, **kwargs):
         source_post = Post.objects.get(pk=pk)
+        if source_post.type == 'post':
+            source_text = 'http://localhost:8000/post/'
+        else:
+            source_text = 'http://localhost:8000/post/shared/'
         original_post_id = source_post.origin.split('/')[-1]
         original_post = Post.objects.get(id=original_post_id)
         form = ShareForm(request.POST)
@@ -161,7 +165,7 @@ class SharedPostView(View):
             new_post = Post(
             type = 'share',
             title = self.request.POST.get('title'),
-            source = 'http://localhost:8000/post/'+str(pk),
+            source = source_text + str(pk),
             origin = original_post.origin,
             description = Post.objects.get(pk=pk).description,
             contentType = 'text',

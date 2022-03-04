@@ -63,9 +63,17 @@
 
                 {% for post in posts.all%}
                     <div class="singlePost position-relative">
+                    {% if post.type == 'share'%}
+                        <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.id}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div>
+                        <div class="postBody">Share note: {{post.title}}</div>
+                         <div class="postBody" style="color: #F28482; background-color: #d5d5d584; margin-left: 5%;">Original Post Content:<br>{{post.description}}</div>
+                        <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div>
+                    
+                    {% else %}
                         <div class="authorName">Author: {{ post.author.id }}</div>
                         <div class="postTitle">{{ post.title }}</div>
                         <div class="postBody">{{ post.description }}</div>
+                    {% endif %}    
                         <div class="postTime">{{ post.published }}
                             <div class="postVis">Visibility: {{ post.visibility }}</div>
                         </div>
@@ -74,7 +82,11 @@
                                 href="/like?post_id={{post.id}}"><i class="fa-solid fa-heart"></i>&ensp;{{post.likes}}</a>&emsp;<a
                                 href="{% url 'myapp:postDetail' post.id %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
                         </div>
+                        {% if post.type == 'post'%}
                         <a href="{% url 'myapp:postDetail' post.id %}" class="stretched-link"></a>
+                        {% else %}
+                        <a href="{% url 'myapp:shareDetail' post.id %}" class="stretched-link"></a>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
