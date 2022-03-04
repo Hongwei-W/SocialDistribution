@@ -45,6 +45,6 @@ def signup(request):
     else:
         form = SignUpForm()
         author_form = AuthorInfoForm()
-
     context = {'form': form, 'author_info_form': AuthorInfoForm}
     return render(request, 'registration/signup.html', context)
+
