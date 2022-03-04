@@ -180,6 +180,8 @@ input[id^="postBar"]::placeholder {
     text-align: right;
     color: #F28482;
     font-family: 'Lato', sans-serif;
+    z-index: 2;
+    position: relative;
 
 }
 

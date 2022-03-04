@@ -19,6 +19,7 @@ from .forms import PostForm, CommentForm
 from .models import Author, Post, FollowerCount, Comment, Inbox
 from . import serializers
 from .pagination import CustomPageNumberPagination
+from django.http import HttpResponseRedirect
 
 from ast import Delete
 
@@ -193,15 +194,15 @@ def like(request):
         # like_text = 'Liked'
         post.likes += 1
         post.save()
-        print("successfullt like")
-        return redirect('myapp:postList')
+        # return redirect('myapp:postList')
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     else:
-        (print('successfullt unlike'))
         like_filter.delete()
         # like_text='Like'
         post.likes -= 1
         post.save()
-        return redirect('myapp:postList')
+        # return redirect('myapp:postList')
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
