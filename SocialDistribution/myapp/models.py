@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.utils.timezone import localtime
+from django.contrib.auth import get_user_model
+
 
 
 # Create your models here.
@@ -47,8 +49,8 @@ class Post(models.Model):
                           unique=True,
                           primary_key=True)
     # TODO: source and origin for webservices??
-    # source = models.CharField(max_length=200)
-    # origin = models.CharField(max_length=200)
+    source = models.CharField(max_length=200)
+    origin = models.CharField(max_length=200)
     description = models.TextField()
     CONTENT_CHOICES = [("md", "text/markdown"), ("plain", "text/plain"),
                           ("app", "application/base64"), ("png", "image/png;base64"), ("jpeg","image/jpeg;base64")]
@@ -72,13 +74,14 @@ class Post(models.Model):
                                   choices=VISIBILITY_CHOICES,
                                   default="PUBLIC")
     # unlisted = models.BooleanField()
+    likes = models.IntegerField(default=0)
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
 
 
 class Like(models.Model):
     type = models.CharField(default='Like', max_length=200)
-    summary = models.TextField()
-    content = models.TextField()
+    # summary = models.TextField()
+    # content = models.TextField()
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
 
@@ -101,7 +104,7 @@ class Comment(models.Model):
 
 class Liked(models.Model):
     type = models.CharField(default='liked', max_length=200)
-    items = models.ManyToManyField(to=Post)
+    items = models.ManyToManyField(to=Like)
 
 
 class Inbox(models.Model):

@@ -36,6 +36,7 @@ ALLOWED_HOSTS = []
 # LOGIN_URL = '/accounts/login/'
 
 LOGIN_REDIRECT_URL = 'myapp:postList'
+LOGIN_URL = '/accounts/login'
 
 # LOGIN_REQUIRED_IGNORE_PATHS = (
 #     # r'^accounts/login/$',
@@ -145,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Edmonton'
 
 USE_I18N = True
 
