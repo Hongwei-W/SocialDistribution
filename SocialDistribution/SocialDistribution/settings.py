@@ -33,7 +33,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-LOGIN_URL = '/accounts/login/'
+# LOGIN_URL = '/accounts/login/'
 
 LOGIN_REDIRECT_URL = 'myapp:postList'
 
@@ -42,11 +42,11 @@ LOGIN_REDIRECT_URL = 'myapp:postList'
 #     r'/accounts/signup/$',
 # )
 
-LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
-    'admin:index',
-    'admin:login',
-    'accounts:signup',
-]
+# LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
+#     'admin:index',
+#     'admin:login',
+#     'accounts:signup',
+# ]
 
 # Application definition
 
@@ -83,7 +83,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'login_required.middleware.LoginRequiredMiddleware',
+    # 'login_required.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'middleware.LoginRequiredMiddleware',

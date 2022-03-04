@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from myapp.models import Author
-from django.contrib.auth.models import Author
+from django.contrib.auth.models import User
 
 class TestUserModel(APITestCase):
 
