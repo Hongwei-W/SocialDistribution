@@ -368,16 +368,9 @@ class PostDeleteView(DeleteView):
     template_name = 'postDelete.html'
     success_url = reverse_lazy('myapp:postList')
 
+#
 # API
-
-# class authorsAPI(APIView):
 #
-#     # pagination_class = CustomPageNumberPagination
-#
-#     def get(self, request):
-#         author1 = Author.objects.all()
-#         serializer = AuthorSerializer(author1, many=True)
-#         return Response(serializer.data)
 
 class AuthorAPIView(RetrieveUpdateAPIView):
     """ GET or PUT an Author object """
@@ -444,7 +437,7 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         if self.relation_check():
             return Response({'following_relation_exist': 'True',
-                             'following_relation_add': 'False'})
+                             'following_relation_put': 'False'})
         else:
             try:
                 FollowerCount.objects.create(follower=self.kwargs['another_author'], user=self.kwargs['author'])
