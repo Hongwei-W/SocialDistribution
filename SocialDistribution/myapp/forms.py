@@ -58,3 +58,12 @@ class CommentForm(forms.ModelForm):
 #     class Meta:
 #         model = Author
 #         field = ('id', 'host', 'displayname', 'github', 'profileImage')
+
+class ShareForm(forms.Form):
+    title = forms.CharField(
+        label='share',
+        widget=forms.Textarea(attrs={
+            'row': 3,
+            'placeholder': 'Share your thoughts'
+        })
+    )
