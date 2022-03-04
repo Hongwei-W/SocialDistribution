@@ -18,10 +18,25 @@ class PostForm(forms.ModelForm):
             'style': 'height: 30%; width: 85%;'
         })
     )
+    # contentType = forms.CharField(label='contentType',
+    #     widget=forms.Textarea(attrs={
+    #         'placeholder': 'Content type for your post...',
+    #         'rows':1,
+    #         'style': 'width: 85%;'
+    #     })
+    # )
+    # TODO: categories as a list of strings
+    categories = forms.CharField(label='categories',
+        widget=forms.Textarea(attrs={
+            'placeholder': 'Which categories does it belong to...',
+            'rows':1,
+            'style': 'width: 85%;'
+        })
+    )
 
     class Meta:
         model = Post
-        fields = ['title','description','visibility']
+        fields = ['title', 'description', 'contentType', 'categories', 'visibility', 'post_image']
 
 
 class CommentForm(forms.ModelForm):
