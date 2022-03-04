@@ -18,9 +18,11 @@ class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
         posts = Inbox.objects.filter(author_id=request.user.username)[0].items
+        author_list = Author.objects.all()
         # form = PostForm()
         context = {
             'postList': posts,
+            'author_list':author_list,
             # 'form': form,
         }
         return render(request,'feed.html', context)
@@ -28,8 +30,10 @@ class PostListView(View):
 class NewPostView(View):
     def get(self, request, *args, **kwargs):
         form = PostForm()
+        author_list = Author.objects.all()
         context = {
             'form': form,
+            'author_list':author_list,
         }
         return render(request,'newpost.html', context)
     
@@ -60,11 +64,12 @@ class PostDetailView(View):
         post = Post.objects.get(id=pk)
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
-
+        author_list = Author.objects.all()
         context = {
             'post': post,
             'form': form,
             'comments':comments,
+            'author_list':author_list,
         }
 
         return render(request, 'postDetail.html', context)
@@ -72,7 +77,7 @@ class PostDetailView(View):
     def post(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
         form = CommentForm(request.POST)
-
+        author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
             newComment.author = Author.objects.get(id=request.user.username)
@@ -87,6 +92,7 @@ class PostDetailView(View):
             'post': post,
             'form': form,
             'comments':comments,
+            'author_list':author_list,
         }
 
         return render(request, 'postDetail.html', context)
@@ -105,12 +111,14 @@ def profile(request, user_id):
         button_text = 'Follow'
     count_followers = len(FollowerCount.objects.filter(user=user_id))
     count_following = len(FollowerCount.objects.filter(follower=user_id))
+    author_list = Author.objects.all()
     context = {
         'current_author_info': current_author_info,
         'button_text': button_text,
         'count_followers': count_followers,
         'count_following': count_following,
-        'github_username': github_username
+        'github_username': github_username,
+        'author_list':author_list,
         }
 
     return render(request, 'profile.html', context)
@@ -134,9 +142,9 @@ def follow(request):
         return redirect('/')
 
 
-def search(request):
-    author_list = Author.objects.all()
-    return render(request, 'feed.html', {'author_list':author_list})
+# def search(request):
+#     author_list = Author.objects.all()
+#     return render(request, 'feed.html', {'author_list':author_list})
 
 def getuser(request):
     username = request.GET['username']
