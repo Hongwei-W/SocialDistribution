@@ -53,7 +53,11 @@ class Post(models.Model):
     # source = models.CharField(max_length=200)
     # origin = models.CharField(max_length=200)
     description = models.TextField()
-    contentType = models.CharField(max_length=200)
+    CONTENT_CHOICES = [("md", "text/markdown"), ("plain", "text/plain"),
+                          ("app", "application/base64"), ("png", "image/png;base64"), ("jpeg","image/jpeg;base64")]
+    contentType = models.CharField(max_length=30,
+                                  choices=CONTENT_CHOICES,
+                                  default="md")
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     # TODO: categories as a list of strings
     categories = models.TextField()
