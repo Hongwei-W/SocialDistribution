@@ -16,29 +16,39 @@ class TestViews(TestCase):
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
             'password2': 'qwonvwet23',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_short_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': '23we',
             'password2': '23we',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_not_follow_standard_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'johnny123',
             'password2': 'johnny123',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_missing_parts_form = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.signup_incorrect_unmatch_password = {
             'username': 'johnny',
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
             'password2': 'qwonvwet243',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         self.login_correct_info = {
             'username': 'johnny',

@@ -19,6 +19,8 @@ class TestViews (TestCase):
             'email': 'johnny@123.com',
             'password1': 'qwonvwet23',
             'password2': 'qwonvwet23',
+            'github': 'https://github.com/johnny123',
+            'url':'https://www.imgur.com/dj2kjdf'
         }
         
 
