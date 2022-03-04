@@ -15,15 +15,23 @@
                 </div>
                 <div>
                     <div class="singlePost">                      
-                        <div class="postTitle">{{ post.title }}</div> 
+                        <div class="postBody" style="font-size: 25px; font-weight: bold;">{{ post.author.id }} <span style="font-size: medium;">shared with comments:</span><br>
+                        {{post.title}}</div> 
                         {% if request.user.username == post.author.id %}
                             <a href="{% url 'myapp:postEdit' post.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
                             <a href="{% url 'myapp:postDelete' post.id %}"><i class="fa-solid fa-trash-can"></i></a>
                         {% endif%}
-                            <div class="postBody">{{ post.description }}</div>
-                        <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
-                        <!-- <div class="postBody">{{ post.contentType }}</div> -->
-                        <!-- <div class="postBody">{{ post.count }}</div> -->
+                            <div class="postBody">
+                                <div class="singlePost" style="background-color: rgba(193, 199, 201, 0.283); margin-left: 6%; margin-top: 0%; border-radius: 4%;">   
+                                    <div class="authorName" style="left: 2%; text-indent: 0%;" >{{source_post.author.id}}</div>                   
+                                    <div class="postTitle">{{ source_post.title }}</div> 
+                                        <div class="postBody">{{ source_post.description }}</div>
+                                    <div class="postTime" style="font-size: small;">{{ source_post.published }}<div class="postVis" style="font-size: 12px;">Visibility: {{ post.visibility}}</div></div>  
+                                </div>
+                            </div>
+                        <div>
+                            <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div> 
+                        </div>      
                         <div class="postTime">{{ post.published }}<div class="postVis">Visibility: {{ post.visibility}}</div></div>  
                         <div class="postActions"><a href="{% url 'myapp:sharePost' post.id %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
                             <a href="{% url 'myapp:liked' post.id %}"><i class="fa-solid fa-heart"></i>&ensp;Like</a>&emsp;

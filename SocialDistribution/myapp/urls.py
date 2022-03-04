@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 
 from . import views
-from .views import NewPostView, PostListView, PostDetailView, PostEditView, PostDeleteView, SharedPostView
+from .views import NewPostView, PostListView, PostDetailView, PostEditView, PostDeleteView, SharedPostView, ShareDetailView
 
 app_name = 'myapp'
 urlpatterns = [
@@ -21,5 +21,6 @@ urlpatterns = [
     path('like', views.like, name='like'),
     path('liked/<uuid:post_id>', views.liked, name='liked'),
     path('post/<uuid:pk>/share', SharedPostView.as_view(), name='sharePost'),
+    path('post/shared/<uuid:pk>',ShareDetailView.as_view(), name='shareDetail'),
     path('', views.getuser, name='getuser'),
 ]

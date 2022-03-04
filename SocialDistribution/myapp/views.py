@@ -19,7 +19,6 @@ class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
         posts = Inbox.objects.filter(author_id=request.user.username)[0].items
-        # form = PostForm()
         context = {
             'postList': posts,
             # 'form': form,
@@ -45,6 +44,11 @@ class NewPostView(View):
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
+            if newPost.type == 'post':
+                newPost.source = 'http://localhost:8000/myapp/post/'+str(newPost.id)
+                newPost.origin = 'http://localhost:8000/myapp/post/'+str(newPost.id)
+            newPost.save()
+
             Inbox.objects.filter(author_id=request.user.username)[0].items.add(newPost)
             followersID = FollowerCount.objects.filter(user=request.user.username)
             for followerID in followersID:
@@ -104,25 +108,29 @@ class PostDetailView(View):
 class SharedPostView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(id=pk)
-        form = ShareForm()
+        share_form = ShareForm()
 
         context = {
             'post': post,
-            'form': form,
+            'form': share_form,
+            # 'source_post': source_post,
+            # 'original_post': original_post,
         }
         return render(request, 'share.html', context)
 
     def post(self, request, pk, *args, **kwargs):
-        original_post = Post.objects.get(pk=pk)
+        source_post = Post.objects.get(pk=pk)
+        original_post_id = source_post.origin.split('/')[-1]
+        original_post = Post.objects.get(id=original_post_id)
         form = ShareForm(request.POST)
-
+        
         if form.is_valid():
             new_post = Post(
             type = 'share',
             title = self.request.POST.get('title'),
             source = 'http://localhost:8000/myapp/post/'+str(pk),
             origin = original_post.origin,
-            description = 'http://localhost:8000/myapp/post/'+str(pk),
+            description = Post.objects.get(pk=pk).description,
             contentType = 'text',
             author = Author.objects.get(id=request.user.username),
             categories = 'categories',
@@ -135,7 +143,8 @@ class SharedPostView(View):
             Inbox.objects.filter(author_id=followerID.follower)[0].items.add(new_post)
         context = {
             'new_post': new_post,
-            'original_post': original_post,
+            # 'source_post': source_post,
+            # 'original_post': original_post,
             'form': form,
         }
         return redirect('myapp:postList')
@@ -164,6 +173,60 @@ def like(request):
         post.likes -= 1
         post.save()
         return redirect('/myapp/feed/')
+
+class ShareDetailView(View):
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.get(id=pk)
+        
+        form = CommentForm()
+        comments = Comment.objects.filter(post=post).order_by('-published')
+        likes = Like.objects.filter(object=post)
+
+        source_post_id = post.source.split('/')[-1]
+        source_post = Post.objects.get(id=source_post_id)
+        original_post_id = post.origin.split('/')[-1]
+        original_post = Post.objects.get(id=original_post_id)
+
+        context = {
+            'post': post,
+            'form': form,
+            'comments':comments,
+            'likes': likes,
+            'source_post': source_post,
+            'original_post': original_post,
+        }
+
+        return render(request, 'shareDetail.html', context)
+    
+    def post(self, request, pk, *args, **kwargs):
+        post = Post.objects.get(id=pk)
+        form = CommentForm(request.POST)
+
+        if form.is_valid():
+            newComment = form.save(commit=False)
+            newComment.author = Author.objects.get(id=request.user.username)
+            newComment.post = post
+            newComment.save()
+            post.count += 1
+            post.save()
+
+        comments = Comment.objects.filter(post=post).order_by('-published')
+        likes = Like.objects.filter(object=post)
+        likes_count = len(Like.objects.filter(object=post))
+
+        context = {
+            'post': post,
+            'form': form,
+            'comments':comments,
+            'likes': likes,
+            'likes_count': likes_count,
+            # 'source_post': source_post,
+            # 'original_post': original_post,
+
+        }
+
+        return render(request, 'shareDetail.html', context)
+
 
 def liked(request, post_id):
     post = Post.objects.get(id=post_id)

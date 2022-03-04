@@ -18,8 +18,8 @@
                         Liked By
                     </div>
                     {% for like in likes_list %}
-                    <div class="singlePost position-relative"> 
-                        <div class="postBody">{{ like.author.id }}</div>                 
+                    <div> 
+                        <div class="postBody" style="font-size: larger;">{{ like.author.id }}</div>                 
                     </div>                   
                     {% endfor %}
                 </div>
