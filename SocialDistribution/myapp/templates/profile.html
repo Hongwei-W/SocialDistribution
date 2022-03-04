@@ -18,7 +18,7 @@
                 <!-- <img scr="../images/avatar1.jpg", alt="user avatar", class="avatar"> -->
                 <form action="{% url 'myapp:follow' %}" method="POST">
                     {% csrf_token %}
-                    <img src="{{ current_author_info.profileImage }}"
+                    <img style="width: 25%;" src="{{ current_author_info.profileImage }}"
                          class='avatar'/>
                     <div class="userInfo">user id: {{ current_author_info.id }}</div>
                     <div class="userInfo">name: {{ current_author_info.displayName }}</div>
