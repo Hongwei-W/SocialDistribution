@@ -20,7 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from .forms import PostForm, CommentForm
-from .models import Author, Post, FollowerCount, Comment, Inbox
+from .models import Author, Post, FollowerCount, Comment, Inbox, Category
 from . import serializers
 from .pagination import CustomPageNumberPagination
 from django.http import HttpResponseRedirect
@@ -74,6 +74,16 @@ class NewPostView(View):
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
+            unparsedCat = newPost.unparsedCategories
+            catList = unparsedCat.split("\"")
+            for cat in catList:
+                newCat = Category()
+                newCat.cat = cat
+                newCat.save()
+                newPost.categories.add(newCat)
+                newPost.save()
+            
+
             if newPost.type == 'post':
                 newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
                 newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
@@ -122,6 +132,8 @@ class PostDetailView(View):
             newComment.save()
             post.count += 1
             post.save()
+            # reset form
+            form = CommentForm()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
@@ -135,6 +147,8 @@ class PostDetailView(View):
             'comments': comments,
             'author_list': author_list,
         }
+
+        
 
         return render(request, 'postDetail.html', context)
 

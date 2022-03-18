@@ -4,7 +4,6 @@ from django.utils.timezone import localtime
 from django.contrib.auth import get_user_model
 
 
-
 # Create your models here.
 class Author(models.Model):
     type = models.CharField(default="author", max_length=200)
@@ -29,6 +28,12 @@ class Authors(models.Model):
 #     type = models.CharField(default='followers', max_length=200)
 #     items = models.ManyToManyField(to=Author)
 
+class Category(models.Model):
+    cat = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.cat
+
 
 class FriendFollowRequest(models.Model):
     type = models.CharField(default='Follow', max_length=200)
@@ -52,17 +57,17 @@ class Post(models.Model):
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
     description = models.TextField()
-    CONTENT_CHOICES = [("md", "text/markdown"), ("plain", "text/plain"),
-                          ("app", "application/base64"), ("png", "image/png;base64"), ("jpeg","image/jpeg;base64")]
+    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext")]
+                        #   ("application/base64", "app"), ("image/png;base64", "png"), ("image/jpeg;base64", "jpeg")]
     contentType = models.CharField(max_length=30,
-                                  choices=CONTENT_CHOICES,
-                                  default="md")
+                                  choices=CONTENT_CHOICES)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     # TODO: categories as a list of strings
-    categories = models.TextField()
+    # categories = models.TextField()
+    unparsedCategories = models.CharField(max_length=100)
+    categories = models.ManyToManyField(Category)
     count = models.IntegerField(default=0)
-    # TODO: comments for webservice??
-    # comments = models.TextField()
+    comments = models.TextField(default = "http://localhost:8000/")
     # commentsSrc = models.ForeignKey(to=Comment, on_delete=models.CASCADE)
     published = models.DateTimeField(default=localtime,
                                      blank=True,

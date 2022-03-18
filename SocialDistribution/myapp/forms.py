@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post, Comment, Author
+from .models import Post, Comment, Author, Category
 
 # Reference: https://www.youtube.com/watch?v=USVjTtApVDM&list=PLPSM8rIid1a3TkwEmHyDALNuHhqiUiU5A&index=2
 class PostForm(forms.ModelForm):
@@ -26,17 +26,19 @@ class PostForm(forms.ModelForm):
     #     })
     # )
     # TODO: categories as a list of strings
-    categories = forms.CharField(label='categories',
+    unparsedCategories = forms.CharField(label='categories',
         widget=forms.Textarea(attrs={
             'placeholder': 'Which categories does it belong to...',
             'rows':1,
             'style': 'width: 85%;'
         })
     )
+    
+    # categories = forms.ModelMultipleChoiceField(queryset=Category.objects.all())
 
     class Meta:
         model = Post
-        fields = ['title', 'description', 'contentType', 'categories', 'visibility', 'post_image']
+        fields = ['title', 'description', 'contentType', 'unparsedCategories', 'visibility', 'post_image']
 
 
 class CommentForm(forms.ModelForm):
