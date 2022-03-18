@@ -8,6 +8,8 @@
 
     {% load static %}
 
+    {% load markdownify %}
+
     <link rel="stylesheet" type="text/css" href="{% static 'css/feed.css' %}">
 
     <div class="colContainer">
@@ -43,7 +45,12 @@
                         {% else %}
                             <div class="authorName">Author: {{ post.author.id }}</div>
                             <div class="postTitle">{{ post.title }}</div>
-                            <div class="postBody">{{ post.description }}</div>
+                            <!-- pip install django-markdownify -->
+                            {% if post.contentType == "text/markdown" %}
+                                <div class="postBody">{{ post.description | markdownify}}</div>
+                            {% else %}
+                                <div class="postBody">{{ post.description}}</div>
+                            {% endif %}
                             {% if post.post_image %}
                             <img src="{{ post.post_image.url }}" width="100%">
                             {% endif %}

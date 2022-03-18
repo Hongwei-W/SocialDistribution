@@ -4,6 +4,7 @@
 
 {% block content %}
 {% load static %}
+{% load markdownify %}
 
 <link rel="stylesheet" type="text/css" href="{% static 'css/postDetail.css' %}">
     <body>
@@ -20,7 +21,11 @@
                             <a href="{% url 'myapp:postEdit' post.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
                             <a href="{% url 'myapp:postDelete' post.id %}"><i class="fa-solid fa-trash-can"></i></a>
                         {% endif%}
-                        <div class="postBody">{{ post.description }}</div>
+                        {% if post.contentType == "text/markdown" %}
+                                <div class="postBody">{{ post.description | markdownify}}</div>
+                            {% else %}
+                                <div class="postBody">{{ post.description}}</div>
+                            {% endif %}
                         <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
                         <!-- <div class="postBody">{{ post.contentType }}</div> -->
                         <!-- <div class="postBody">{{ post.count }}</div> -->

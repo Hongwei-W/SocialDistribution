@@ -77,6 +77,7 @@ class NewPostView(View):
             if newPost.type == 'post':
                 newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
                 newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
+                newPost.comments = 'http://localhost:8000/post/'+str(newPost.id)
             newPost.save()
 
             Inbox.objects.filter(author__id=request.user.username)[0].items.add(newPost)
@@ -355,7 +356,7 @@ def getuser(request):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','visibility']
+    fields = ['title','description','contentType','visibility']
     template_name = 'postEdit.html'
 
     def get_success_url(self):

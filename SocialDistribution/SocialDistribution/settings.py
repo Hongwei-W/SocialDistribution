@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'common.apps.CommonConfig',
     'myapp.apps.MyappConfig',
+    'markdownify.apps.MarkdownifyConfig',
     #
     # REST api
     #
