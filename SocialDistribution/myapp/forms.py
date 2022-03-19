@@ -28,7 +28,7 @@ class PostForm(forms.ModelForm):
     # TODO: categories as a list of strings
     unparsedCategories = forms.CharField(label='categories',
         widget=forms.Textarea(attrs={
-            'placeholder': 'Which categories does it belong to...',
+            'placeholder': 'Enclose each category within double quotes... e.g. "web""CMPUT404"',
             'rows':1,
             'style': 'width: 85%;'
         })

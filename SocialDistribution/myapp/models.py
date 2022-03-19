@@ -76,7 +76,7 @@ class Post(models.Model):
     visibility = models.CharField(max_length=7,
                                   choices=VISIBILITY_CHOICES,
                                   default="PUBLIC")
-    # unlisted = models.BooleanField()
+    unlisted = models.BooleanField(default=False)
     likes = models.IntegerField(default=0)
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
 
