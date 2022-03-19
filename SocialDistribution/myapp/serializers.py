@@ -1,5 +1,9 @@
+import ordering as ordering
+from rest_framework import serializers, pagination
+from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 from . import models
+
 
 class AuthorSerializer(ModelSerializer):
 
@@ -32,37 +36,35 @@ class PostSerializer(ModelSerializer):
     class Meta:
         model = models.Post
         fields = '__all__'
+        depth = 1
 
-# class ImagePostSerializer(ModelSerializer):
-#
-#     # TODO image post & model
-#     class Meta:
-#         model = models.Post
-#         fields = ''
 
-class CommentSerializer(ModelSerializer):
+class CommentsSerializer(ModelSerializer):
 
     class Meta:
         model = models.Comment
         fields = '__all__'
-
-# class LikeSerializer(ModelSerializer):
-#
-#     class Meta:
-#         model = models.Like
-#         fields = '__all__'
-
-# class LikedSerializer(ModelSerializer):
-#
-#     class Meta:
-#         model = models.Liked
-#         fields = '__all__'
+        depth = 1
 
 
-# class InboxSerializer(ModelSerializer):
-#     class Meta:
-#         model = models.Inbox
-#         fields = '__all__'
+class LikesSerializer(ModelSerializer):
 
+    class Meta:
+        model = models.Like
+        fields = '__all__'
+
+
+class LikeSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Like
+        fields = '__all__'
+
+class InboxSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Inbox
+        fields = '__all__'
+        depth = 1
 
 
