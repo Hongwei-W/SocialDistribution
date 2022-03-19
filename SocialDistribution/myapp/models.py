@@ -79,7 +79,13 @@ class Post(models.Model):
     unlisted = models.BooleanField(default=False)
     likes = models.IntegerField(default=0)
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
-
+    image_b64 = models.BinaryField(blank=True, null=True)
+    
+    # def save(self, *args, **kwargs):
+    #     if self.post_image:
+    #         img_file = open(self.post_image.url, "rb")
+    #         self.image_b64 = base64.b64encode(img_file.read())
+    #         super(Image, self).save(*args, **kwargs)
 
 class Like(models.Model):
     type = models.CharField(default='Like', max_length=200)

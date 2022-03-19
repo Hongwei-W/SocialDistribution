@@ -1,4 +1,3 @@
-import ordering as ordering
 from rest_framework import serializers, pagination
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
