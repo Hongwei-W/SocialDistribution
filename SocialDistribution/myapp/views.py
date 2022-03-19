@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from .forms import PostForm, CommentForm
-from .models import Author, Post, FollowerCount, Comment, Inbox
+from .models import Author, Post, FollowerCount, Comment, Inbox, Category
 
 from . import serializers, renderers, pagination
 from .pagination import CustomPageNumberPagination
@@ -78,9 +78,20 @@ class NewPostView(View):
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
+            unparsedCat = newPost.unparsedCategories
+            catList = unparsedCat.split("\"")
+            for cat in catList:
+                newCat = Category()
+                newCat.cat = cat
+                newCat.save()
+                newPost.categories.add(newCat)
+                newPost.save()
+
+
             if newPost.type == 'post':
                 newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
                 newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
+                newPost.comments = 'http://localhost:8000/post/'+str(newPost.id)
             newPost.save()
 
             Inbox.objects.filter(author__id=request.user.username)[0].items.add(newPost)
@@ -125,6 +136,8 @@ class PostDetailView(View):
             newComment.save()
             post.count += 1
             post.save()
+            # reset form
+            form = CommentForm()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
@@ -359,7 +372,7 @@ def getuser(request):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','visibility']
+    fields = ['title','description','contentType','visibility']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
