@@ -1,9 +1,12 @@
+import json
 from http.client import HTTPResponse
 from urllib import request
 from itertools import chain
 
 from multiprocessing import context
-from django.http import HttpResponse
+
+from django.core import paginator
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views import View
 from .models import Post, Comment, Inbox, Like
 from .forms import PostForm, CommentForm, ShareForm
@@ -21,7 +24,8 @@ from django.utils.decorators import method_decorator
 
 from .forms import PostForm, CommentForm
 from .models import Author, Post, FollowerCount, Comment, Inbox
-from . import serializers
+
+from . import serializers, renderers, pagination
 from .pagination import CustomPageNumberPagination
 from django.http import HttpResponseRedirect
 
@@ -389,6 +393,7 @@ class AuthorsAPIView(ListAPIView):
     # resource https://www.youtube.com/watch?v=eaWzTMtrcrE&list=PLx-q4INfd95FWHy9M3Gt6NkUGR2R2yqT8&index=9
     serializer_class = serializers.AuthorSerializer
     pagination_class = CustomPageNumberPagination
+    renderer_classes = (renderers.AuthorsRenderer, )
 
     def get_queryset(self):
         return Author.objects.all()
@@ -398,6 +403,7 @@ class FollowersAPIView(RetrieveAPIView):
     """ GET an Author's all followers """
 
     # serializer_class = serializers.FollowersSerializer
+    # renderer_classes = (renderers.FollowersRenderer,)
 
     def retrieve(self, request, *args, **kwargs):
         queryset = []
@@ -406,10 +412,11 @@ class FollowersAPIView(RetrieveAPIView):
         for follower in followers:
             author = model_to_dict(Author.objects.filter(id=follower.follower).first())
             queryset.append(author)
-        return Response(queryset)
-
-
-
+        # response = json.dumps({"type": "followers"})
+        # response = json.dumps({"type": "followers", "items": queryset})
+        # return Response(queryset)
+        response = {"type": "followers", "items": queryset}
+        return Response(response)
 
 class FollowerAPIView(RetrieveUpdateDestroyAPIView):
     """ GET if is a follower PUT a new follower DELETE an existing follower"""
@@ -425,7 +432,6 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
         if another in followers:
             return True
         return False
-
 
     def retrieve(self, request, *args, **kwargs):
 
@@ -461,7 +467,8 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
             return Response({'following_relation_exist': 'False',
                                  'following_relation_delete': 'False'})
 
-# TODO FollowRequest is not complete
+# TODO FollowRequest is not complete (after Project 2)
+
 
 class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
     """ GET POST PUT DELETE a post"""
@@ -469,6 +476,7 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
     # note that PUT is updating an existing post
 
     serializer_class = serializers.PostSerializer
+    # renderer_classes = (renderers.PostRenderer, )
     lookup_fields = ('pk', 'author')
 
     def get_queryset(self):
@@ -477,40 +485,209 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
         return Post.objects.filter(id=post_id, author=username)
 
     def post(self, request, *args, **kwargs):
-        # TODO Push the post into the inbox
-        return self.create(request, *args, **kwargs)
+        author = self.kwargs['author']
+        post_id = self.kwargs['pk']
+        author = Author.objects.filter(id=author).first()
+        if author is None:
+            return HttpResponseNotFound("author not exist")
+        data = request.data             # TODO handle source and origin
+        try:
+            new_post = Post.objects.create(title=data["title"], id=post_id, description=data["description"],
+                                           contentType=data["contentType"], author=author,
+                                           categories=data["categories"],
+                                           visibility=data["visibility"],
+                                           post_image=data["post_image"])
+            new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
+            new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+            new_post.save()
+        except Exception as e:
+            return HttpResponseNotFound(e)
 
-class PostsAPIView(ListCreateAPIView):
+        Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+        followersID = FollowerCount.objects.filter(user=author.id)
+
+        for followerID in followersID:
+            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+        serializer = serializers.PostSerializer(new_post)
+        return Response(serializer.data)
+
+
+class PostsAPIView(CreateModelMixin, ListAPIView):
     """ GET all posts or POST a new post (with pagination support) """
 
     serializer_class = serializers.PostSerializer
     pagination_class = CustomPageNumberPagination
+    # renderer_classes = (renderers.PostsRenderer, )
     lookup_field = 'author'
 
-    def perform_create(self, serializer):
-        return serializer.save()
+    def post(self, request, *args, **kwargs):
+        author = self.kwargs['author']
+        author = Author.objects.filter(id=author).first()
+        if author is None:
+            return HttpResponseNotFound("author not exist")
+        data = request.data             # TODO handle source and origin
+        new_post = Post.objects.create(title=data["title"], description=data["description"],
+                                       contentType=data["contentType"], author=author,
+                                       categories=data["categories"],
+                                       visibility=data["visibility"],
+                                       post_image=data["post_image"])
+        try:
+            new_post.save()
+        except Exception as e:
+            return HttpResponseNotFound(e)
+        new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
+        new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+        new_post.save()
+
+        Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+        followersID = FollowerCount.objects.filter(user=author.id)
+
+        for followerID in followersID:
+            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+        serializer = serializers.PostSerializer(new_post)
+        return Response(serializer.data)
 
     def get_queryset(self):
         username = self.kwargs['author']
         return Post.objects.filter(author=username)
 
-# TODO ImagePost API is not complete
 
-# TODO write this when author is linked in
-# class CommentsAPIView(ListCreateAPIView):
-#     """ GET all comments or POST a new comment (with pagination support) """
-#
-#     serializer_class = serializers.CommentSerializer
-#     pagination_class = CustomPageNumberPagination
-#     lookup_fields = ('post', 'author')
-#
-#     def get_queryset(self):
-#         username = self.kwargs['author']
-#         post_id = self.kwargs['post']
-#         return Post.objects.filter(author=username, post=post_id)
+class ImagePostAPIView(RetrieveAPIView):
+    """ GET an image post"""
+    # note that POST is creating a new post
+    # note that PUT is updating an existing post
 
-# TODO Like API
+    serializer_class = serializers.PostSerializer
+    renderer_classes = (renderers.ImagePostRenderer, )
+    lookup_fields = ('pk', 'author')
 
-# TODO Liked API
+    def get_queryset(self):
+        username = self.kwargs['author']
+        post_id = self.kwargs['pk']
+        return Post.objects.filter(id=post_id, author=username)
 
-# TODO Inbox API can start on Mar.2 (after meeting)
+
+class CommentsAPIView(ListCreateAPIView):
+    """ GET all comments or POST a new comment (with pagination support) """
+
+    serializer_class = serializers.CommentSerializer
+    pagination_class = CustomPageNumberPagination
+    renderer_classes = (renderers.CommentsRenderer, )
+    lookup_fields = ('post', )
+
+    def get_queryset(self):
+        post_id = self.kwargs['post']
+        return Comment.objects.filter(post=post_id)
+
+
+# TODO Like API - 1: send a like object
+
+
+class LikesAPIView(ListAPIView):
+    serializer_class = serializers.LikesSerializer
+    pagination_class = CustomPageNumberPagination
+    renderer_classes = (renderers.LikesRenderer,)
+    lookup_fields = ('object', )
+
+    def get_queryset(self):
+        post_id = self.kwargs['post']
+        return Like.objects.filter(object=post_id)
+
+# TODO Like API - 3: comment likes
+
+
+class LikedAPIView(ListAPIView):
+    serializer_class = serializers.LikesSerializer
+    pagination_class = CustomPageNumberPagination
+    renderer_classes = (renderers.LikedRenderer,)
+    lookup_fields = ('author',)
+
+    def get_queryset(self):
+        username = self.kwargs['author']
+        return Like.objects.filter(author=username)
+
+
+class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
+    """ GET inbox POST post/follow/like DELETE inbox_obj"""
+    serializer_class = serializers.InboxSerializer
+    pagination_class = CustomPageNumberPagination
+    lookup_fields = ('author',)
+
+    def get_object(self):
+        username = self.kwargs['author']
+        return Inbox.objects.filter(author=username).first()
+
+    def post(self, request, *args, **kwargs):
+        # check if user in url exists
+        current_username = self.kwargs['author']
+        current_user = Author.objects.filter(id=current_username).first()
+        if current_user is None:
+            return HttpResponseNotFound("author (in url) not exist")
+        data = request.data
+
+        try:
+            # 1. publish a post
+            # don't care if these two have a friend relation, just push the post into its follower's inbox
+            if data["type"] == "post":
+                # check if user in the body (who post the post) exists
+                author = Author.objects.filter(id=data["author"]).first()
+                if author is None:
+                    return HttpResponseNotFound("author (in body) not exist")
+
+                new_post = Post.objects.create(title=data["title"], description=data["description"],
+                                               contentType=data["contentType"], author=author,
+                                               categories=data["categories"],
+                                               visibility=data["visibility"],
+                                               post_image=data["post_image"])
+                try:
+                    new_post.save()
+                except Exception as e:
+                    return HttpResponseNotFound(e)
+                new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
+                new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+                new_post.save()
+
+                Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+                followersID = FollowerCount.objects.filter(user=author.id)
+
+                for followerID in followersID:
+                    Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+
+                serializer = serializers.PostSerializer(new_post)
+                return Response(serializer.data)
+            # TODO 2. friend request
+            elif data["type"] == "friend_request":
+                pass
+
+            elif data["type"] == "like":
+                # check if post in the body (the post that user gives a like) exists
+                post = Post.objects.filter(id=data["object"]).first()
+                if post is None:
+                    return HttpResponseNotFound("post not exist")
+                like_before = Like.objects.filter(author=current_user, object=post).first()
+                if like_before is not None:
+                    return HttpResponseNotFound("user has given a like before")
+                new_like = Like.objects.create(author=current_user, object=post)
+                new_like.save()
+                post.likes += 1
+                post.save()
+                # TODO like could be comments/posts
+                serializer = serializers.LikeSerializer(new_like)
+                # TODO push into inbox
+                return Response(serializer.data)
+
+        except Exception as e:
+            return HttpResponseNotFound(e)
+
+    def delete(self, request, *args, **kwargs):
+        username = self.kwargs['author']
+        inbox = Inbox.objects.filter(author=username).first()
+
+        author = inbox.author
+        inbox.delete()
+        new_inbox = Inbox.objects.create(author=author)
+        new_inbox.save()
+
+        serializer = serializers.InboxSerializer(new_inbox)
+        return Response(serializer.data)
+

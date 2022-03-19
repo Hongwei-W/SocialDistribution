@@ -52,8 +52,8 @@ class Post(models.Model):
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
     description = models.TextField()
-    CONTENT_CHOICES = [("md", "text/markdown"), ("plain", "text/plain"),
-                          ("app", "application/base64"), ("png", "image/png;base64"), ("jpeg","image/jpeg;base64")]
+    CONTENT_CHOICES = [("text/markdown", "text/markdown"), ("text/plain", "text/plain"),
+                          ("application/base64", "application/base64"), ("image/png;base64", "image/png;base64"), ("image/jpeg;base64","image/jpeg;base64")]
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES,
                                   default="md")
