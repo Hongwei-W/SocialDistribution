@@ -79,7 +79,7 @@ class NewPostView(View):
             newPost.author = Author.objects.get(id=request.user.username)
             newPost.save()
             unparsedCat = newPost.unparsedCategories
-            catList = unparsedCat.split("\"")
+            catList = unparsedCat.split()
             for cat in catList:
                 newCat = Category()
                 newCat.cat = cat
@@ -507,11 +507,21 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
         try:
             new_post = Post.objects.create(title=data["title"], id=post_id, description=data["description"],
                                            contentType=data["contentType"], author=author,
-                                           categories=data["categories"],
+                                           unparsedCategories=data["unparsedCategories"],
                                            visibility=data["visibility"],
                                            post_image=data["post_image"])
+            unparsed_cat = new_post.unparsedCategories
+            cat_list = unparsed_cat.split()
+            for cat in cat_list:
+                new_cat = Category()
+                new_cat.cat = cat
+                new_cat.save()
+                new_post.categories.add(new_cat)
+                new_post.save()
+
             new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
             new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+            new_post.comments = 'http://localhost:8000/post/' + str(new_post.id)
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
@@ -539,17 +549,27 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
         if author is None:
             return HttpResponseNotFound("author not exist")
         data = request.data             # TODO handle source and origin
+
         new_post = Post.objects.create(title=data["title"], description=data["description"],
-                                       contentType=data["contentType"], author=author,
-                                       categories=data["categories"],
-                                       visibility=data["visibility"],
-                                       post_image=data["post_image"])
+                                      contentType=data["contentType"], author=author,
+                                      unparsedCategories=data["unparsedCategories"],
+                                      visibility=data["visibility"],
+                                      post_image=data["post_image"])
+        unparsed_cat = new_post.unparsedCategories
+        cat_list = unparsed_cat.split()
+        for cat in cat_list:
+            new_cat = Category()
+            new_cat.cat = cat
+            new_cat.save()
+            new_post.categories.add(new_cat)
+            new_post.save()
         try:
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
         new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
         new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+        new_post.comments = 'http://localhost:8000/post/'+str(new_post.id)
         new_post.save()
 
         Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
@@ -562,13 +582,11 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['author']
-        return Post.objects.filter(author=username)
+        return Post.objects.filter(author=username, visibility="PUBLIC")
 
 
 class ImagePostAPIView(RetrieveAPIView):
     """ GET an image post"""
-    # note that POST is creating a new post
-    # note that PUT is updating an existing post
 
     serializer_class = serializers.PostSerializer
     renderer_classes = (renderers.ImagePostRenderer, )
@@ -580,18 +598,31 @@ class ImagePostAPIView(RetrieveAPIView):
         return Post.objects.filter(id=post_id, author=username)
 
 
-class CommentsAPIView(ListCreateAPIView):
+class CommentsAPIView(CreateModelMixin, ListAPIView):
     """ GET all comments or POST a new comment (with pagination support) """
 
-    serializer_class = serializers.CommentSerializer
+    serializer_class = serializers.CommentsSerializer
     pagination_class = CustomPageNumberPagination
-    renderer_classes = (renderers.CommentsRenderer, )
+    # renderer_classes = (renderers.CommentsRenderer, )
     lookup_fields = ('post', )
 
     def get_queryset(self):
         post_id = self.kwargs['post']
         return Comment.objects.filter(post=post_id)
 
+    def post(self, request, *args, **kwargs):
+        current_username = self.kwargs['author']
+        current_user = Author.objects.filter(id=current_username).first()
+        post_id = self.kwargs['post']
+        post_obj = Post.objects.filter(id=post_id).first()
+        if current_user is None or post_obj is None:
+            return HttpResponseNotFound("author or post not exist")
+        data = request.data
+        new_comment = Comment.objects.create(author=current_user, comment=data["comment"],
+                                             contentType=data["contentType"], post=post_obj)
+        new_comment.save()
+        serializer = serializers.CommentsSerializer(new_comment)
+        return Response(serializer.data)
 
 # TODO Like API - 1: send a like object
 
@@ -617,7 +648,7 @@ class LikedAPIView(ListAPIView):
 
     def get_queryset(self):
         username = self.kwargs['author']
-        return Like.objects.filter(author=username)
+        return Like.objects.filter(object__visibility="PUBLIC", author=username)
 
 
 class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
@@ -649,15 +680,25 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
                 new_post = Post.objects.create(title=data["title"], description=data["description"],
                                                contentType=data["contentType"], author=author,
-                                               categories=data["categories"],
+                                               unparsedCategories=data["unparsedCategories"],
                                                visibility=data["visibility"],
                                                post_image=data["post_image"])
+                unparsed_cat = new_post.unparsedCategories
+                cat_list = unparsed_cat.split()
+                for cat in cat_list:
+                    new_cat = Category()
+                    new_cat.cat = cat
+                    new_cat.save()
+                    new_post.categories.add(new_cat)
+                    new_post.save()
+
                 try:
                     new_post.save()
                 except Exception as e:
                     return HttpResponseNotFound(e)
                 new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
                 new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
+                new_post.comments = 'http://localhost:8000/post/' + str(new_post.id)
                 new_post.save()
 
                 Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)

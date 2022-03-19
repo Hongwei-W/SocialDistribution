@@ -39,11 +39,12 @@ class PostSerializer(ModelSerializer):
         depth = 1
 
 
-class CommentSerializer(ModelSerializer):
+class CommentsSerializer(ModelSerializer):
 
     class Meta:
         model = models.Comment
         fields = '__all__'
+        depth = 1
 
 
 class LikesSerializer(ModelSerializer):

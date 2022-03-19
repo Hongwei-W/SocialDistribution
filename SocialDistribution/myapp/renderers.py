@@ -1,5 +1,5 @@
 from django.forms import model_to_dict
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, HttpResponse
 from rest_framework import renderers
 import json
 
@@ -80,7 +80,10 @@ class CommentsRenderer(renderers.JSONRenderer):
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         results = dict(data).get("items")
-        post = results[0]["post"]
+        try:
+            post = results[0]["post"]
+        except:
+            return HttpResponse("This post have no comments")
         response = []
         for comment in results:
             comment = dict(comment)
@@ -93,7 +96,7 @@ class CommentsRenderer(renderers.JSONRenderer):
             comment["post"] = str(comment["post"])
             response.append(comment)
 
-        response = json.dumps({"type": "posts", "page": data["page"], "size": data["size"], "post": str(post), "id": str(post), "next": data["next"], "previous": data["previous"], "items": response})
+        response = json.dumps({"type": "comments", "page": data["page"], "size": data["size"], "post": str(post), "id": str(post), "next": data["next"], "previous": data["previous"], "items": response})
 
         return response
 

@@ -28,7 +28,7 @@ class PostForm(forms.ModelForm):
 
     unparsedCategories = forms.CharField(label='categories',
         widget=forms.Textarea(attrs={
-            'placeholder': 'Enclose each category within double quotes... e.g. "web""CMPUT404"',
+            'placeholder': 'Separate your categories with space e.g. web_dev CMPUT404',
             'rows':2,
             'style': 'width: 85%;'
         })
