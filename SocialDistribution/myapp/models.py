@@ -57,13 +57,11 @@ class Post(models.Model):
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
     description = models.TextField()
-    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext")]
-                        #   ("application/base64", "app"), ("image/png;base64", "png"), ("image/jpeg;base64", "jpeg")]
+    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext"),
+                          ("application/base64", "app"), ("image/png;base64", "png"), ("image/jpeg;base64", "jpeg")]
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    # TODO: categories as a list of strings
-    # categories = models.TextField()
     unparsedCategories = models.CharField(max_length=100)
     categories = models.ManyToManyField(Category)
     count = models.IntegerField(default=0)
@@ -95,7 +93,9 @@ class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
-    contentType = models.CharField(max_length=200)
+    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext")]
+    contentType = models.CharField(max_length=30,
+                                  choices=CONTENT_CHOICES)
     published = models.DateTimeField(default=localtime,
                                      blank=True,
                                      editable=False)

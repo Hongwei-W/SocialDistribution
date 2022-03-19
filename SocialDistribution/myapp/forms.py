@@ -54,7 +54,7 @@ class CommentForm(forms.ModelForm):
 
     class Meta:
         model = Comment
-        fields = ['comment']
+        fields = ['comment', 'contentType']
 
 # class AuthorForm(forms.ModelForm):
 #     class Meta:

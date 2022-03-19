@@ -64,13 +64,21 @@
                             {{ form.comment }}
                         </div>
                         <div class="postDetail">
+                            <!-- <label for="title">Title:</label> -->
+                            {{ form.contentType }}
+                        </div>
+                        <div class="postDetail">
                             <button class="btnShare">Share</button>
                         </div>
                     </form>
                     {% for comment in comments %}
                     <div class="singlePost position-relative"> 
                         <div class="postBody">{{ comment.author.id }}</div>
-                        <div class="postBody">{{ comment.comment }}</div>
+                        {% if post.contentType == "text/markdown" %}
+                            <div class="postBody">{{ comment.comment | markdownify}}</div>
+                        {% else %}
+                            <div class="postBody">{{ comment.comment }}</div>
+                        {% endif %}
                         <div class="postTime">{{ comment.published }}</div>                       
                     </div>                   
                     {% endfor %}
