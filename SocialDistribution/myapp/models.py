@@ -62,7 +62,7 @@ class Post(models.Model):
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    unparsedCategories = models.CharField(max_length=100)
+    unparsedCategories = models.CharField(max_length=100, default="")
     categories = models.ManyToManyField(Category)
     count = models.IntegerField(default=0)
     comments = models.TextField(default = "http://localhost:8000/")
