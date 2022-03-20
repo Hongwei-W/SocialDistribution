@@ -40,6 +40,7 @@ from rest_framework.mixins import CreateModelMixin
 from rest_framework.renderers import JSONRenderer
 
 import re
+import base64
 
 
 # Create your views here.
@@ -92,7 +93,14 @@ class NewPostView(View):
                 newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
                 newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
                 newPost.comments = 'http://localhost:8000/post/'+str(newPost.id)
-            newPost.save()
+                newPost.save()
+            if newPost.post_image:
+                # print("------url", newPost.post_image.path)
+                # print(str(newPost.post_image))
+                img_file = open(newPost.post_image.path, "rb")
+                newPost.image_b64 = base64.b64encode(img_file.read())
+                # print(newPost.image_b64[:20])
+                newPost.save()
 
             Inbox.objects.filter(author__id=request.user.username)[0].items.add(newPost)
             followersID = FollowerCount.objects.filter(user=request.user.username)
@@ -115,12 +123,17 @@ class PostDetailView(View):
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
+        if post.post_image:
+            image_b64 = post.image_b64.decode('utf-8')
+        else:
+            image_b64 = ''
         context = {
             'post': post,
             'form': form,
             'comments':comments,
             'likes': likes,
             'author_list':author_list,
+            'image_b64':image_b64,
         }
 
         return render(request, 'postDetail.html', context)
@@ -142,7 +155,7 @@ class PostDetailView(View):
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
-
+        image_b64 = post.image_b64.decode('utf-8')
         context = {
             'post': post,
             'form': form,
@@ -150,6 +163,7 @@ class PostDetailView(View):
             'likes_count': likes_count,
             'comments': comments,
             'author_list': author_list,
+            'image_b64':image_b64,
         }
 
         return render(request, 'postDetail.html', context)
