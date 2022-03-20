@@ -78,7 +78,7 @@ class NewPostView(View):
         if form.is_valid():
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(username=request.user.username)
-            newPost.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(newPost.uuid)
+            newPost.id = request.get_host()+ "/authors/" + str(newPost.author.uuid) + "/posts/" + str(newPost.uuid)
             newPost.save()
             unparsedCat = newPost.unparsedCategories
             catList = unparsedCat.split()
@@ -148,7 +148,7 @@ class PostDetailView(View):
             newComment.author = Author.objects.get(username=request.user.username)
             newComment.post = post
             newComment.save()
-            newComment.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(pk) + "/comments/" + str(newComment.uuid)
+            newComment.id = request.get_host()+ "/authors/" + str(post.author.uuid) + "/posts/" + str(pk) + "/comments/" + str(newComment.uuid)
             newComment.save()
             post.count += 1
             post.save()
@@ -219,7 +219,7 @@ class SharedPostView(View):
             )
         new_post.save()
         new_post.author = Author.objects.get(username=request.user.username)
-        new_post.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(new_post.uuid)
+        new_post.id = request.get_host()+ "/authors/" + str(new_post.author.uuid) + "/posts/" + str(new_post.uuid)
         new_post.save()
         Inbox.objects.filter(author__username=request.user.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=request.user.username)
@@ -280,7 +280,7 @@ class ShareDetailView(View):
             'likes': likes,
             'source_post': source_post,
             'original_post': original_post,
-            
+
         }
 
         return render(request, 'shareDetail.html', context)
@@ -308,7 +308,7 @@ class ShareDetailView(View):
             'likes': likes,
             'likes_count': likes_count,
             # 'source_post': source_post,
-            # 'original_post': original_post,
+            'original_post': original_post,
 
         }
 
