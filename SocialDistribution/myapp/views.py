@@ -48,7 +48,7 @@ import base64
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
-        posts = Inbox.objects.filter(author__id=request.user.username)[0].items
+        posts = Inbox.objects.filter(author__username=request.user.username)[0].items
         author_list = Author.objects.all()
         context = {
             'postList': posts,
@@ -77,7 +77,8 @@ class NewPostView(View):
 
         if form.is_valid():
             newPost = form.save(commit=False)
-            newPost.author = Author.objects.get(id=request.user.username)
+            newPost.author = Author.objects.get(username=request.user.username)
+            newPost.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(newPost.uuid)
             newPost.save()
             unparsedCat = newPost.unparsedCategories
             catList = unparsedCat.split()
@@ -90,9 +91,9 @@ class NewPostView(View):
 
 
             if newPost.type == 'post':
-                newPost.source = 'http://localhost:8000/post/'+str(newPost.id)
-                newPost.origin = 'http://localhost:8000/post/'+str(newPost.id)
-                newPost.comments = 'http://localhost:8000/post/'+str(newPost.id)
+                newPost.source = request.get_host()+ "/post/" + str(newPost.uuid)
+                newPost.origin = request.get_host()+ "/post/" + str(newPost.uuid)
+                newPost.comments = request.get_host()+ "/post/" + str(newPost.uuid)
                 newPost.save()
             if newPost.post_image:
                 # print("------url", newPost.post_image.path)
@@ -102,10 +103,10 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 
-            Inbox.objects.filter(author__id=request.user.username)[0].items.add(newPost)
+            Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
             followersID = FollowerCount.objects.filter(user=request.user.username)
             for followerID in followersID:
-                Inbox.objects.filter(author__id=followerID.follower)[0].items.add(newPost)
+                Inbox.objects.filter(author__username=followerID.follower)[0].items.add(newPost)
 
         # posts = Post.objects.all()
         # context = {
@@ -118,7 +119,7 @@ class NewPostView(View):
 @method_decorator(login_required, name='dispatch')
 class PostDetailView(View):
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(id=pk)
+        post = Post.objects.get(uuid=pk)
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
@@ -139,13 +140,15 @@ class PostDetailView(View):
         return render(request, 'postDetail.html', context)
 
     def post(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(id=pk)
+        post = Post.objects.get(uuid=pk)
         form = CommentForm(request.POST)
         author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
-            newComment.author = Author.objects.get(id=request.user.username)
+            newComment.author = Author.objects.get(username=request.user.username)
             newComment.post = post
+            newComment.save()
+            newComment.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(pk) + "/comments/" + str(newComment.uuid)
             newComment.save()
             post.count += 1
             post.save()
@@ -155,23 +158,33 @@ class PostDetailView(View):
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
-        image_b64 = post.image_b64.decode('utf-8')
-        context = {
-            'post': post,
-            'form': form,
-            'likes': likes,
-            'likes_count': likes_count,
-            'comments': comments,
-            'author_list': author_list,
-            'image_b64':image_b64,
-        }
+        if post.image_b64 != None:
+            image_b64 = post.image_b64.decode('utf-8')
+            context = {
+                'post': post,
+                'form': form,
+                'likes': likes,
+                'likes_count': likes_count,
+                'comments': comments,
+                'author_list': author_list,
+                'image_b64':image_b64,
+            }
+        else:
+            context = {
+                'post': post,
+                'form': form,
+                'likes': likes,
+                'likes_count': likes_count,
+                'comments': comments,
+                'author_list': author_list,
+            }
 
         return render(request, 'postDetail.html', context)
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(id=pk)
+        post = Post.objects.get(uuid=pk)
         share_form = ShareForm()
 
         context = {
@@ -185,11 +198,11 @@ class SharedPostView(View):
     def post(self, request, pk, *args, **kwargs):
         source_post = Post.objects.get(pk=pk)
         if source_post.type == 'post':
-            source_text = 'http://localhost:8000/post/'
+            source_text = request.get_host()+'/post/'
         else:
-            source_text = 'http://localhost:8000/post/shared/'
+            source_text = request.get_host()+'/post/shared/'
         original_post_id = source_post.origin.split('/')[-1]
-        original_post = Post.objects.get(id=original_post_id)
+        original_post = Post.objects.get(uuid=original_post_id)
         form = ShareForm(request.POST)
         
         if form.is_valid():
@@ -199,16 +212,19 @@ class SharedPostView(View):
             source = source_text + str(pk),
             origin = original_post.origin,
             description = Post.objects.get(pk=pk).description,
+            content = Post.objects.get(pk=pk).content,
             contentType = 'text',
-            author = Author.objects.get(id=request.user.username),
-            categories = 'categories',
+            author = Author.objects.get(username=request.user.username),
             visibility = original_post.visibility, 
             )
         new_post.save()
-        Inbox.objects.filter(author__id=request.user.username)[0].items.add(new_post)
+        new_post.author = Author.objects.get(username=request.user.username)
+        new_post.id = request.get_host()+ "/authors/" + request.user.username + "/posts/" + str(new_post.uuid)
+        new_post.save()
+        Inbox.objects.filter(author__username=request.user.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=request.user.username)
         for followerID in followersID:
-            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
         context = {
             'new_post': new_post,
             # 'source_post': source_post,
@@ -221,9 +237,9 @@ class SharedPostView(View):
 @login_required(login_url='/accounts/login')
 def like(request):
     username = request.user.username
-    author = Author.objects.get(id=username)
+    author = Author.objects.get(username=username)
     post_id = request.GET.get('post_id')
-    post = Post.objects.get(id=post_id)
+    post = Post.objects.get(uuid=post_id)
     summary = username + ' Likes your post'
     like_filter = Like.objects.filter(object=post, author=author).first()
     if like_filter == None:
@@ -246,16 +262,16 @@ def like(request):
 @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(id=pk)
+        post = Post.objects.get(uuid=pk)
         
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
-        source_post = Post.objects.get(id=source_post_id)
+        source_post = Post.objects.get(uuid=source_post_id)
         original_post_id = post.origin.split('/')[-1]
-        original_post = Post.objects.get(id=original_post_id)
+        original_post = Post.objects.get(uuid=original_post_id)
 
         context = {
             'post': post,
@@ -264,17 +280,18 @@ class ShareDetailView(View):
             'likes': likes,
             'source_post': source_post,
             'original_post': original_post,
+            
         }
 
         return render(request, 'shareDetail.html', context)
     
     def post(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(id=pk)
+        post = Post.objects.get(uuid=pk)
         form = CommentForm(request.POST)
 
         if form.is_valid():
             newComment = form.save(commit=False)
-            newComment.author = Author.objects.get(id=request.user.username)
+            newComment.author = Author.objects.get(username=request.user.username)
             newComment.post = post
             newComment.save()
             post.count += 1
@@ -299,7 +316,7 @@ class ShareDetailView(View):
 
 @login_required(login_url='/accounts/login')
 def liked(request, post_id):
-    post = Post.objects.get(id=post_id)
+    post = Post.objects.get(uuid=post_id)
     username = request.user.username
     likes_list = Like.objects.filter(object=post)
     context = {
@@ -319,7 +336,7 @@ def profile(request, user_id):
     github_username = current_author_info.github.split("/")[-1]
     # get posts
     try:
-        posts = Post.objects.filter(author__id=user_id).order_by('-published')
+        posts = Post.objects.filter(author__username=user_id).order_by('-published')
     except:
         posts = []
     # get follow
@@ -380,13 +397,13 @@ def getuser(request):
         return render(request, 'profileNotFound.html', context)
     # current_author_info = get_object_or_404(Author, displayName = username)
     else:
-        user_id = current_author_info.id
+        user_id = current_author_info.username
         return redirect('myapp:profile', user_id=user_id)
 
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','contentType','visibility']
+    fields = ['title','content','contentType','visibility']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
@@ -533,18 +550,18 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
                 new_post.categories.add(new_cat)
                 new_post.save()
 
-            new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
-            new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
-            new_post.comments = 'http://localhost:8000/post/' + str(new_post.id)
+            new_post.source = request.get_host()+ "/post/" + str(newPost.uuid)
+            new_post.origin = request.get_host()+ "/post/" + str(newPost.uuid)
+            new_post.comments = request.get_host()+ "/post/" + str(newPost.uuid)
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
 
-        Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+        Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=author.id)
 
         for followerID in followersID:
-            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
         serializer = serializers.PostSerializer(new_post)
         return Response(serializer.data)
 
@@ -581,16 +598,16 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
-        new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
-        new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
-        new_post.comments = 'http://localhost:8000/post/'+str(new_post.id)
+        new_post.source = request.get_host()+ "/post/" + str(newPost.uuid)
+        new_post.origin = request.get_host()+ "/post/" + str(newPost.uuid)
+        new_post.comments = request.get_host()+ "/post/" + str(newPost.uuid)
         new_post.save()
 
-        Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+        Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=author.id)
 
         for followerID in followersID:
-            Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
         serializer = serializers.PostSerializer(new_post)
         return Response(serializer.data)
 
@@ -710,16 +727,16 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                     new_post.save()
                 except Exception as e:
                     return HttpResponseNotFound(e)
-                new_post.source = 'http://localhost:8000/post/' + str(new_post.id)
-                new_post.origin = 'http://localhost:8000/post/' + str(new_post.id)
-                new_post.comments = 'http://localhost:8000/post/' + str(new_post.id)
+                new_post.source = str(new_post.id)
+                new_post.origin = str(new_post.id)
+                new_post.comments = str(new_post.id)
                 new_post.save()
 
-                Inbox.objects.filter(author__id=author.id)[0].items.add(new_post)
+                Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
                 followersID = FollowerCount.objects.filter(user=author.id)
 
                 for followerID in followersID:
-                    Inbox.objects.filter(author__id=followerID.follower)[0].items.add(new_post)
+                    Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
 
                 serializer = serializers.PostSerializer(new_post)
                 return Response(serializer.data)

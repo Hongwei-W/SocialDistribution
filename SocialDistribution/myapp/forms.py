@@ -12,6 +12,13 @@ class PostForm(forms.ModelForm):
     )
     description = forms.CharField(label='description', 
         widget=forms.Textarea(attrs={
+            'placeholder': 'Give a brief description of the post.',
+            'rows':1,
+            'style': 'width: 85%;'
+        })
+    )
+    content = forms.CharField(label='content', 
+        widget=forms.Textarea(attrs={
             'placeholder': 'Type something...',
             # 'rows':5,
             # 'columns':50,
@@ -38,7 +45,7 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ['title', 'description', 'contentType', 'unparsedCategories', 'visibility', 'post_image']
+        fields = ['title', 'description', 'content', 'contentType', 'unparsedCategories', 'visibility', 'post_image']
 
 
 class CommentForm(forms.ModelForm):
