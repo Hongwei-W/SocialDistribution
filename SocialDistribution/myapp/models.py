@@ -7,7 +7,10 @@ from django.contrib.auth import get_user_model
 # Create your models here.
 class Author(models.Model):
     type = models.CharField(default="author", max_length=200)
-    id = models.CharField(unique=True, max_length=200, primary_key=True)
+    
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=True)
+    id = models.CharField(max_length=200)
+    username = models.CharField(unique=True, max_length=200, primary_key=True)
 
     # id = models.UUIDField(default=uuid.uuid4,
     #                       editable=False,
@@ -49,15 +52,16 @@ class FriendFollowRequest(models.Model):
 class Post(models.Model):
     type = models.CharField(default='post', max_length=200)
     title = models.CharField(max_length=200)
-    id = models.UUIDField(default=uuid.uuid4,
+    uuid = models.UUIDField(default=uuid.uuid4,
                           editable=True,
                           unique=True,
                           primary_key=True)
-    # TODO: source and origin for webservices??
+    id = models.CharField(max_length=200)
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
     description = models.TextField()
-    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext"),
+    content = models.TextField()
+    CONTENT_CHOICES = [("text/plain", "Plaintext"), ("text/markdown", "Markdown"), 
                           ("application/base64", "app"), ("image/png;base64", "png"), ("image/jpeg;base64", "jpeg")]
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES)
@@ -99,16 +103,17 @@ class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
     comment = models.TextField()
-    CONTENT_CHOICES = [("text/markdown", "Markdown"), ("text/plain", "Plaintext")]
+    CONTENT_CHOICES = [("text/plain", "Plaintext"),("text/markdown", "Markdown")]
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES)
     published = models.DateTimeField(default=localtime,
                                      blank=True,
                                      editable=False)
-    id = models.UUIDField(default=uuid.uuid4,
+    uuid = models.UUIDField(default=uuid.uuid4,
                           editable=False,
                           unique=True,
                           primary_key=True)
+    id = models.CharField(max_length=200)
     post = models.ForeignKey(to=Post, on_delete=models.CASCADE, null=True)
 
 

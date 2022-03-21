@@ -44,7 +44,7 @@ urlpatterns = [
     #   API
     #
     path('service/authors', views.AuthorsAPIView.as_view(), name='service-authors'),
-    path('service/authors/<str:id>', views.AuthorAPIView.as_view(), name='service-author'),
+    path('service/authors/<str:uuid>', views.AuthorAPIView.as_view(), name='service-author'),
     path('service/authors/<str:author>/followers', views.FollowersAPIView.as_view(), name='service-followers'),
     path('service/authors/<str:author>/followers/<str:another_author>', views.FollowerAPIView.as_view(), name='service-follower'),
     # TODO write the FollowRequest
