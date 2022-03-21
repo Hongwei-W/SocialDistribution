@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 class Author(models.Model):
     type = models.CharField(default="author", max_length=200)
     
-    uuid = models.UUIDField(default=uuid.uuid4, editable=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=True)
     id = models.CharField(max_length=200)
     username = models.CharField(unique=True, max_length=200, primary_key=True)
 

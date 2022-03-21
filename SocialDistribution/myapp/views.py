@@ -8,6 +8,8 @@ from multiprocessing import context
 from django.core import paginator
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views import View
+from rest_framework.decorators import api_view
+
 from .models import Post, Comment, Inbox, Like
 from .forms import PostForm, CommentForm, ShareForm
 from django.shortcuts import render, get_object_or_404, redirect
@@ -425,22 +427,26 @@ class AuthorAPIView(RetrieveUpdateAPIView):
     # note that PUT is updating an author object
 
     serializer_class = serializers.AuthorSerializer
-    lookup_field = "id"
+    lookup_field = "uuid"
+    http_method_names = ['get', 'put']
 
     def get_queryset(self):
-        username = self.kwargs['id']
-        return Author.objects.filter(id=username)
+        uuid = self.kwargs['uuid']
+        return Author.objects.filter(uuid=uuid)
+
 
 class AuthorsAPIView(ListAPIView):
     """ GET Authors (with pagination support)"""
-
+    # TODO pagination failed
     # resource https://www.youtube.com/watch?v=eaWzTMtrcrE&list=PLx-q4INfd95FWHy9M3Gt6NkUGR2R2yqT8&index=9
     serializer_class = serializers.AuthorSerializer
     pagination_class = CustomPageNumberPagination
-    renderer_classes = (renderers.AuthorsRenderer, )
+    # renderer_classes = (renderers.AuthorsRenderer, )
+    http_method_names = ['get']
 
-    def get_queryset(self):
-        return Author.objects.all()
+    def list(self, request, *args, **kwargs):
+        serializer = serializers.AuthorSerializer(Author.objects.all(), many=True)
+        return Response({"type": "authors", "items": serializer.data})
 
 
 class FollowersAPIView(RetrieveAPIView):
@@ -448,17 +454,17 @@ class FollowersAPIView(RetrieveAPIView):
 
     # serializer_class = serializers.FollowersSerializer
     # renderer_classes = (renderers.FollowersRenderer,)
+    http_method_names = ['get']
 
     def retrieve(self, request, *args, **kwargs):
         queryset = []
-        username = self.kwargs['author']
-        followers = FollowerCount.objects.filter(user=username)
+        uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=uuid).first()
+        followers = FollowerCount.objects.filter(user=author.username)
         for follower in followers:
-            author = model_to_dict(Author.objects.filter(id=follower.follower).first())
-            queryset.append(author)
-        # response = json.dumps({"type": "followers"})
-        # response = json.dumps({"type": "followers", "items": queryset})
-        # return Response(queryset)
+            author = model_to_dict(Author.objects.filter(username=follower.follower).first())
+            serializer = serializers.AuthorSerializer(author)
+            queryset.append(serializer.data)
         response = {"type": "followers", "items": queryset}
         return Response(response)
 
@@ -467,13 +473,19 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
 
     serializer_class = serializers.FollowersSerializer
     renderer_classes = [JSONRenderer]
+    # TODO foreign author (currently our author)
 
+    def usernames(self, *args, **kwargs):
+        follower_uuid = self.kwargs['another_author']
+        follower = Author.objects.filter(uuid=follower_uuid).first()
+        user_uuid = self.kwargs['author']
+        user = Author.objects.filter(uuid=user_uuid).first()
+        return follower.username, user.username
 
     def relation_check(self, *args, **kwargs):
-        username = self.kwargs['author']
-        another = self.kwargs['another_author']
-        followers = FollowerCount.objects.filter(user=username).values_list('follower', flat=True)
-        if another in followers:
+        usernames = self.usernames()
+        followers = FollowerCount.objects.filter(user=usernames[1]).values_list('follower', flat=True)
+        if usernames[0] in followers:
             return True
         return False
 
@@ -490,7 +502,8 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
                              'following_relation_put': 'False'})
         else:
             try:
-                FollowerCount.objects.create(follower=self.kwargs['another_author'], user=self.kwargs['author'])
+                usernames = self.usernames()
+                FollowerCount.objects.create(follower=usernames[0], user=usernames[1])
                 return Response({'following_relation_exist': 'False',
                                  'following_relation_put': 'True'})
             except:
@@ -499,7 +512,8 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         if self.relation_check():
-            relation = FollowerCount.objects.filter(follower=self.kwargs['another_author']).filter(user=self.kwargs['author'])
+            usernames = self.usernames()
+            relation = FollowerCount.objects.filter(follower=usernames[0]).filter(user=usernames[1])
             try:
                 relation.delete()
                 return Response({'following_relation_exist': 'True',
@@ -518,29 +532,32 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
     """ GET POST PUT DELETE a post"""
     # note that POST is creating a new post
     # note that PUT is updating an existing post
+    # TODO rewrite the PUT method
 
     serializer_class = serializers.PostSerializer
     # renderer_classes = (renderers.PostRenderer, )
     lookup_fields = ('pk', 'author')
 
     def get_queryset(self):
-        username = self.kwargs['author']
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
         post_id = self.kwargs['pk']
-        return Post.objects.filter(id=post_id, author=username)
+        return Post.objects.filter(uuid=post_id, author=author.username)
 
     def post(self, request, *args, **kwargs):
-        author = self.kwargs['author']
+        author_uuid = self.kwargs['author']
         post_id = self.kwargs['pk']
-        author = Author.objects.filter(id=author).first()
+        author = Author.objects.filter(uuid=author_uuid).first()
         if author is None:
             return HttpResponseNotFound("author not exist")
-        data = request.data             # TODO handle source and origin
+        data = request.data
         try:
-            new_post = Post.objects.create(title=data["title"], id=post_id, description=data["description"],
+            new_post = Post.objects.create(title=data["title"], uuid=post_id, description=data["description"],
+                                           content=data["content"],
                                            contentType=data["contentType"], author=author,
-                                           unparsedCategories=data["unparsedCategories"],
+                                           unparsedCategories=data["categories"],
                                            visibility=data["visibility"],
-                                           post_image=data["post_image"])
+                                           image_b64=data["post_image"])
             unparsed_cat = new_post.unparsedCategories
             cat_list = unparsed_cat.split()
             for cat in cat_list:
@@ -550,15 +567,16 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
                 new_post.categories.add(new_cat)
                 new_post.save()
 
-            new_post.source = request.get_host()+ "/post/" + str(newPost.uuid)
-            new_post.origin = request.get_host()+ "/post/" + str(newPost.uuid)
-            new_post.comments = request.get_host()+ "/post/" + str(newPost.uuid)
+            new_post.id = request.get_host()+ "/authors/" + str(new_post.author.uuid) + "/posts/" + str(new_post.uuid)
+            new_post.source = request.get_host()+ "/post/" + str(new_post.uuid)
+            new_post.origin = request.get_host()+ "/post/" + str(new_post.uuid)
+            new_post.comments = request.get_host()+ "/post/" + str(new_post.uuid)
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
 
-        Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
-        followersID = FollowerCount.objects.filter(user=author.id)
+        Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+        followersID = FollowerCount.objects.filter(user=author.username)
 
         for followerID in followersID:
             Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
@@ -575,45 +593,49 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
     lookup_field = 'author'
 
     def post(self, request, *args, **kwargs):
-        author = self.kwargs['author']
-        author = Author.objects.filter(id=author).first()
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
         if author is None:
             return HttpResponseNotFound("author not exist")
-        data = request.data             # TODO handle source and origin
-
-        new_post = Post.objects.create(title=data["title"], description=data["description"],
-                                      contentType=data["contentType"], author=author,
-                                      unparsedCategories=data["unparsedCategories"],
-                                      visibility=data["visibility"],
-                                      post_image=data["post_image"])
-        unparsed_cat = new_post.unparsedCategories
-        cat_list = unparsed_cat.split()
-        for cat in cat_list:
-            new_cat = Category()
-            new_cat.cat = cat
-            new_cat.save()
-            new_post.categories.add(new_cat)
-            new_post.save()
+        data = request.data
         try:
+            new_post = Post.objects.create(title=data["title"], description=data["description"], content=data["content"],
+                                          contentType=data["contentType"], author=author,
+                                          unparsedCategories=data["categories"],
+                                          visibility=data["visibility"],
+                                          post_image=data["post_image"])
+            unparsed_cat = new_post.unparsedCategories
+            cat_list = unparsed_cat.split()
+            for cat in cat_list:
+                new_cat = Category()
+                new_cat.cat = cat
+                new_cat.save()
+                new_post.categories.add(new_cat)
+                new_post.save()
+
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
-        new_post.source = request.get_host()+ "/post/" + str(newPost.uuid)
-        new_post.origin = request.get_host()+ "/post/" + str(newPost.uuid)
-        new_post.comments = request.get_host()+ "/post/" + str(newPost.uuid)
+        new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(new_post.uuid)
+        new_post.source = request.get_host()+ "/post/" + str(new_post.uuid)
+        new_post.origin = request.get_host()+ "/post/" + str(new_post.uuid)
+        new_post.comments = request.get_host()+ "/post/" + str(new_post.uuid)
         new_post.save()
 
-        Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
-        followersID = FollowerCount.objects.filter(user=author.id)
+        Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+        followersID = FollowerCount.objects.filter(user=author.username)
 
         for followerID in followersID:
             Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
         serializer = serializers.PostSerializer(new_post)
         return Response(serializer.data)
 
-    def get_queryset(self):
-        username = self.kwargs['author']
-        return Post.objects.filter(author=username, visibility="PUBLIC")
+    def list(self, request, *args, **kwargs):
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
+        posts = Post.objects.filter(author=author.username, visibility="PUBLIC")
+        serializer = serializers.PostSerializer(posts, many=True)
+        return Response({"type": "posts", "items": serializer.data})
 
 
 class ImagePostAPIView(RetrieveAPIView):
@@ -621,37 +643,45 @@ class ImagePostAPIView(RetrieveAPIView):
 
     serializer_class = serializers.PostSerializer
     renderer_classes = (renderers.ImagePostRenderer, )
-    lookup_fields = ('pk', 'author')
+    lookup_fields = ('uuid', 'author')
 
     def get_queryset(self):
-        username = self.kwargs['author']
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
         post_id = self.kwargs['pk']
-        return Post.objects.filter(id=post_id, author=username)
+        return Post.objects.filter(uuid=post_id, author=author.username)
 
 
 class CommentsAPIView(CreateModelMixin, ListAPIView):
     """ GET all comments or POST a new comment (with pagination support) """
-
+    # TODO pagination failed
     serializer_class = serializers.CommentsSerializer
     pagination_class = CustomPageNumberPagination
     # renderer_classes = (renderers.CommentsRenderer, )
     lookup_fields = ('post', )
 
-    def get_queryset(self):
+    def list(self, request, *args, **kwargs):
         post_id = self.kwargs['post']
-        return Comment.objects.filter(post=post_id)
+        serializer = serializers.CommentsSerializer(Comment.objects.filter(post=post_id), many=True)
+        return Response({"type": "comments", "items": serializer.data})
 
     def post(self, request, *args, **kwargs):
-        current_username = self.kwargs['author']
-        current_user = Author.objects.filter(id=current_username).first()
+        current_user_uuid = self.kwargs['author']
+        current_user = Author.objects.filter(uuid=current_user_uuid).first()
         post_id = self.kwargs['post']
-        post_obj = Post.objects.filter(id=post_id).first()
-        if current_user is None or post_obj is None:
+        post = Post.objects.filter(uuid=post_id).first()
+        if current_user is None or post is None:
             return HttpResponseNotFound("author or post not exist")
+
         data = request.data
         new_comment = Comment.objects.create(author=current_user, comment=data["comment"],
-                                             contentType=data["contentType"], post=post_obj)
+                                             contentType=data["contentType"], post=post)
         new_comment.save()
+        new_comment.id = request.get_host() + "/authors/" + str(post.author.uuid) + "/posts/" + str(
+            post.uuid) + "/comments/" + str(new_comment.uuid)
+        new_comment.save()
+        post.count += 1
+        post.save()
         serializer = serializers.CommentsSerializer(new_comment)
         return Response(serializer.data)
 
@@ -661,7 +691,7 @@ class CommentsAPIView(CreateModelMixin, ListAPIView):
 class LikesAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
-    renderer_classes = (renderers.LikesRenderer,)
+    # renderer_classes = (renderers.LikesRenderer,)
     lookup_fields = ('object', )
 
     def get_queryset(self):
@@ -674,13 +704,15 @@ class LikesAPIView(ListAPIView):
 class LikedAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
-    renderer_classes = (renderers.LikedRenderer,)
+    # renderer_classes = (renderers.LikedRenderer,)
     lookup_fields = ('author',)
 
-    def get_queryset(self):
-        username = self.kwargs['author']
-        return Like.objects.filter(object__visibility="PUBLIC", author=username)
-
+    def list(self, request, *args, **kwargs):
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
+        like = Like.objects.filter(object__visibility="PUBLIC", author=author.username)
+        serializer = serializers.LikesSerializer(like, many=True)
+        return Response({"type": "liked", "items": serializer.data})
 
 class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
     """ GET inbox POST post/follow/like DELETE inbox_obj"""
@@ -689,13 +721,14 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
     lookup_fields = ('author',)
 
     def get_object(self):
-        username = self.kwargs['author']
-        return Inbox.objects.filter(author=username).first()
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
+        return Inbox.objects.filter(author=author.username).first()
 
     def post(self, request, *args, **kwargs):
         # check if user in url exists
         current_username = self.kwargs['author']
-        current_user = Author.objects.filter(id=current_username).first()
+        current_user = Author.objects.filter(username=current_username).first()
         if current_user is None:
             return HttpResponseNotFound("author (in url) not exist")
         data = request.data
@@ -705,11 +738,12 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # don't care if these two have a friend relation, just push the post into its follower's inbox
             if data["type"] == "post":
                 # check if user in the body (who post the post) exists
-                author = Author.objects.filter(id=data["author"]).first()
+                author = Author.objects.filter(username=data["author"]).first()
                 if author is None:
                     return HttpResponseNotFound("author (in body) not exist")
 
                 new_post = Post.objects.create(title=data["title"], description=data["description"],
+                                               content=data["content"],
                                                contentType=data["contentType"], author=author,
                                                unparsedCategories=data["unparsedCategories"],
                                                visibility=data["visibility"],
@@ -727,13 +761,15 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                     new_post.save()
                 except Exception as e:
                     return HttpResponseNotFound(e)
-                new_post.source = str(new_post.id)
-                new_post.origin = str(new_post.id)
-                new_post.comments = str(new_post.id)
+                new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(
+                    new_post.uuid)
+                new_post.source = request.get_host() + "/post/" + str(new_post.uuid)
+                new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
+                new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
                 new_post.save()
 
-                Inbox.objects.filter(author__username=author.id)[0].items.add(new_post)
-                followersID = FollowerCount.objects.filter(user=author.id)
+                Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+                followersID = FollowerCount.objects.filter(user=author.username)
 
                 for followerID in followersID:
                     Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
@@ -746,7 +782,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
             elif data["type"] == "like":
                 # check if post in the body (the post that user gives a like) exists
-                post = Post.objects.filter(id=data["object"]).first()
+                post = Post.objects.filter(uuid=data["object"]).first()
                 if post is None:
                     return HttpResponseNotFound("post not exist")
                 like_before = Like.objects.filter(author=current_user, object=post).first()
@@ -765,10 +801,9 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             return HttpResponseNotFound(e)
 
     def delete(self, request, *args, **kwargs):
-        username = self.kwargs['author']
-        inbox = Inbox.objects.filter(author=username).first()
-
-        author = inbox.author
+        author_uuid = self.kwargs['author']
+        author = Author.objects.filter(uuid=author_uuid).first()
+        inbox = Inbox.objects.filter(author=author.username).first()
         inbox.delete()
         new_inbox = Inbox.objects.create(author=author)
         new_inbox.save()

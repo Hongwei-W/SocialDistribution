@@ -66,10 +66,10 @@ class ImagePostRenderer(renderers.JSONRenderer):
         post = dict(data)
 
         if post.get("contentType") == "image/jpeg;base64" or post.get("contentType") == "image/png;base64":
-            username = post.get("author")
-            author = Author.objects.filter(id=username).first()
-            author = model_to_dict(author)
-            post["author"] = author
+            # username = post.get("author")
+            # author = Author.objects.filter(id=username).first()
+            # author = model_to_dict(author)
+            # post["author"] = author
             return json.dumps(post)
         else:
             return HttpResponseNotFound('This is not an Image Post')

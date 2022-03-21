@@ -44,7 +44,7 @@ URL:://service/authors/{author_id}
 
 retrieve one author's profile.
 
-*Example:* `GET ://service/authors/johnny` will retreieve johnny's profile.
+*Example:* `GET ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4` will retreieve johnny's profile.
 
 
 
@@ -52,17 +52,18 @@ retrieve one author's profile.
 
 update one author's profile.
 
-*Example:* `POST ://service/authors/johnny` will update johnny's profile.
+*Example:* `POST ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4` will update johnny's profile.
 
-```
+```json
 (body) 
 {
-    "id": "johnny",
     "type": "author",
-    "host": "localhost:8000",
-    "displayName": "johnny",
-    "github": "https://github.com/johnny",
-    "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+    "id": "127.0.0.1:8000/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4",		
+    "username": "johnny",														
+    "host": "127.0.0.1:8000",
+    "displayName": "someone",
+    "github": "https://github.com/someone",
+    "profileImage": "https://an_image.url"
 }
 ```
 
@@ -82,7 +83,7 @@ URL:://service/authors/{author_id}/followers
 
 retreive a list of authors that are `author_id`'s followers.
 
-*Example:* `GET ://service/authors/johnny/followers` will retreieve johnny's followers.
+*Example:* `GET ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/followers` will retreieve johnny's followers.
 
 
 
@@ -104,7 +105,7 @@ Returns:
 
 ​	Will return `{'following_relation_exist': 'False'}` if  `another_author_id` is not `author_id`'s follower. 
 
-*Example:* `GET ://service/authors/johnny/followers/wong/` will check if wong is one of jonny's followers.
+*Example:* `GET ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/followers/44603e25-39c7-4343-b779-baf9e137c155/` will check if wong is one of jonny's followers.
 
 
 
@@ -120,7 +121,7 @@ Returns:
 
 ​	Will return `{'following_relation_exist': 'False', 'following_relation_put': 'True'}` if `another_author_id` is not `author_id`'s follower, and the addition process is not success.
 
-*Example*:  `PUT ://service/authors/johnny/followers/wong/` will try to add wong as johnny's follower.
+*Example*:  `PUT ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/followers/44603e25-39c7-4343-b779-baf9e137c155/` will try to add wong as johnny's follower.
 
 
 
@@ -136,7 +137,7 @@ Returns:
 
 ​	Will return `{'following_relation_exist': 'False', 'following_relation_delete': 'False'}` if `another_author_id` is not `author_id`'s follower.
 
-*Example*:  `DELETE ://service/authors/johnny/followers/wong/` will try to remove wong from johnny's follower.
+*Example*:  `DELETE ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/followers/44603e25-39c7-4343-b779-baf9e137c155/` will try to remove wong from johnny's follower.
 
 
 
@@ -170,20 +171,19 @@ retrieve all the posts published by `author_id`.
 
 publish a new post by using `author_id`
 
-*Example:* `POST ://service/authors/johnny/posts` will publish a post using `author_id` as johnny, the field below are all mandatory
+*Example:* `POST ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/posts` will publish a post using `author_id` as johnny, the field below are all mandatory
 
-```
+```json
 (body)
 {
-    "type": "post",
     "title": "new post",
     "description": "this is a new post",
+    "content": "whatever you wanna write",
     "contentType": "text/markdown", // choose from {text/markdown, text/plain, application/base64, 		
     								// image/png;base64, image/jpeg;base64}
     "categories": "post web_dev", 	// separate categories with space
     "visibility": "PUBLIC", 		// choose from {PUBLIC, FRIENDS, PRIVATE}
     "post_image": null, 			// or an base64 enocoded image
-    "author": "johnny"
 }
 ```
 
@@ -203,7 +203,7 @@ URL::/service/authors/{author_id}/posts/{post_id}/
 
 retrieve public post published by `author_id` and that is `post_id`. 
 
-*Example:* `GET ://service/authors/johnny/posts/338ef917-789e-4db7-99e6-b00169fb9326/` will retrieve johnny's post with id as 338ef917-789e-4db7-99e6-b00169fb9326.
+*Example:* `GET ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/posts/338ef917-789e-4db7-99e6-b00169fb9326/` will retrieve johnny's post with id as `338ef917-789e-4db7-99e6-b00169fb9326`.
 
 
 
@@ -211,26 +211,25 @@ retrieve public post published by `author_id` and that is `post_id`.
 
 publish a new post with `post_id` by using account `author_id`
 
-*Example:* `POST ://service/authors/johnny/posts/338ef917-789e-4db7-99e6-b00169fb9326/` will publish a new post, id as 338ef917-789e-4db7-99e6-b00169fb9326, by using johnny's account.  The field below are all mandatory
+*Example:* `POST ://service/authors/25e8f446-efc3-4f44-af8c-3af5c42993d4/posts/338ef917-789e-4db7-99e6-b00169fb9326/` will publish a new post, id as `338ef917-789e-4db7-99e6-b00169fb9326`, by using johnny's account.  The field below are all mandatory
 
-```
+```json
 (body)
 {
-    "type": "post",
     "title": "new post",
     "description": "this is a new post",
+    "content": "whatever you wanna write",
     "contentType": "text/markdown", // choose from {text/markdown, text/plain, application/base64, 		
     								// image/png;base64, image/jpeg;base64}
     "categories": "post web_dev", 	// separate categories with space
     "visibility": "PUBLIC", 		// choose from {PUBLIC, FRIENDS, PRIVATE}
     "post_image": null, 			// or an base64 enocoded image
-    "author": "johnny"
 }
 ```
 
+<span style="color:grey">
 
-
-### PUT
+### PUT (N/A)
 
 update an existing post that id is `post_id` and published by `author_id`
 
@@ -253,7 +252,7 @@ update an existing post that id is `post_id` and published by `author_id`
 }
 ```
 
-
+</span>
 
 ### DELETE
 
@@ -365,6 +364,8 @@ retrieve author_id's inbox
 
 
 
+<span style="color:grey">
+
 ### POST (remote) 
 
 
@@ -410,6 +411,8 @@ publish a like on an object, is not able to send the like object into inbox righ
     "author": "johnny"				// "author" have to specify, it could be the same person as author_id
 }
 ```
+
+</span>
 
 
 
