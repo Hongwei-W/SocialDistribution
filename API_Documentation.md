@@ -417,4 +417,4 @@ publish a like on an object, is not able to send the like object into inbox righ
 
 will empty the entire inbox of author_id
 
-*Example:* `POST ://service/authors/wong/inbox` will empty `wong`'s inbox, so there won't be anything in `wong`'s  inbox after this DELETE is executed 
+*Example:* `DELETE ://service/authors/wong/inbox` will empty `wong`'s inbox, so there won't be anything in `wong`'s  inbox after this DELETE is executed 
