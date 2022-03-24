@@ -2,6 +2,8 @@ import uuid
 from django.db import models
 from django.utils.timezone import localtime
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 
 # Create your models here.
@@ -27,16 +29,33 @@ class Authors(models.Model):
     items = models.ManyToManyField(to=Author)
 
 
-# class Followers(models.Model):
-#     type = models.CharField(default='followers', max_length=200)
-#     items = models.ManyToManyField(to=Author)
-
 class Category(models.Model):
     cat = models.CharField(max_length=50)
 
     def __str__(self):
         return self.cat
 
+class Followers(models.Model):
+    type = models.CharField(default='followers', max_length=200)
+    user = models.OneToOneField(to=Author, 
+                                on_delete=models.CASCADE,
+                                related_name='user')
+    items = models.ManyToManyField(to=Author,
+                                related_name='items')
+    def __str__(self):
+	    return self.user.username
+    # def add_friend(self):
+    #     pass
+
+    
+
+class FollowerCount(models.Model):
+    # follower is who logged in now
+    follower = models.CharField(max_length=100)
+    user = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.user
 
 class FriendFollowRequest(models.Model):
     type = models.CharField(default='Follow', max_length=200)
@@ -47,6 +66,19 @@ class FriendFollowRequest(models.Model):
     object = models.ForeignKey(to=Author,
                                on_delete=models.CASCADE,
                                related_name='%(class)s_request_receiver')
+    def __str__(self):
+        return self.actor.username
+    
+    def accept(self):
+        Followers.objects.get(user=self.object).items.add(self.actor)
+        self.delete()
+		# if object_friend_list:
+		# 	object_friend_list.add_friend(self.sender)
+		# 	sender_friend_list = Followers.objects.get(user=self.sender)
+		# 	if sender_friend_list:
+		# 		sender_friend_list.add_friend(self.receiver)
+		# 		self.is_active = False
+		# 		self.save()
 
 
 class Post(models.Model):
@@ -126,13 +158,9 @@ class Liked(models.Model):
 class Inbox(models.Model):
     type = models.CharField(default='inbox', max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    items = models.ManyToManyField(to=Post)
+    # items = models.ManyToManyField(to=Post)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.CharField(max_length=250, null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
 
 
-class FollowerCount(models.Model):
-    # follower is who logged in now
-    follower = models.CharField(max_length=100)
-    user = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.user

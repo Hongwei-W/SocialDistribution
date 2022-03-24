@@ -10,11 +10,11 @@ from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views import View
 from rest_framework.decorators import api_view
 
-from .models import Post, Comment, Inbox, Like
+from .models import Post, Comment, Inbox, Like, Followers
 from .forms import PostForm, CommentForm, ShareForm
 from django.shortcuts import render, get_object_or_404, redirect
 
-from .models import Author, Post, FollowerCount
+from .models import Author, Post, FriendFollowRequest
 from django.views import View
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, auth
@@ -50,7 +50,7 @@ import base64
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
-        posts = Inbox.objects.filter(author__username=request.user.username)[0].items
+        posts = Inbox.objects.get(author__username=request.user.username)
         author_list = Author.objects.all()
         context = {
             'postList': posts,
@@ -104,9 +104,10 @@ class NewPostView(View):
                 newPost.image_b64 = base64.b64encode(img_file.read())
                 # print(newPost.image_b64[:20])
                 newPost.save()
+# to modify
+            Inbox.objects.get(author__username=request.user.username)[0].add(newPost)
 
-            Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
-            followersID = FollowerCount.objects.filter(user=request.user.username)
+            followersID = FriendFollowRequest.objects.filter(object=request.user.username)
             for followerID in followersID:
                 Inbox.objects.filter(author__username=followerID.follower)[0].items.add(newPost)
 
@@ -223,6 +224,7 @@ class SharedPostView(View):
         new_post.author = Author.objects.get(username=request.user.username)
         new_post.id = request.get_host()+ "/authors/" + str(new_post.author.uuid) + "/posts/" + str(new_post.uuid)
         new_post.save()
+        # to modify
         Inbox.objects.filter(author__username=request.user.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=request.user.username)
         for followerID in followersID:
@@ -332,8 +334,8 @@ def liked(request, post_id):
 def profile(request, user_id):
     # get basic info
     current_author_info = get_object_or_404(Author, pk=user_id)
-    follower = request.user.username
-    user = user_id
+    actor = Author.objects.filter(username=request.user.username).first()
+    object = Author.objects.filter(username=user_id).first()
     # get github info
     github_username = current_author_info.github.split("/")[-1]
     # get posts
@@ -342,12 +344,12 @@ def profile(request, user_id):
     except:
         posts = []
     # get follow
-    if FollowerCount.objects.filter(follower=follower, user=user).first():
+    if FriendFollowRequest.objects.filter(actor__username=actor.username, object__username=object.username).first():
         button_text = 'Unfollow'
     else:
         button_text = 'Follow'
-    count_followers = len(FollowerCount.objects.filter(user=user_id))
-    count_following = len(FollowerCount.objects.filter(follower=user_id))
+    count_followers = len(FriendFollowRequest.objects.filter(object__username=user_id))
+    count_following = len(FriendFollowRequest.objects.filter(actor__username=user_id))
     author_list = Author.objects.all()
     context = {
         'current_author_info': current_author_info,
@@ -364,19 +366,62 @@ def profile(request, user_id):
 @login_required(login_url='/accounts/login')
 def follow(request):
     # print("follow is working")
+    payload = {}
     if request.method == 'POST':
-        follower = request.POST['follower']
-        user = request.POST['user']
-        if FollowerCount.objects.filter(follower=follower, user=user).first():
-            delete_follower = FollowerCount.objects.get(follower=follower, user=user)
+        actorName = request.POST['follower']
+        objectName = request.POST['user']
+        # actor = Author.objects.filter(username=actorName).first()
+        # actorName = request.user.username
+        actor = Author.objects.filter(username=actorName).first()
+        # object_id = request.POST.get("receiver_user_id")
+        # print("!!!!!!!!!!!!!!!\n", object_id, "~~~~~~~~~~~~~~~~\n")
+        object = Author.objects.filter(username=objectName).first()
+        # objectName = object.displayName
+        
+        if FriendFollowRequest.objects.filter(actor=actor, object=object):
+            delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
             delete_follower.delete()
-            return redirect('myapp:profile', user_id=user)
-        else:
-            new_follower = FollowerCount.objects.create(follower=follower, user=user)
-            new_follower.save()
-            return redirect('myapp:profile', user_id=user)
-    else:
-        return redirect('/')
+            raise Exception('Friend request canceled') 
+        else:    
+            friendReuquest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+                                                                summary=f'{actorName} wants to follow {objectName}')
+            friendReuquest.save()
+            payload['response'] = 'Friend request sent'
+   
+        if payload['response'] == None:
+            payload['response'] = 'Something went wrong'
+    # return HttpResponse(json.dumps(payload), content_type='application/json')
+        return redirect('myapp:profile', user_id=objectName)
+    #     else:       
+    #         
+    #         return redirect('myapp:profile', user_id=object)
+    # else:
+    #     return redirect('/')
+
+@login_required(login_url='/accounts/login')
+def friendRequests(request):
+    context = {}
+    actorName = request.user.username
+    actor = Author.objects.get(username=actorName)
+    # if actorName == user_id:
+    friendRequests = FriendFollowRequest.objects.filter(object=actor)
+    context['friendRequests'] = friendRequests
+    return render(request, 'friendRequests.html', context)
+
+@login_required(login_url='/accounts/login')
+def acceptFriendRequest(request, actor_id):
+    objectName = request.user.username
+    object = Author.objects.get(username=objectName)
+    actor = Author.objects.get(username=actor_id)
+    print("????????????????\n", actor.username, "~~~~~~~~~~~~~~~~\n")
+    if request.method == 'GET':
+        friendRequest_accept = FriendFollowRequest.objects.get(actor=actor, object=object)
+        if friendRequest_accept:
+        # print("????????????????\n", friendRequest, "~~~~~~~~~~~~~~~~\n")
+        # friendRequest.accept()
+            Followers.objects.create(user=object)
+            # FriendFollowRequest.objects.delete(actor=actor, object=object)
+        
 
 @login_required(login_url='/accounts/login')
 def search(request):
@@ -574,7 +619,7 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
             new_post.save()
         except Exception as e:
             return HttpResponseNotFound(e)
-
+# to modify
         Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=author.username)
 
@@ -621,7 +666,7 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
         new_post.origin = request.get_host()+ "/post/" + str(new_post.uuid)
         new_post.comments = request.get_host()+ "/post/" + str(new_post.uuid)
         new_post.save()
-
+# to modify
         Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
         followersID = FollowerCount.objects.filter(user=author.username)
 
