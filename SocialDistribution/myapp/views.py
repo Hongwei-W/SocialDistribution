@@ -55,7 +55,7 @@ authDict = {
 
 # nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
 # nodeArray = ['http://127.0.0.1:7080/service/']
-localHostList = ['http://127.0.0.1:7080/', 'http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+localHostList = ['http://127.0.0.1:7070/', 'http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
 
 # Create your views here.
 @method_decorator(login_required, name='dispatch')
@@ -74,7 +74,7 @@ class PostListView(View):
         # author.save()
 
         for node in nodeArray:
-            # make get request to other notes /service/authors/            
+            # make get request to other notes /service/authors/
             response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth(authDict[node][0], authDict[node][1]))
             if response.status_code == 200:
                 response_contents = response.json()['items']
@@ -433,7 +433,7 @@ def profile(request, user_id):
 
     # use API calls to get posts
     modifiedNodeArray = nodeArray.copy() # adding our local to node array
-    modifiedNodeArray.append(localURL)
+    # modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
         response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth(authDict[node][0], authDict[node][1]))
         if response.status_code == 200:
@@ -482,9 +482,10 @@ def follow(request):
         # objectName = object.displayName
 
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
-            delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
-            delete_follower.delete()
-            raise Exception('Friend request canceled')
+            pass
+            # delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
+            # delete_follower.delete()
+            # raise Exception('Friend request canceled')
         else:
             # localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://cmput4042ndnetwork.herokuapp.com/']
             if object.host in localHostList:
@@ -499,7 +500,7 @@ def follow(request):
                 print(f'following remote author {object.username}')
                 # if author is not local make post request to add to other user inbox
                 serializer = serializers.FriendFollowRequestSerializer(friendRequest)
-                print(f"{object.host}service/authors/{object.username}/inbox")
+                print(f"{object.host}/service/authors/{object.username}/inbox")
                 print(json.dumps(serializer.data))
 
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
@@ -630,7 +631,7 @@ class AuthorsAPIView(ListAPIView):
     http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
-        serializer = serializers.AuthorSerializer(Author.objects.all(), many=True)
+        serializer = serializers.AuthorSerializer(Author.objects.filter(host="https://"+request.get_host()), many=True)
         return Response({"type": "authors", "items": serializer.data})
 
 
@@ -816,7 +817,7 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
     def list(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
         author = Author.objects.filter(uuid=author_uuid).first()
-        posts = Post.objects.filter(author=author.username, visibility="PUBLIC")
+        posts = Post.objects.filter(author__username=author.username, visibility="PUBLIC")
         serializer = serializers.PostSerializer(posts, many=True)
         return Response({"type": "posts", "items": serializer.data})
 
