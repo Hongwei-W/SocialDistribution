@@ -46,6 +46,12 @@ class Followers(models.Model):
 	    return self.user.username
     # def add_friend(self):
     #     pass
+    def to_dict(self):
+        return {
+            'type': self.type,
+            'users_following': self.items,
+            'user_followed': self.user,
+        }
 
     
 

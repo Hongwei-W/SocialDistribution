@@ -40,6 +40,7 @@ from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpda
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.renderers import JSONRenderer
+from requests.auth import HTTPBasicAuth
 
 import re
 import base64
@@ -134,12 +135,53 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 # to modify
-            Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
+            
+            Inbox.objects.filter(author__username=request.user.username).first().items.add(newPost)
             user = Author.objects.get(username=request.user.username)
-            followersID = Followers.objects.filter(user=user)[0].items.all()
-            for followerID in followersID:
-                print(followerID)
-                Inbox.objects.filter(author__username=followerID.username)[0].items.add(newPost)
+            try: 
+                followersID = Followers.objects.filter(user__username=user.username).first().items.all()
+                for follower in followersID:
+                    # follower is <author> object
+                    #TODO: Remove the localhost urls once in HEROKU
+                    localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+                    if follower.host in localHostList:
+                        # print(f'pushing to local author {follower.username}')
+                        Inbox.objects.filter(author__username=follower.username).first().items.add(newPost)
+                    else:
+                        # print(f'pushing to remote author {follower.username}')
+                        # if author is not local make post request to add to other user inbox
+                        serializer = serializers.PostSerializer(newPost)
+                        # print(f"{follower.host}service/authors/{follower.username}/inbox")
+                        # print(json.dumps(serializer.data))
+                        
+                        ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
+                        req = requests.Request('POST',f"{follower.host}service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                        prepared = req.prepare()
+
+                        s = requests.Session()
+                        resp = s.send(prepared)
+                    
+                        print("status code, ",resp.status_code)
+
+
+                        # if response.status_code == 200:
+                        #     print('Post successfully sent to remote follower')
+                        # else:
+                        #     print(f'Post FAILED to send to remote {follower.host}')
+                        #     print(response)
+
+                            # how the api does it
+                        # Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+                        # followersID = FollowerCount.objects.filter(user=author.username)
+
+                        # for followerID in followersID:
+                        #     Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+                        # serializer = serializers.PostSerializer(new_post)
+                        # return Response(serializer.data)
+            except AttributeError as e:
+                print(e, 'No followers for this author')
+        
+        
         # posts = Post.objects.all()
         # context = {
         #     # 'postList': posts,
@@ -285,14 +327,15 @@ def like(request):
         post.likes += 1
         post.save()
         # return redirect('myapp:postList')
+        # push like object into inbox
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-    else:
-        like_filter.delete()
-        # like_text='Like'
-        post.likes -= 1
-        post.save()
-        # return redirect('myapp:postList')
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    # else:
+    #     like_filter.delete()
+    #     # like_text='Like'
+    #     post.likes -= 1
+    #     post.save()
+    #     # return redirect('myapp:postList')
+    #     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
@@ -432,9 +475,30 @@ def follow(request):
             delete_follower.delete()
             raise Exception('Friend request canceled') 
         else:    
-            friendReuquest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+            localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+            if object.host in localHostList:
+                print("following local users...",object.username)
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
                                                                 summary=f'{actorName} wants to follow {objectName}')
-            friendReuquest.save()
+                friendRequest.save()
+            else:
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+                                                                summary=f'{actorName} wants to follow {objectName}')
+                friendRequest.save()
+                print(f'following remote author {object.username}')
+                # if author is not local make post request to add to other user inbox
+                serializer = serializers.FriendFollowRequestSerializer(friendRequest)
+                print(f"{object.host}service/authors/{object.username}/inbox")
+                print(json.dumps(serializer.data))
+            
+                ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
+                req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                prepared = req.prepare()
+
+                s = requests.Session()
+                resp = s.send(prepared)
+            
+                print("status code, ",resp.status_code)
         return redirect('myapp:profile', user_id=objectName)
     else:
         return redirect('/')
@@ -632,8 +696,6 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
         else:
             return Response({'following_relation_exist': 'False',
                                  'following_relation_delete': 'False'})
-
-# TODO FollowRequest is not complete (after Project 2)
 
 
 class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
@@ -835,78 +897,84 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
     def post(self, request, *args, **kwargs):
         # check if user in url exists
-        current_username = self.kwargs['author']
-        current_user = Author.objects.filter(username=current_username).first()
+        uuid = self.kwargs['author']
+        current_user = Author.objects.filter(uuid=uuid).first()
         if current_user is None:
             return HttpResponseNotFound("author (in url) not exist")
         data = request.data
 
-        try:
+        # try:
             # 1. publish a post
             # don't care if these two have a friend relation, just push the post into its follower's inbox
-            if data["type"] == "post":
-                # check if user in the body (who post the post) exists
-                author = Author.objects.filter(username=data["author"]).first()
-                if author is None:
-                    return HttpResponseNotFound("author (in body) not exist")
+        if data["type"] == "post":
+            # check if user in the body (who post the post) exists
+            author = Author.objects.filter(username=data["author"]).first()
+            if author is None:
+                return HttpResponseNotFound("author (in body) not exist")
 
-                new_post = Post.objects.create(title=data["title"], description=data["description"],
-                                               content=data["content"],
-                                               contentType=data["contentType"], author=author,
-                                               unparsedCategories=data["unparsedCategories"],
-                                               visibility=data["visibility"],
-                                               post_image=data["post_image"])
-                unparsed_cat = new_post.unparsedCategories
-                cat_list = unparsed_cat.split()
-                for cat in cat_list:
-                    new_cat = Category()
-                    new_cat.cat = cat
-                    new_cat.save()
-                    new_post.categories.add(new_cat)
-                    new_post.save()
-
-                try:
-                    new_post.save()
-                except Exception as e:
-                    return HttpResponseNotFound(e)
-                new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(
-                    new_post.uuid)
-                new_post.source = request.get_host() + "/post/" + str(new_post.uuid)
-                new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
-                new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post = Post.objects.create(title=data["title"], description=data["description"],
+                                           content=data["content"],
+                                           contentType=data["contentType"], author=author,
+                                           unparsedCategories=data["unparsedCategories"],
+                                           visibility=data["visibility"],
+                                           post_image=data["post_image"])
+            unparsed_cat = new_post.unparsedCategories
+            cat_list = unparsed_cat.split()
+            for cat in cat_list:
+                new_cat = Category()
+                new_cat.cat = cat
+                new_cat.save()
+                new_post.categories.add(new_cat)
                 new_post.save()
 
-                Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
-                followersID = FollowerCount.objects.filter(user=author.username)
+            try:
+                new_post.save()
+            except Exception as e:
+                return HttpResponseNotFound(e)
+            new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(
+                new_post.uuid)
+            new_post.source = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.save()
 
-                for followerID in followersID:
-                    Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+            followersID = FollowerCount.objects.filter(user=author.username)
 
-                serializer = serializers.PostSerializer(new_post)
-                return Response(serializer.data)
-            # TODO 2. friend request
-            elif data["type"] == "friend_request":
-                pass
+            for followerID in followersID:
+                Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
 
-            elif data["type"] == "like":
-                # check if post in the body (the post that user gives a like) exists
-                post = Post.objects.filter(uuid=data["object"]).first()
-                if post is None:
-                    return HttpResponseNotFound("post not exist")
-                like_before = Like.objects.filter(author=current_user, object=post).first()
-                if like_before is not None:
-                    return HttpResponseNotFound("user has given a like before")
-                new_like = Like.objects.create(author=current_user, object=post)
-                new_like.save()
-                post.likes += 1
-                post.save()
-                # TODO like could be comments/posts
-                serializer = serializers.LikeSerializer(new_like)
-                # TODO push into inbox
-                return Response(serializer.data)
+            serializer = serializers.PostSerializer(new_post)
+            return Response(serializer.data)
 
-        except Exception as e:
-            return HttpResponseNotFound(e)
+        elif data["type"].lower() == "follow":
+            remote_author = Author.objects.filter(id=data['actor']['id']).first()
+            our_author = Author.objects.filter(username=data['object']['displayName']).first()
+            friend_request = FriendFollowRequest.objects.create(summary=data["summary"], actor=remote_author, object=our_author)
+            friend_request.save()
+
+            serializer = serializers.FriendFollowRequestSerializer(friend_request)
+            return Response(serializer.data)
+
+        elif data["type"] == "like":
+            # check if post in the body (the post that user gives a like) exists
+            post = Post.objects.filter(uuid=data["object"]).first()
+            if post is None:
+                return HttpResponseNotFound("post not exist")
+            like_before = Like.objects.filter(author=current_user, object=post).first()
+            if like_before is not None:
+                return HttpResponseNotFound("user has given a like before")
+            new_like = Like.objects.create(author=current_user, object=post)
+            new_like.save()
+            post.likes += 1
+            post.save()
+            # TODO like could be comments/posts
+            serializer = serializers.LikeSerializer(new_like)
+            # TODO push into inbox
+            return Response(serializer.data)
+
+        # except Exception as e:
+        #     return HttpResponseNotFound(e)
 
     def delete(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
