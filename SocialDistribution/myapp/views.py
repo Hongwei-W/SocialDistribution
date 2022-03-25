@@ -50,7 +50,7 @@ import base64
 class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
-        posts = Inbox.objects.get(author__username=request.user.username)
+        posts = Inbox.objects.filter(author__username=request.user.username)[0].items
         author_list = Author.objects.all()
         context = {
             'postList': posts,
@@ -105,16 +105,18 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 # to modify
-            Inbox.objects.get(author__username=request.user.username)[0].add(newPost)
-
-            followersID = FriendFollowRequest.objects.filter(object=request.user.username)
+            Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
+            breakpoint()
+            user = Author.objects.get(username=request.user.username)
+            followersID = Followers.objects.filter(user=user).all()
             for followerID in followersID:
-                Inbox.objects.filter(author__username=followerID.follower)[0].items.add(newPost)
-
+                print(followerID)
+                Inbox.objects.filter(author__username=followerID.user.username)[0].items.add(newPost)
         # posts = Post.objects.all()
         # context = {
-        #     'postList': posts,
-        #     # 'form': form,
+        #     # 'postList': posts,
+        #     'form': form,
+        #     'new_post': newPost 
         # }
         # return render(request,'myapp/newpost.html', context)
         return redirect('myapp:postList')
@@ -226,9 +228,10 @@ class SharedPostView(View):
         new_post.save()
         # to modify
         Inbox.objects.filter(author__username=request.user.username)[0].items.add(new_post)
-        followersID = FollowerCount.objects.filter(user=request.user.username)
-        for followerID in followersID:
-            Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+        followers = Followers.objects.get(user=object).items
+        # followersID = FollowerCount.objects.filter(user=request.user.username)
+        # for followerID in followersID:
+        #     Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
         context = {
             'new_post': new_post,
             # 'source_post': source_post,
@@ -366,7 +369,7 @@ def profile(request, user_id):
 @login_required(login_url='/accounts/login')
 def follow(request):
     # print("follow is working")
-    payload = {}
+    # payload = {}
     if request.method == 'POST':
         actorName = request.POST['follower']
         objectName = request.POST['user']
@@ -374,7 +377,6 @@ def follow(request):
         # actorName = request.user.username
         actor = Author.objects.filter(username=actorName).first()
         # object_id = request.POST.get("receiver_user_id")
-        # print("!!!!!!!!!!!!!!!\n", object_id, "~~~~~~~~~~~~~~~~\n")
         object = Author.objects.filter(username=objectName).first()
         # objectName = object.displayName
         
@@ -386,24 +388,23 @@ def follow(request):
             friendReuquest = FriendFollowRequest.objects.create(actor=actor, object=object, 
                                                                 summary=f'{actorName} wants to follow {objectName}')
             friendReuquest.save()
-            payload['response'] = 'Friend request sent'
-   
-        if payload['response'] == None:
-            payload['response'] = 'Something went wrong'
-    # return HttpResponse(json.dumps(payload), content_type='application/json')
         return redirect('myapp:profile', user_id=objectName)
+    else:
+        return redirect('/')
+        #     payload['response'] = 'Friend request sent'
+        # if payload['response'] == None:
+        #     payload['response'] = 'Something went wrong'
+    # return HttpResponse(json.dumps(payload), content_type='application/json')
     #     else:       
     #         
     #         return redirect('myapp:profile', user_id=object)
-    # else:
-    #     return redirect('/')
+    
 
 @login_required(login_url='/accounts/login')
 def friendRequests(request):
     context = {}
     actorName = request.user.username
     actor = Author.objects.get(username=actorName)
-    # if actorName == user_id:
     friendRequests = FriendFollowRequest.objects.filter(object=actor)
     context['friendRequests'] = friendRequests
     return render(request, 'friendRequests.html', context)
@@ -413,14 +414,15 @@ def acceptFriendRequest(request, actor_id):
     objectName = request.user.username
     object = Author.objects.get(username=objectName)
     actor = Author.objects.get(username=actor_id)
-    print("????????????????\n", actor.username, "~~~~~~~~~~~~~~~~\n")
     if request.method == 'GET':
         friendRequest_accept = FriendFollowRequest.objects.get(actor=actor, object=object)
         if friendRequest_accept:
-        # print("????????????????\n", friendRequest, "~~~~~~~~~~~~~~~~\n")
-        # friendRequest.accept()
-            Followers.objects.create(user=object)
-            # FriendFollowRequest.objects.delete(actor=actor, object=object)
+            if Followers.objects.filter(user=object):
+                Followers.objects.get(user=object).items.add(actor)
+            else:
+                Followers.objects.create(user=object)
+                Followers.objects.get(user=object).items.add(actor)  
+            return render(request, 'feed.html')
         
 
 @login_required(login_url='/accounts/login')

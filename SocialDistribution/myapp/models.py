@@ -41,7 +41,7 @@ class Followers(models.Model):
                                 on_delete=models.CASCADE,
                                 related_name='user')
     items = models.ManyToManyField(to=Author,
-                                related_name='items')
+                                related_name='items', blank=True)
     def __str__(self):
 	    return self.user.username
     # def add_friend(self):
@@ -50,9 +50,9 @@ class Followers(models.Model):
     
 
 class FollowerCount(models.Model):
-    # follower is who logged in now
+    # follower is who logged in now # user.usernamr
     follower = models.CharField(max_length=100)
-    user = models.CharField(max_length=100)
+    user = models.CharField(max_length=100) 
 
     def __str__(self):
         return self.user
@@ -158,9 +158,9 @@ class Liked(models.Model):
 class Inbox(models.Model):
     type = models.CharField(default='inbox', max_length=200)
     author = models.ForeignKey(to=Author, on_delete=models.CASCADE)
-    # items = models.ManyToManyField(to=Post)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
-    object_id = models.CharField(max_length=250, null=True)
-    content_object = GenericForeignKey('content_type', 'object_id')
+    items = models.ManyToManyField(to=Post)
+    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    # object_id = models.CharField(max_length=250, null=True)
+    # content_object = GenericForeignKey('content_type', 'object_id')
 
 

@@ -21,7 +21,7 @@
                 {% for friendRequest in friendRequests%}
                     <div class="singlePost position-relative">
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->
-                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 18px;">{{riendRequest.summary}}</div>
+                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 18px;">{{friendRequest.summary}}</div>
                             <form action="{% url 'myapp:acceptFriendRequest' friendRequest.actor.username %}">
                                 <button type="submit" id="follow_request_button">Accept</button>
                             </form>
