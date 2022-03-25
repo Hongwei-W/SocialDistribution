@@ -75,7 +75,7 @@ class PostListView(View):
 
         for node in nodeArray:
             # make get request to other notes /service/authors/            
-            response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth(node, authDict[node]))
+            response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth(authDict[node][0], authDict[node][1]))
             if response.status_code == 200:
                 response_contents = response.json()['items']
                 for author in response_contents:
@@ -166,7 +166,7 @@ class NewPostView(View):
 
                         ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                         authDictKey = follower.host+"/service/"
-                        req = requests.Request('POST', f"{follower.host}/service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDictKey, authDict[authDictKey]), headers={'Content-Type': 'application/json'})
+                        req = requests.Request('POST', f"{follower.host}/service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDict[authDictKey][0], authDict[authDictKey][1]), headers={'Content-Type': 'application/json'})
                         prepared = req.prepare()
 
                         s = requests.Session()
@@ -435,7 +435,7 @@ def profile(request, user_id):
     modifiedNodeArray = nodeArray.copy() # adding our local to node array
     modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
-        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth(node, authDict[node]))
+        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth(authDict[node][0], authDict[node][1]))
         if response.status_code == 200:
             response_contents = response.json()['items']
             posts = response_contents
@@ -505,7 +505,7 @@ def follow(request):
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
                 authDictKey = object.host+"/service/"
-                req = requests.Request('POST',f"{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDictKey, authDict[authDictKey]), headers={'Content-Type': 'application/json'})
+                req = requests.Request('POST',f"{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDict[authDictKey][0], authDict[authDictKey][1]), headers={'Content-Type': 'application/json'})
                 prepared = req.prepare()
 
                 s = requests.Session()
