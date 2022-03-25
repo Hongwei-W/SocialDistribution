@@ -77,9 +77,16 @@ class PostListView(View):
                         github=author['github'],
                         profileImage=author['profileImage'])
                     remote_author.save()
+                    # for test case
+                    current_author_original_uuid = remote_author.id.split('/')[-1]
+                    foreign_post_response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
+                    # response_contents = foreign_post_response.json()['items']
+                    # foreign_posts = response_contents  
+                    # print('foreigh posts:', foreign_posts)          
             else:
                 print("FAILURE")
             print(response)
+        
 
         author_list = Author.objects.all()
         context = {
@@ -120,7 +127,6 @@ class NewPostView(View):
                 newCat.save()
                 newPost.categories.add(newCat)
                 newPost.save()
-
 
             if newPost.type == 'post':
                 newPost.source = request.get_host()+ "/post/" + str(newPost.uuid)
@@ -318,17 +324,52 @@ def like(request):
     post_id = request.GET.get('post_id')
     post = Post.objects.get(uuid=post_id)
     summary = username + ' Likes your post'
-    like_filter = Like.objects.filter(object=post, author=author).first()
-    if like_filter == None:
-        print(post, author)
-        new_like = Like.objects.create(author=author, object=post)
-        new_like.save()
-        # like_text = 'Liked'
-        post.likes += 1
-        post.save()
-        # return redirect('myapp:postList')
-        # push like object into inbox
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+    if post.author.host in localHostList:
+        print("liking local posts...",object.username)
+        like_filter = Like.objects.filter(object=post, author=author).first()
+        if like_filter == None:
+            print(post, author)
+            new_like = Like.objects.create(author=author, object=post)
+            new_like.save()
+            # like_text = 'Liked'
+            post.likes += 1
+            post.save()
+            # push like object into inbox
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    else:
+        print("liking local posts...",post.author.username)
+        like_filter = Like.objects.filter(object=post, author=author).first()
+        if like_filter == None:
+            print(post, author)
+            new_like = Like.objects.create(author=author, object=post)
+            new_like.save()
+            # like_text = 'Liked'
+            post.likes += 1
+            post.save()
+        print(f'liking remote post {post.author.username}')
+        # if author is not local make post request to add to other user inbox
+        serializer = serializers.LikesSerializer(new_like)
+        print(f"{post.author.host}service/authors/{post.author.username}/inbox")
+        print(json.dumps(serializer.data))
+            
+        ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
+        # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+        req = requests.Request('POST',f"http://{post.author.host}/service/authors/{post.author.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+        prepared = req.prepare()
+
+        s = requests.Session()
+        resp = s.send(prepared)
+    # like_filter = Like.objects.filter(object=post, author=author).first()
+    # if like_filter == None:
+    #     print(post, author)
+    #     new_like = Like.objects.create(author=author, object=post)
+    #     new_like.save()
+    #     # like_text = 'Liked'
+    #     post.likes += 1
+    #     post.save()
+    #     # push like object into inbox
+    #     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     # else:
     #     like_filter.delete()
     #     # like_text='Like'
@@ -386,7 +427,7 @@ class ShareDetailView(View):
             'likes': likes,
             'likes_count': likes_count,
             # 'source_post': source_post,
-            'original_post': original_post,
+            # 'original_post': original_post,
 
         }
 
@@ -421,8 +462,8 @@ def profile(request, user_id):
     current_author_original_uuid = current_author_info.id.split('/')[-1]
 
     # use API calls to get posts
-    modifiedNodeArray = nodeArray # adding our local to node array
-    # modifiedNodeArray.append(localURL)
+    modifiedNodeArray = nodeArray.copy() # adding our local to node array
+    modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
         response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
         if response.status_code == 200:
