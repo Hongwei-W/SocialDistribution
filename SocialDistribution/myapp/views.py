@@ -135,12 +135,11 @@ class NewPostView(View):
                 newPost.save()
 # to modify
             Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
-            breakpoint()
             user = Author.objects.get(username=request.user.username)
-            followersID = Followers.objects.filter(user=user).all()
+            followersID = Followers.objects.filter(user=user)[0].items.all()
             for followerID in followersID:
                 print(followerID)
-                Inbox.objects.filter(author__username=followerID.user.username)[0].items.add(newPost)
+                Inbox.objects.filter(author__username=followerID.username)[0].items.add(newPost)
         # posts = Post.objects.all()
         # context = {
         #     # 'postList': posts,
@@ -380,7 +379,7 @@ def profile(request, user_id):
 
     # use API calls to get posts
     modifiedNodeArray = nodeArray # adding our local to node array
-    modifiedNodeArray.append(localURL)
+    # modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
         response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
         if response.status_code == 200:
@@ -392,25 +391,21 @@ def profile(request, user_id):
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
-
-    # # get posts
-    # try:
-    #     posts = Post.objects.filter(author__username=user_id).order_by('-published')
-    # except:
-    #     posts = []
     # get follow
     if FriendFollowRequest.objects.filter(actor__username=actor.username, object__username=object.username).first():
-        button_text = 'Unfollow'
+        button_text = 'Friend Request Sent'
     else:
-        button_text = 'Follow'
-    count_followers = len(FriendFollowRequest.objects.filter(object__username=user_id))
-    count_following = len(FriendFollowRequest.objects.filter(actor__username=user_id))
+        button_text = 'Send Friend Request'
+    user = Author.objects.get(username=user_id)
+    try:
+        count_followers = len(Followers.objects.filter(user=user)[0].items.all())
+    except:
+        count_followers = 0
     author_list = Author.objects.all()
     context = {
         'current_author_info': current_author_info,
         'button_text': button_text,
         'count_followers': count_followers,
-        'count_following': count_following,
         'github_username': github_username,
         'posts': posts,
         'author_list': author_list,

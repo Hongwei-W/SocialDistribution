@@ -13,6 +13,7 @@
         #follow_request_button {
             background-color: #ffc0cb; 
             border: #ffc0cb;
+            margin-left: 10%;
         }
     </style>
 
@@ -30,8 +31,7 @@
                     <div class="userInfo">name: {{ current_author_info.displayName }}</div>
                     <!-- <button class="followerButton">Follower</button> -->
                     <!-- <a href="#" class="followButton">Follower</a> -->
-                    <span class="userInfo" style="padding: left;"><b>{{ count_following }}  Following</b></span>
-                    <span class="userInfo" style="padding: 50px;"><b>{{ count_followers }}  Followers</b></span>
+                    <span class="userInfo" style="padding: left;"><b>{{ count_followers }}  Followers</b></span>
                     <input type="hidden" value="{{ user.username }}" name="follower"/>
                     <input type="hidden" value="{{ current_author_info.username }}" name="user"/>
                     {% if current_author_info.username == user.username %}
