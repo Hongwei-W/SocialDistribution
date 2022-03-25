@@ -26,11 +26,12 @@ class FollowersSerializer(ModelSerializer):
         fields = '__all__'
 
 
-# class FriendFollowRequestSerializer(ModelSerializer):
-#
-#     class Meta:
-#         model = models.FriendFollowRequest
-#         fields = '__all__'
+class FriendFollowRequestSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.FriendFollowRequest
+        fields = '__all__'
+        depth = 1
 
 
 class PostSerializer(ModelSerializer):

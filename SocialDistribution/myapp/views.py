@@ -638,8 +638,6 @@ class FollowerAPIView(RetrieveUpdateDestroyAPIView):
             return Response({'following_relation_exist': 'False',
                                  'following_relation_delete': 'False'})
 
-# TODO FollowRequest is not complete (after Project 2)
-
 
 class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
     """ GET POST PUT DELETE a post"""
@@ -840,78 +838,84 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
     def post(self, request, *args, **kwargs):
         # check if user in url exists
-        current_username = self.kwargs['author']
-        current_user = Author.objects.filter(username=current_username).first()
+        uuid = self.kwargs['author']
+        current_user = Author.objects.filter(uuid=uuid).first()
         if current_user is None:
             return HttpResponseNotFound("author (in url) not exist")
         data = request.data
 
-        try:
+        # try:
             # 1. publish a post
             # don't care if these two have a friend relation, just push the post into its follower's inbox
-            if data["type"] == "post":
-                # check if user in the body (who post the post) exists
-                author = Author.objects.filter(username=data["author"]).first()
-                if author is None:
-                    return HttpResponseNotFound("author (in body) not exist")
+        if data["type"] == "post":
+            # check if user in the body (who post the post) exists
+            author = Author.objects.filter(username=data["author"]).first()
+            if author is None:
+                return HttpResponseNotFound("author (in body) not exist")
 
-                new_post = Post.objects.create(title=data["title"], description=data["description"],
-                                               content=data["content"],
-                                               contentType=data["contentType"], author=author,
-                                               unparsedCategories=data["unparsedCategories"],
-                                               visibility=data["visibility"],
-                                               post_image=data["post_image"])
-                unparsed_cat = new_post.unparsedCategories
-                cat_list = unparsed_cat.split()
-                for cat in cat_list:
-                    new_cat = Category()
-                    new_cat.cat = cat
-                    new_cat.save()
-                    new_post.categories.add(new_cat)
-                    new_post.save()
-
-                try:
-                    new_post.save()
-                except Exception as e:
-                    return HttpResponseNotFound(e)
-                new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(
-                    new_post.uuid)
-                new_post.source = request.get_host() + "/post/" + str(new_post.uuid)
-                new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
-                new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post = Post.objects.create(title=data["title"], description=data["description"],
+                                           content=data["content"],
+                                           contentType=data["contentType"], author=author,
+                                           unparsedCategories=data["unparsedCategories"],
+                                           visibility=data["visibility"],
+                                           post_image=data["post_image"])
+            unparsed_cat = new_post.unparsedCategories
+            cat_list = unparsed_cat.split()
+            for cat in cat_list:
+                new_cat = Category()
+                new_cat.cat = cat
+                new_cat.save()
+                new_post.categories.add(new_cat)
                 new_post.save()
 
-                Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
-                followersID = FollowerCount.objects.filter(user=author.username)
+            try:
+                new_post.save()
+            except Exception as e:
+                return HttpResponseNotFound(e)
+            new_post.id = request.get_host() + "/authors/" + str(new_post.author.uuid) + "/posts/" + str(
+                new_post.uuid)
+            new_post.source = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
+            new_post.save()
 
-                for followerID in followersID:
-                    Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+            followersID = FollowerCount.objects.filter(user=author.username)
 
-                serializer = serializers.PostSerializer(new_post)
-                return Response(serializer.data)
-            # TODO 2. friend request
-            elif data["type"] == "friend_request":
-                pass
+            for followerID in followersID:
+                Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
 
-            elif data["type"] == "like":
-                # check if post in the body (the post that user gives a like) exists
-                post = Post.objects.filter(uuid=data["object"]).first()
-                if post is None:
-                    return HttpResponseNotFound("post not exist")
-                like_before = Like.objects.filter(author=current_user, object=post).first()
-                if like_before is not None:
-                    return HttpResponseNotFound("user has given a like before")
-                new_like = Like.objects.create(author=current_user, object=post)
-                new_like.save()
-                post.likes += 1
-                post.save()
-                # TODO like could be comments/posts
-                serializer = serializers.LikeSerializer(new_like)
-                # TODO push into inbox
-                return Response(serializer.data)
+            serializer = serializers.PostSerializer(new_post)
+            return Response(serializer.data)
 
-        except Exception as e:
-            return HttpResponseNotFound(e)
+        elif data["type"].lower() == "follow":
+            remote_author = Author.objects.filter(id=data['actor']['id']).first()
+            our_author = Author.objects.filter(username=data['object']['displayName']).first()
+            friend_request = FriendFollowRequest.objects.create(summary=data["summary"], actor=remote_author, object=our_author)
+            friend_request.save()
+
+            serializer = serializers.FriendFollowRequestSerializer(friend_request)
+            return Response(serializer.data)
+
+        elif data["type"] == "like":
+            # check if post in the body (the post that user gives a like) exists
+            post = Post.objects.filter(uuid=data["object"]).first()
+            if post is None:
+                return HttpResponseNotFound("post not exist")
+            like_before = Like.objects.filter(author=current_user, object=post).first()
+            if like_before is not None:
+                return HttpResponseNotFound("user has given a like before")
+            new_like = Like.objects.create(author=current_user, object=post)
+            new_like.save()
+            post.likes += 1
+            post.save()
+            # TODO like could be comments/posts
+            serializer = serializers.LikeSerializer(new_like)
+            # TODO push into inbox
+            return Response(serializer.data)
+
+        # except Exception as e:
+        #     return HttpResponseNotFound(e)
 
     def delete(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
