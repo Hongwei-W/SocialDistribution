@@ -40,6 +40,7 @@ from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpda
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.renderers import JSONRenderer
+from requests.auth import HTTPBasicAuth
 
 import re
 import base64
@@ -134,13 +135,45 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 # to modify
-            Inbox.objects.filter(author__username=request.user.username)[0].items.add(newPost)
-            breakpoint()
+            
+            Inbox.objects.filter(author__username=request.user.username).first().items.add(newPost)
             user = Author.objects.get(username=request.user.username)
-            followersID = Followers.objects.filter(user=user).all()
-            for followerID in followersID:
-                print(followerID)
-                Inbox.objects.filter(author__username=followerID.user.username)[0].items.add(newPost)
+            try: 
+                followersID = Followers.objects.filter(user__username=user.username).first().items.all()
+                for follower in followersID:
+                    # follower is <author> object
+                    #TODO: Remove the localhost urls once in HEROKU
+                    localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+                    if follower.host in localHostList:
+                        print(f'pushing to local author {follower.username}')
+                        Inbox.objects.filter(author__username=follower.username).first().items.add(newPost)
+                    else:
+                        print(f'pushing to remote author {follower.username}')
+                        # if author is not local make post request to add to other user inbox
+                        serializer = serializers.PostSerializer(newPost)
+                        print(json.dumps(serializer.data))
+                        print("URL", f"{follower.id}/inbox")
+                        # username, password = nodeArray['url']
+                        # response = requests.post(f"{follower.host}service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                        response = requests.post(f"127.0.0.1:7000/service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                        if response.status_code == 200:
+                            print('Post successfully sent to remote follower')
+                        else:
+                            print(f'Post FAILED to send to remote {follower.host}')
+                            print(response)
+
+                            # how the api does it
+                        # Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
+                        # followersID = FollowerCount.objects.filter(user=author.username)
+
+                        # for followerID in followersID:
+                        #     Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+                        # serializer = serializers.PostSerializer(new_post)
+                        # return Response(serializer.data)
+            except AttributeError as e:
+                print(e, 'No followers for this author')
+        
+        
         # posts = Post.objects.all()
         # context = {
         #     # 'postList': posts,
@@ -380,7 +413,7 @@ def profile(request, user_id):
 
     # use API calls to get posts
     modifiedNodeArray = nodeArray # adding our local to node array
-    modifiedNodeArray.append(localURL)
+    # modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
         response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
         if response.status_code == 200:
