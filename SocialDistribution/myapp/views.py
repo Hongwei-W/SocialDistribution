@@ -81,16 +81,9 @@ class PostListView(View):
                         github=author['github'],
                         profileImage=author['profileImage'])
                     remote_author.save()
-                    # for test case
-                    current_author_original_uuid = remote_author.id.split('/')[-1]
-                    foreign_post_response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
-                    # response_contents = foreign_post_response.json()['items']
-                    # foreign_posts = response_contents  
-                    # print('foreigh posts:', foreign_posts)          
             else:
                 print("FAILURE")
             print(response)
-        
 
         author_list = Author.objects.all()
         context = {
@@ -145,7 +138,7 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 # to modify
-            
+
             Inbox.objects.filter(author__username=request.user.username).first().items.add(newPost)
             user = Author.objects.get(username=request.user.username)
             try:
