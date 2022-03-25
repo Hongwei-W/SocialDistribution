@@ -42,16 +42,18 @@ class Followers(models.Model):
                                 related_name='user')
     items = models.ManyToManyField(to=Author,
                                 related_name='items', blank=True)
-    def __str__(self):
-	    return self.user.username
-    # def add_friend(self):
-    #     pass
     def to_dict(self):
         return {
             'type': self.type,
             'users_following': self.items,
             'user_followed': self.user,
         }
+
+    def __str__(self):
+	    return self.user.username
+    # def add_friend(self):
+    #     pass
+    
 
     
 
