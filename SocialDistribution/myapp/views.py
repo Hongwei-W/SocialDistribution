@@ -151,16 +151,47 @@ class NewPostView(View):
                         print(f'pushing to remote author {follower.username}')
                         # if author is not local make post request to add to other user inbox
                         serializer = serializers.PostSerializer(newPost)
+                        print(f"{follower.host}service/authors/{follower.username}/inbox")
                         print(json.dumps(serializer.data))
-                        print("URL", f"{follower.id}/inbox")
+                        # print(HTTPBasicAuth('proxy','proxy123!'))
                         # username, password = nodeArray['url']
-                        # response = requests.post(f"{follower.host}service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                        response = requests.post(f"127.0.0.1:7000/service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                        if response.status_code == 200:
-                            print('Post successfully sent to remote follower')
-                        else:
-                            print(f'Post FAILED to send to remote {follower.host}')
-                            print(response)
+                        # response = requests.post(f"{follower.host}service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'))
+                        # response = requests.post(f"127.0.0.1:7000/service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+
+                        ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
+                        req = requests.Request('POST',f"{follower.host}service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                        prepared = req.prepare()
+
+                        # def pretty_print_POST(req):
+                        #     """
+                        #     At this point it is completely built and ready
+                        #     to be fired; it is "prepared".
+
+                        #     However pay attention at the formatting used in 
+                        #     this function because it is programmed to be pretty 
+                        #     printed and may differ from the actual request.
+                        #     """
+                        #     print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+                        #         '-----------START-----------',
+                        #         req.method + ' ' + req.url,
+                        #         '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+                        #         req.body,
+                        #     ))
+
+                        # pretty_print_POST(prepared)
+
+                        ####
+                        s = requests.Session()
+                        resp = s.send(prepared)
+                    
+                        print("status code, ",resp.status_code)
+
+
+                        # if response.status_code == 200:
+                        #     print('Post successfully sent to remote follower')
+                        # else:
+                        #     print(f'Post FAILED to send to remote {follower.host}')
+                        #     print(response)
 
                             # how the api does it
                         # Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
