@@ -145,42 +145,19 @@ class NewPostView(View):
                     #TODO: Remove the localhost urls once in HEROKU
                     localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
                     if follower.host in localHostList:
-                        print(f'pushing to local author {follower.username}')
+                        # print(f'pushing to local author {follower.username}')
                         Inbox.objects.filter(author__username=follower.username).first().items.add(newPost)
                     else:
-                        print(f'pushing to remote author {follower.username}')
+                        # print(f'pushing to remote author {follower.username}')
                         # if author is not local make post request to add to other user inbox
                         serializer = serializers.PostSerializer(newPost)
-                        print(f"{follower.host}service/authors/{follower.username}/inbox")
-                        print(json.dumps(serializer.data))
-                        # print(HTTPBasicAuth('proxy','proxy123!'))
-                        # username, password = nodeArray['url']
-                        # response = requests.post(f"{follower.host}service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'))
-                        # response = requests.post(f"127.0.0.1:7000/service/authors/{follower.username}/inbox", json=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-
+                        # print(f"{follower.host}service/authors/{follower.username}/inbox")
+                        # print(json.dumps(serializer.data))
+                        
                         ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                         req = requests.Request('POST',f"{follower.host}service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
                         prepared = req.prepare()
 
-                        # def pretty_print_POST(req):
-                        #     """
-                        #     At this point it is completely built and ready
-                        #     to be fired; it is "prepared".
-
-                        #     However pay attention at the formatting used in 
-                        #     this function because it is programmed to be pretty 
-                        #     printed and may differ from the actual request.
-                        #     """
-                        #     print('{}\n{}\r\n{}\r\n\r\n{}'.format(
-                        #         '-----------START-----------',
-                        #         req.method + ' ' + req.url,
-                        #         '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
-                        #         req.body,
-                        #     ))
-
-                        # pretty_print_POST(prepared)
-
-                        ####
                         s = requests.Session()
                         resp = s.send(prepared)
                     
@@ -350,14 +327,15 @@ def like(request):
         post.likes += 1
         post.save()
         # return redirect('myapp:postList')
+        # push like object into inbox
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-    else:
-        like_filter.delete()
-        # like_text='Like'
-        post.likes -= 1
-        post.save()
-        # return redirect('myapp:postList')
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    # else:
+    #     like_filter.delete()
+    #     # like_text='Like'
+    #     post.likes -= 1
+    #     post.save()
+    #     # return redirect('myapp:postList')
+    #     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
@@ -501,9 +479,30 @@ def follow(request):
             delete_follower.delete()
             raise Exception('Friend request canceled') 
         else:    
-            friendReuquest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+            localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+            if object.host in localHostList:
+                print("following local users...",object.username)
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
                                                                 summary=f'{actorName} wants to follow {objectName}')
-            friendReuquest.save()
+                friendRequest.save()
+            else:
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+                                                                summary=f'{actorName} wants to follow {objectName}')
+                friendRequest.save()
+                print(f'following remote author {object.username}')
+                # if author is not local make post request to add to other user inbox
+                serializer = serializers.FriendFollowRequestSerializer(friendRequest)
+                print(f"{object.host}service/authors/{object.username}/inbox")
+                print(json.dumps(serializer.data))
+            
+                ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
+                req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                prepared = req.prepare()
+
+                s = requests.Session()
+                resp = s.send(prepared)
+            
+                print("status code, ",resp.status_code)
         return redirect('myapp:profile', user_id=objectName)
     else:
         return redirect('/')

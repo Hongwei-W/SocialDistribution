@@ -30,7 +30,8 @@ class FriendFollowRequestSerializer(ModelSerializer):
 
     class Meta:
         model = models.FriendFollowRequest
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ("type","summary","actor","object")
         depth = 1
 
 
