@@ -45,8 +45,10 @@ from requests.auth import HTTPBasicAuth
 import re
 import base64
 
-nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/', 'https://cmput4042ndnetwork.herokuapp.com/service/']
+# nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/', 'https://cmput4042ndnetwork.herokuapp.com/service/']
 # nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
+nodeArray = ['http://127.0.0.1:7080/service/']
+localHostList = ['http://127.0.0.1:7080/', 'http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
 
 # Create your views here.
 @method_decorator(login_required, name='dispatch')
@@ -66,12 +68,14 @@ class PostListView(View):
 
         for node in nodeArray:
             # make get request to other notes /service/authors/
-            response = requests.get(f"{node}authors/", params=request.GET)
+            response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth('admin', 'admin'))
             if response.status_code == 200:
                 response_contents = response.json()['items']
                 for author in response_contents:
+                    if Author.objects.filter(id=author['id']).exists():
+                        continue
                     remote_author = Author(id=author['id'],
-                        username = author['id'].split("/")[-1],  # username = remote_author.uuid
+                        username=author['id'].split("/")[-1],  # username = remote_author.uuid
                         displayName=author['displayName'],
                         host=author['host'],
                         github=author['github'],
@@ -144,12 +148,12 @@ class NewPostView(View):
             
             Inbox.objects.filter(author__username=request.user.username).first().items.add(newPost)
             user = Author.objects.get(username=request.user.username)
-            try: 
+            try:
                 followersID = Followers.objects.filter(user__username=user.username).first().items.all()
                 for follower in followersID:
                     # follower is <author> object
                     #TODO: Remove the localhost urls once in HEROKU
-                    localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+                    # localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://cmput4042ndnetwork.herokuapp.com/']
                     if follower.host in localHostList:
                         # print(f'pushing to local author {follower.username}')
                         Inbox.objects.filter(author__username=follower.username).first().items.add(newPost)
@@ -159,14 +163,14 @@ class NewPostView(View):
                         serializer = serializers.PostSerializer(newPost)
                         # print(f"{follower.host}service/authors/{follower.username}/inbox")
                         # print(json.dumps(serializer.data))
-                        
+
                         ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
-                        req = requests.Request('POST',f"{follower.host}service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                        req = requests.Request('POST', f"{follower.host}/service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('admin', 'admin'), headers={'Content-Type': 'application/json'})
                         prepared = req.prepare()
 
                         s = requests.Session()
                         resp = s.send(prepared)
-                    
+
                         print("status code, ",resp.status_code)
 
 
@@ -186,8 +190,7 @@ class NewPostView(View):
                         # return Response(serializer.data)
             except AttributeError as e:
                 print(e, 'No followers for this author')
-        
-        
+
         # posts = Post.objects.all()
         # context = {
         #     # 'postList': posts,
@@ -285,7 +288,7 @@ class SharedPostView(View):
         original_post_id = source_post.origin.split('/')[-1]
         original_post = Post.objects.get(uuid=original_post_id)
         form = ShareForm(request.POST)
-        
+
         if form.is_valid():
             new_post = Post(
             type = 'share',
@@ -296,7 +299,7 @@ class SharedPostView(View):
             content = Post.objects.get(pk=pk).content,
             contentType = 'text',
             author = Author.objects.get(username=request.user.username),
-            visibility = original_post.visibility, 
+            visibility = original_post.visibility,
             )
         new_post.save()
         new_post.author = Author.objects.get(username=request.user.username)
@@ -324,65 +327,31 @@ def like(request):
     post_id = request.GET.get('post_id')
     post = Post.objects.get(uuid=post_id)
     summary = username + ' Likes your post'
-    localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
-    if post.author.host in localHostList:
-        print("liking local posts...",object.username)
-        like_filter = Like.objects.filter(object=post, author=author).first()
-        if like_filter == None:
-            print(post, author)
-            new_like = Like.objects.create(author=author, object=post)
-            new_like.save()
-            # like_text = 'Liked'
-            post.likes += 1
-            post.save()
-            # push like object into inbox
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    like_filter = Like.objects.filter(object=post, author=author).first()
+    if like_filter == None:
+        print(post, author)
+        new_like = Like.objects.create(author=author, object=post)
+        new_like.save()
+        # like_text = 'Liked'
+        post.likes += 1
+        post.save()
+        # return redirect('myapp:postList')
+        # push like object into inbox
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     else:
-        print("liking local posts...",post.author.username)
-        like_filter = Like.objects.filter(object=post, author=author).first()
-        if like_filter == None:
-            print(post, author)
-            new_like = Like.objects.create(author=author, object=post)
-            new_like.save()
-            # like_text = 'Liked'
-            post.likes += 1
-            post.save()
-        print(f'liking remote post {post.author.username}')
-        # if author is not local make post request to add to other user inbox
-        serializer = serializers.LikesSerializer(new_like)
-        print(f"{post.author.host}service/authors/{post.author.username}/inbox")
-        print(json.dumps(serializer.data))
-            
-        ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
-        # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-        req = requests.Request('POST',f"http://{post.author.host}/service/authors/{post.author.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-        prepared = req.prepare()
+        like_filter.delete()
+        # like_text='Like'
+        post.likes -= 1
+        post.save()
+        # return redirect('myapp:postList')
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-        s = requests.Session()
-        resp = s.send(prepared)
-    # like_filter = Like.objects.filter(object=post, author=author).first()
-    # if like_filter == None:
-    #     print(post, author)
-    #     new_like = Like.objects.create(author=author, object=post)
-    #     new_like.save()
-    #     # like_text = 'Liked'
-    #     post.likes += 1
-    #     post.save()
-    #     # push like object into inbox
-    #     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-    # else:
-    #     like_filter.delete()
-    #     # like_text='Like'
-    #     post.likes -= 1
-    #     post.save()
-    #     # return redirect('myapp:postList')
-    #     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @method_decorator(login_required, name='dispatch')
 class ShareDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(uuid=pk)
-        
+
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
@@ -403,7 +372,7 @@ class ShareDetailView(View):
         }
 
         return render(request, 'shareDetail.html', context)
-    
+
     def post(self, request, pk, *args, **kwargs):
         post = Post.objects.get(uuid=pk)
         form = CommentForm(request.POST)
@@ -453,7 +422,7 @@ def profile(request, user_id):
     object = Author.objects.filter(username=user_id).first()
     # get github info
     github_username = current_author_info.github.split("/")[-1]
-    
+
     localURL = f"http://{request.get_host()}/service/"
     posts = []
 
@@ -465,13 +434,13 @@ def profile(request, user_id):
     modifiedNodeArray = nodeArray.copy() # adding our local to node array
     modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
-        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
+        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth('admin', 'admin'))
         if response.status_code == 200:
             response_contents = response.json()['items']
             posts = response_contents
         else:
             pass
-    
+
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
@@ -510,20 +479,20 @@ def follow(request):
         # object_id = request.POST.get("receiver_user_id")
         object = Author.objects.filter(username=objectName).first()
         # objectName = object.displayName
-        
+
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
             delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
             delete_follower.delete()
-            raise Exception('Friend request canceled') 
-        else:    
-            localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
+            raise Exception('Friend request canceled')
+        else:
+            # localHostList = ['http://127.0.0.1:8000/', 'http://localhost:8000', 'https://cmput4042ndnetwork.herokuapp.com/']
             if object.host in localHostList:
                 print("following local users...",object.username)
-                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object,
                                                                 summary=f'{actorName} wants to follow {objectName}')
                 friendRequest.save()
             else:
-                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object, 
+                friendRequest = FriendFollowRequest.objects.create(actor=actor, object=object,
                                                                 summary=f'{actorName} wants to follow {objectName}')
                 friendRequest.save()
                 print(f'following remote author {object.username}')
@@ -531,15 +500,15 @@ def follow(request):
                 serializer = serializers.FriendFollowRequestSerializer(friendRequest)
                 print(f"{object.host}service/authors/{object.username}/inbox")
                 print(json.dumps(serializer.data))
-            
+
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                req = requests.Request('POST',f"http://{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                req = requests.Request('POST',f"{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('admin','admin'), headers={'Content-Type': 'application/json'})
                 prepared = req.prepare()
 
                 s = requests.Session()
                 resp = s.send(prepared)
-            
+
                 print("status code, ",resp.status_code)
         return redirect('myapp:profile', user_id=objectName)
     else:
@@ -551,7 +520,7 @@ def follow(request):
     #     else:       
     #         
     #         return redirect('myapp:profile', user_id=object)
-    
+
 
 @login_required(login_url='/accounts/login')
 def friendRequests(request):
@@ -574,9 +543,9 @@ def acceptFriendRequest(request, actor_id):
                 Followers.objects.get(user=object).items.add(actor)
             else:
                 Followers.objects.create(user=object)
-                Followers.objects.get(user=object).items.add(actor)  
+                Followers.objects.get(user=object).items.add(actor)
             return render(request, 'feed.html')
-        
+
 
 # @login_required(login_url='/accounts/login')
 # def search(request):
@@ -950,19 +919,18 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # don't care if these two have a friend relation, just push the post into its follower's inbox
         if data["type"] == "post":
             # check if user in the body (who post the post) exists
-            author = Author.objects.filter(username=data["author"]).first()
+            author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
                 return HttpResponseNotFound("author (in body) not exist")
 
             new_post = Post.objects.create(title=data["title"], description=data["description"],
                                            content=data["content"],
                                            contentType=data["contentType"], author=author,
-                                           unparsedCategories=data["unparsedCategories"],
+                                           unparsedCategories=data["categories"],
                                            visibility=data["visibility"],
-                                           post_image=data["post_image"])
+                                           image_b64=data["image_b64"])
             unparsed_cat = new_post.unparsedCategories
-            cat_list = unparsed_cat.split()
-            for cat in cat_list:
+            for cat in unparsed_cat:
                 new_cat = Category()
                 new_cat.cat = cat
                 new_cat.save()
@@ -979,12 +947,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
             new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
             new_post.save()
-
-            Inbox.objects.filter(author__username=author.username)[0].items.add(new_post)
-            followersID = FollowerCount.objects.filter(user=author.username)
-
-            for followerID in followersID:
-                Inbox.objects.filter(author__username=followerID.follower)[0].items.add(new_post)
+            Inbox.objects.filter(author__username=current_user.username)[0].items.add(new_post)
 
             serializer = serializers.PostSerializer(new_post)
             return Response(serializer.data)
