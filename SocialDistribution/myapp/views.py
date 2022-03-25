@@ -2,7 +2,7 @@ import json
 from http.client import HTTPResponse
 from urllib import request
 from itertools import chain
-
+import requests
 from multiprocessing import context
 
 from django.core import paginator
@@ -44,6 +44,8 @@ from rest_framework.renderers import JSONRenderer
 import re
 import base64
 
+nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/']
+# nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
 
 # Create your views here.
 @method_decorator(login_required, name='dispatch')
@@ -51,6 +53,33 @@ class PostListView(View):
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
         posts = Inbox.objects.filter(author__username=request.user.username)[0].items
+
+        # author = Author(username=user.username,
+        #                     host=request.get_host(),
+        #                     displayName=user.username,
+        #                     profileImage=profile_image_string,
+        #                     github=github)
+        # author.save()
+        # author.id = request.get_host()+"/authors/"+str(author.uuid)
+        # author.save()
+
+        for node in nodeArray:
+            # make get request to other notes /service/authors/
+            response = requests.get(f"{node}authors/", params=request.GET)
+            if response.status_code == 200:
+                response_contents = response.json()['items']
+                for author in response_contents:
+                    remote_author = Author(id=author['id'],
+                        username = author['id'].split("/")[-1],  # username = remote_author.uuid
+                        displayName=author['displayName'],
+                        host=author['host'],
+                        github=author['github'],
+                        profileImage=author['profileImage'])
+                    remote_author.save()
+            else:
+                print("FAILURE")
+            print(response)
+
         author_list = Author.objects.all()
         context = {
             'postList': posts,
@@ -341,11 +370,34 @@ def profile(request, user_id):
     object = Author.objects.filter(username=user_id).first()
     # get github info
     github_username = current_author_info.github.split("/")[-1]
-    # get posts
-    try:
-        posts = Post.objects.filter(author__username=user_id).order_by('-published')
-    except:
-        posts = []
+    
+    localURL = f"http://{request.get_host()}/service/"
+    posts = []
+
+    response_contents = None
+    # original UUID from Original server for current_author_info
+    current_author_original_uuid = current_author_info.id.split('/')[-1]
+
+    # use API calls to get posts
+    modifiedNodeArray = nodeArray # adding our local to node array
+    modifiedNodeArray.append(localURL)
+    for node in modifiedNodeArray:
+        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET)
+        if response.status_code == 200:
+            response_contents = response.json()['items']
+            posts = response_contents
+        else:
+            pass
+    
+    # add UUID to posts object
+    for post in posts:
+        post['uuid'] = post['id'].split('/')[-1]
+
+    # # get posts
+    # try:
+    #     posts = Post.objects.filter(author__username=user_id).order_by('-published')
+    # except:
+    #     posts = []
     # get follow
     if FriendFollowRequest.objects.filter(actor__username=actor.username, object__username=object.username).first():
         button_text = 'Unfollow'
@@ -363,7 +415,7 @@ def profile(request, user_id):
         'posts': posts,
         'author_list': author_list,
         }
-
+    # breakpoint()
     return render(request, 'profile.html', context)
 
 @login_required(login_url='/accounts/login')
@@ -425,10 +477,24 @@ def acceptFriendRequest(request, actor_id):
             return render(request, 'feed.html')
         
 
-@login_required(login_url='/accounts/login')
-def search(request):
-    author_list = Author.objects.all()
-    return render(request, 'feed.html', {'author_list':author_list})
+# @login_required(login_url='/accounts/login')
+# def search(request):
+#     # TODO: Move this up
+#     import requests
+#     author_list = Author.objects.all()
+#     # get all authors from other nodes, append it 
+#     raise ValueError('u kdf')
+#     for node in nodeArray:
+#         # make get request to other notes /service/authors/
+#         response = requests.get(f"{node}authors/", params=request.GET)
+#         if response.status_code == 200:
+#             print("SUCCESS")
+#         else:
+#             print("FAILURE")
+#         print(response)
+#         # create them into author objects
+#         # append them in to list, return them
+#     return render(request, 'feed.html', {'author_list':author_list})
 
 @login_required(login_url='/accounts/login')
 def getuser(request):
