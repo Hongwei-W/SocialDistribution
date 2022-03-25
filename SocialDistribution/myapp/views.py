@@ -45,9 +45,16 @@ from requests.auth import HTTPBasicAuth
 import re
 import base64
 
-# nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/', 'https://cmput4042ndnetwork.herokuapp.com/service/']
+nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/', 'https://cmput4042ndnetwork.herokuapp.com/service/', 'https://social-dist-wed.herokuapp.com/service/']
+authDict = {
+    'https://cmput404-w22-project-backend.herokuapp.com/service/':['proxy','proxy123!'],
+    'https://cmput4042ndnetwork.herokuapp.com/service/':['admin','admin'],
+    'https://social-dist-wed.herokuapp.com/service/':['team02admin','admin']
+
+}
+
 # nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
-nodeArray = ['http://127.0.0.1:7080/service/']
+# nodeArray = ['http://127.0.0.1:7080/service/']
 localHostList = ['http://127.0.0.1:7080/', 'http://127.0.0.1:8000/', 'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/']
 
 # Create your views here.
@@ -67,8 +74,8 @@ class PostListView(View):
         # author.save()
 
         for node in nodeArray:
-            # make get request to other notes /service/authors/
-            response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth('admin', 'admin'))
+            # make get request to other notes /service/authors/            
+            response = requests.get(f"{node}authors/", params=request.GET, auth=HTTPBasicAuth(node, authDict[node]))
             if response.status_code == 200:
                 response_contents = response.json()['items']
                 for author in response_contents:
@@ -158,7 +165,8 @@ class NewPostView(View):
                         # print(json.dumps(serializer.data))
 
                         ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
-                        req = requests.Request('POST', f"{follower.host}/service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('admin', 'admin'), headers={'Content-Type': 'application/json'})
+                        authDictKey = follower.host+"/service/"
+                        req = requests.Request('POST', f"{follower.host}/service/authors/{follower.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDictKey, authDict[authDictKey]), headers={'Content-Type': 'application/json'})
                         prepared = req.prepare()
 
                         s = requests.Session()
@@ -427,7 +435,7 @@ def profile(request, user_id):
     modifiedNodeArray = nodeArray.copy() # adding our local to node array
     modifiedNodeArray.append(localURL)
     for node in modifiedNodeArray:
-        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth('admin', 'admin'))
+        response = requests.get(f"{node}authors/{current_author_original_uuid}/posts/", params=request.GET, auth=HTTPBasicAuth(node, authDict[node]))
         if response.status_code == 200:
             response_contents = response.json()['items']
             posts = response_contents
@@ -496,7 +504,8 @@ def follow(request):
 
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                req = requests.Request('POST',f"{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('admin','admin'), headers={'Content-Type': 'application/json'})
+                authDictKey = object.host+"/service/"
+                req = requests.Request('POST',f"{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth(authDictKey, authDict[authDictKey]), headers={'Content-Type': 'application/json'})
                 prepared = req.prepare()
 
                 s = requests.Session()
