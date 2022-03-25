@@ -45,7 +45,7 @@ from requests.auth import HTTPBasicAuth
 import re
 import base64
 
-nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/']
+nodeArray = ['https://cmput404-w22-project-backend.herokuapp.com/service/', 'https://cmput4042ndnetwork.herokuapp.com/service/']
 # nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
 
 # Create your views here.
@@ -492,7 +492,8 @@ def follow(request):
                 print(json.dumps(serializer.data))
             
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
-                req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
+                req = requests.Request('POST',f"http://{object.host}/service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
                 prepared = req.prepare()
 
                 s = requests.Session()
