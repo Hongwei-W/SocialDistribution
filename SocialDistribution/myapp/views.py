@@ -637,7 +637,10 @@ def acceptFriendRequest(request, actor_id):
 
 @login_required(login_url='/accounts/login')
 def getuser(request):
-    username = request.GET['username']
+    try:
+        username = request.GET['username']
+    except:
+        return redirect('myapp:postList')
     try:
         current_author_info = Author.objects.get(displayName=username)
     except:
