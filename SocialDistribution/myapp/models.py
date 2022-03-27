@@ -9,7 +9,6 @@ from django.contrib.contenttypes.models import ContentType
 # Create your models here.
 class Author(models.Model):
     type = models.CharField(default="author", max_length=200)
-    
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=True)
     id = models.CharField(max_length=200)
     username = models.CharField(unique=True, max_length=200, primary_key=True)
@@ -37,7 +36,7 @@ class Category(models.Model):
 
 class Followers(models.Model):
     type = models.CharField(default='followers', max_length=200)
-    user = models.OneToOneField(to=Author, 
+    user = models.OneToOneField(to=Author,
                                 on_delete=models.CASCADE,
                                 related_name='user')
     items = models.ManyToManyField(to=Author,
@@ -50,17 +49,17 @@ class Followers(models.Model):
         }
 
     def __str__(self):
-	    return self.user.username
+        return self.user.username
     # def add_friend(self):
     #     pass
-    
 
-    
+
+
 
 class FollowerCount(models.Model):
     # follower is who logged in now # user.usernamr
     follower = models.CharField(max_length=100)
-    user = models.CharField(max_length=100) 
+    user = models.CharField(max_length=100)
 
     def __str__(self):
         return self.user
@@ -76,17 +75,17 @@ class FriendFollowRequest(models.Model):
                                related_name='%(class)s_request_receiver')
     def __str__(self):
         return self.actor.username
-    
+
     def accept(self):
         Followers.objects.get(user=self.object).items.add(self.actor)
         self.delete()
-		# if object_friend_list:
-		# 	object_friend_list.add_friend(self.sender)
-		# 	sender_friend_list = Followers.objects.get(user=self.sender)
-		# 	if sender_friend_list:
-		# 		sender_friend_list.add_friend(self.receiver)
-		# 		self.is_active = False
-		# 		self.save()
+# if object_friend_list:
+# 	object_friend_list.add_friend(self.sender)
+# 	sender_friend_list = Followers.objects.get(user=self.sender)
+# 	if sender_friend_list:
+# 		sender_friend_list.add_friend(self.receiver)
+# 		self.is_active = False
+# 		self.save()
 
 
 class Post(models.Model):
@@ -101,7 +100,7 @@ class Post(models.Model):
     origin = models.CharField(max_length=200)
     description = models.TextField()
     content = models.TextField()
-    CONTENT_CHOICES = [("text/plain", "Plaintext"), ("text/markdown", "Markdown"), 
+    CONTENT_CHOICES = [("text/plain", "Plaintext"), ("text/markdown", "Markdown"),
                           ("application/base64", "app"), ("image/png;base64", "png"), ("image/jpeg;base64", "jpeg")]
     contentType = models.CharField(max_length=30,
                                   choices=CONTENT_CHOICES)
@@ -124,7 +123,7 @@ class Post(models.Model):
     likes = models.IntegerField(default=0)
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
     image_b64 = models.BinaryField(blank=True, null=True)
-    
+
     # def save(self, *args, **kwargs):
     #     if self.post_image:
     #         img_file = open(self.post_image.url, "rb")
@@ -172,3 +171,28 @@ class Inbox(models.Model):
     # content_object = GenericForeignKey('content_type', 'object_id')
 
 
+class ConnectionNode(models.Model):
+    """
+        Class to contain the connection node information of other
+        nodes
+        service_url INCLUDES the backslash at the end
+    """
+    name = models.CharField(max_length=255)
+    url = models.URLField()
+    auth_username = models.CharField(max_length=255)
+    auth_password = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name = "connection node"
+        verbose_name_plural = "connection nodes"
+
+    def __str__(self):
+        return str(self.name)
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'service_url': self.url,
+            'auth_username': self.auth_username,
+            'auth_password': self.auth_password
+        }
