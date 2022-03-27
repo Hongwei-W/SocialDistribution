@@ -514,9 +514,15 @@ def follow(request):
                 print(f"{object.host}/service/authors/{object.username}/inbox")
                 print(json.dumps(serializer.data))
 
-                # get object node object
-                objectNode = connectionNodes.filter(
-                    url=f"{object.host}service/").first()
+                # TODO: Su: change this once the 2nd network heroku has been updated
+                if 'cmput4042ndnetwork' in object.host or object.host in localHostList:
+#                     authDictKey = object.host + "/service/"
+                    objectNode = connectionNodes.filter(
+                        url=f"{object.host}/service/").first()
+                else:
+#                     authDictKey = object.host + "service/"
+                    objectNode = connectionNodes.filter(
+                        url=f"{object.host}service/").first()
                 req = requests.Request(
                     'POST',
                     f"{objectNode.url}authors/{object.username}/inbox",
