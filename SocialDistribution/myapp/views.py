@@ -60,7 +60,7 @@ authDict = {
 # nodeArray = ['https://social-dist-wed.herokuapp.com/service/']
 # nodeArray = ['http://127.0.0.1:7080/service/']
 localHostList = [
-    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
+    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/', 'https://localhost:8000',
     'http://localhost:8000', 'https://c404-social-distribution.herokuapp.com/'
 ]
 
@@ -558,7 +558,11 @@ def follow(request):
 
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                authDictKey = object.host + "/service/"
+                print('!!!!!',object.host)
+                if 'cmput4042ndnetwork' in object.host or object.host in localHostList:
+                    authDictKey = object.host + "/service/"
+                else:
+                    authDictKey = object.host + "service/"
                 req = requests.Request(
                     'POST',
                     f"{object.host}/service/authors/{object.username}/inbox",
