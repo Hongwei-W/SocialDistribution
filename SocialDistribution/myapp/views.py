@@ -557,7 +557,7 @@ def follow(request):
                 print(json.dumps(serializer.data))
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                if object.host in localHostList:
+                if 'cmput4042ndnetwork' in object.host or object.host in localHostList:
                     authDictKey = object.host + "/service/"
                 else:
                     authDictKey = object.host + "service/"
