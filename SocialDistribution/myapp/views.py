@@ -163,7 +163,7 @@ class NewPostView(View):
                         # print(f'pushing to remote author {follower.username}')
                         # if author is not local make post request to add to other user inbox
                         serializer = serializers.PostSerializer(newPost)
-
+                        
                         # get follower node object
                         followerNode = connectionNodes.filter(
                             url=f"{follower.host}service/").first()
@@ -514,15 +514,10 @@ def follow(request):
                 print(f"{object.host}/service/authors/{object.username}/inbox")
                 print(json.dumps(serializer.data))
 
-                # TODO: Su: change this once the 2nd network heroku has been updated
-                if 'cmput4042ndnetwork' in object.host or object.host in localHostList:
-#                     authDictKey = object.host + "/service/"
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}/service/").first()
-                else:
-#                     authDictKey = object.host + "service/"
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}service/").first()
+                # TODO: Su: change this once the 2nd network heroku has been update
+                objectNode = connectionNodes.filter(
+                    url=f"{object.host}service/").first()
+                
                 req = requests.Request(
                     'POST',
                     f"{objectNode.url}authors/{object.username}/inbox",
@@ -570,7 +565,10 @@ def acceptFriendRequest(request, actor_id):
 
 @login_required(login_url='/accounts/login')
 def getuser(request):
-    username = request.GET['username']
+    try:
+        username = request.GET['username']
+    except:
+        return redirect('myapp:postList')
     try:
         current_author_info = Author.objects.get(displayName=username)
     except:
