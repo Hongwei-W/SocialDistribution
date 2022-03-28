@@ -54,8 +54,6 @@ class Followers(models.Model):
     #     pass
 
 
-
-
 class FollowerCount(models.Model):
     # follower is who logged in now # user.usernamr
     follower = models.CharField(max_length=100)
@@ -175,7 +173,7 @@ class ConnectionNode(models.Model):
     """
         Class to contain the connection node information of other
         nodes
-        service_url INCLUDES the backslash at the end
+        url INCLUDES the backslash at the end
     """
     name = models.CharField(max_length=255)
     url = models.URLField()
@@ -192,7 +190,7 @@ class ConnectionNode(models.Model):
     def to_dict(self):
         return {
             'name': self.name,
-            'service_url': self.url,
+            'url': self.url,
             'auth_username': self.auth_username,
             'auth_password': self.auth_password
         }
