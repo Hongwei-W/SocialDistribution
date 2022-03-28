@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title%}Share Post{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'posts/css/newpost.css' %}">
+    <body>
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <div>
+                        <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
+                    </div>
+                    <div id="newPostContainer">
+                        <div class="poster-font logo-color" id="newPostText">Share Post</div>
+                        <hr>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <!-- {{ form.as_table }} -->
+                            <div class="postDetail">
+                                <!-- <label for="title">Title:</label> -->
+                                {{ form.title }}
+                            </div>
+                            <div class="postDetail">
+                                <button class="btnShare">Share</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% include "sidebarRight.html" %}
+        </div>
+
+        {% endblock %}

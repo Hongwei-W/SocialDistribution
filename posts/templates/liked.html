@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title%}Post Detail{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'posts/css/postDetail.css' %}">
+    <body>
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <a href="{% url 'posts:postList' %}" class="btn btn-light"> Back To Feed </a>
+                </div>
+                <div>
+                    <div class="postTitle">
+                        Liked By
+                    </div>
+                    {% for like in likes_list %}
+                    <div> 
+                        <div class="postBody" style="font-size: larger;">{{ like.author.username }}</div>                 
+                    </div>                   
+                    {% endfor %}
+                </div>
+            </div>
+            {% include "sidebarRight.html" %}
+        </div>
+
+{% endblock %}
