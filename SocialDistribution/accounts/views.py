@@ -23,11 +23,19 @@ def signup(request):
                 profile_image_string = 'https://www.ibm.com/support/pages/system/files/support/swg/rattech.nsf/0/a857b0395de747c085257bcf0037ccb6/Symptom/0.126.gif'
 
             github = author_form.cleaned_data['github']
-            author = Author(username=user.username,
-                            host="https://"+request.get_host(),
-                            displayName=user.username,
-                            profileImage=profile_image_string,
-                            github=github)
+            host = request.get_host()
+            if host[0:3] == '127' or host[0:3] == 'loc':
+                author = Author(username=user.username,
+                                host="http://" + host,
+                                displayName=user.username,
+                                profileImage=profile_image_string,
+                                github=github)
+            else:
+                author = Author(username=user.username,
+                                host="https://" + host,
+                                displayName=user.username,
+                                profileImage=profile_image_string,
+                                github=github)
 
             author.save()
             author.id = "http://"+request.get_host()+"/authors/"+str(author.uuid)

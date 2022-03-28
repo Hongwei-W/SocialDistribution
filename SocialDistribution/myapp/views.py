@@ -46,11 +46,13 @@ import re
 import base64
 
 nodeArray = [
+    'http://127.0.0.1:8000/service/',
     'https://cmput404-w22-project-backend.herokuapp.com/service/',
     'https://cmput4042ndnetwork.herokuapp.com/service/',
     'https://social-dist-wed.herokuapp.com/service/'
 ]
 authDict = {
+    'http://127.0.0.1:8000/service/': ['admin', 'admin'],
     'https://cmput404-w22-project-backend.herokuapp.com/service/':
     ['proxy', 'proxy123!'],
     'https://cmput4042ndnetwork.herokuapp.com/service/': ['admin', 'admin'],
@@ -191,7 +193,10 @@ class NewPostView(View):
                         # print(json.dumps(serializer.data))
 
                         ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
-                        authDictKey = follower.host + "/service/"
+                        if follower.host[-1] != '/':
+                            authDictKey = object.host + "/service/"
+                        else:
+                            authDictKey = object.host + "service/"
                         req = requests.Request(
                             'POST',
                             f"{follower.host}/service/authors/{follower.username}/inbox",
@@ -555,9 +560,10 @@ def follow(request):
                     friendRequest)
                 print(f"{object.host}/service/authors/{object.username}/inbox")
                 print(json.dumps(serializer.data))
+
                 ### from stack overflow https://stackoverflow.com/questions/20658572/python-requests-print-entire-http-request-raw
                 # req = requests.Request('POST',f"{object.host}service/authors/{object.username}/inbox", data=json.dumps(serializer.data), auth=HTTPBasicAuth('proxy','proxy123!'), headers={'Content-Type': 'application/json'})
-                if 'cmput4042ndnetwork' in object.host or object.host in localHostList:
+                if object.host[-1] != '/':
                     authDictKey = object.host + "/service/"
                 else:
                     authDictKey = object.host + "service/"
