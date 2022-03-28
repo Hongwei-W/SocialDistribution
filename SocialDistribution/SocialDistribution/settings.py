@@ -37,7 +37,6 @@ ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = 'myapp:postList'
 LOGIN_URL = '/accounts/login'
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # LOGIN_REQUIRED_IGNORE_PATHS = (
 #     # r'^accounts/login/$',
