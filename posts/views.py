@@ -86,7 +86,6 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 
-            # adding post to inbox of current author
             # add post to InboxItem which links to Inbox
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
@@ -101,6 +100,7 @@ class NewPostView(View):
                     user__username=user.username).first().items.all()
                 for follower in followersID:
                     # follower is <author> object
+                    # if follower is local
                     if follower.host in localHostList:
                         # add it to inbox of follower
                         InboxItem.objects.create(
@@ -301,18 +301,27 @@ def like(request):
         print(post, author)
         new_like = Like.objects.create(author=author, object=post)
         new_like.save()
-        # like_text = 'Liked'
         post.likes += 1
         post.save()
-        # return redirect('inboxes:postList')
+
         # push like object into inbox
+        InboxItem.objects.create(
+            inbox=Inbox.objects.filter(
+                author__username=post.author.username).first(),
+            inbox_item_type='like',
+            item=new_like,
+        )
+
+        # return redirect('inboxes:postList')
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     else:
         like_filter.delete()
+        # also delete InboxItem for that like (will never be none)
+        InboxItem.objects.filter(
+            inbox_item_type='like', item=like_filter).delete()
         # like_text='Like'
         post.likes -= 1
         post.save()
-        # return redirect('inboxes:postList')
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
@@ -528,14 +537,6 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
         new_post.origin = request.get_host() + "/post/" + str(new_post.uuid)
         new_post.comments = request.get_host() + "/post/" + str(new_post.uuid)
         new_post.save()
-
-        # to modify
-        # Inbox.objects.filter(
-        #     author__username=author.username)[0].items.add(new_post)
-        # followersID = FollowerCount.objects.filter(user=author.username)
-        # for followerID in followersID:
-        #     Inbox.objects.filter(
-        #         author__username=followerID.follower)[0].items.add(new_post)
 
         # adding post to inbox of current author
         # add post to InboxItem which links to Inbox

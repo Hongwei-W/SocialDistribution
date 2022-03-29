@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from common.models import *
 from common.pagination import CustomPageNumberPagination
+from inboxes.models import InboxItem, Inbox
 from . import serializers
 from .models import *
 
@@ -19,6 +20,7 @@ localHostList = [
 ]
 
 connectionNodes = ConnectionNode.objects.all()
+
 
 @login_required(login_url='/accounts/login')
 def profile(request, user_id):
@@ -49,6 +51,7 @@ def profile(request, user_id):
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
+
     # get follow
     if FriendFollowRequest.objects.filter(
             actor__username=actor.username,
@@ -77,8 +80,6 @@ def profile(request, user_id):
 
 @login_required(login_url='/accounts/login')
 def follow(request):
-    # print("follow is working")
-    # payload = {}
     # TODO: maybe change name to something else instead of object?
     if request.method == 'POST':
         actorName = request.POST['follower']
@@ -101,25 +102,33 @@ def follow(request):
                 friendRequest = FriendFollowRequest.objects.create(
                     actor=actor,
                     object=object,
-                    summary=f'{actorName} wants to follow {objectName}')
+                    summary=
+                    f'created request: {actorName} wants to follow {objectName}'
+                )
+
+                # when created, also push into recepients inbox
+                InboxItem.objects.create(inbox=Inbox.objects.filter(
+                    author__username=objectName).first(),
+                                         item=friendRequest,
+                                         inbox_item_type='FriendFollowRequest')
+
                 friendRequest.save()
             else:
                 friendRequest = FriendFollowRequest.objects.create(
                     actor=actor,
                     object=object,
-                    summary=f'{actorName} wants to follow {objectName}')
+                    summary=
+                    f'created request: {actorName} wants to follow {objectName}'
+                )
                 friendRequest.save()
                 print(f'following remote author {object.username}')
-                # if author is not local make post request to add to other user inbox
+
+                # since author is not local, make request to remote inbox
                 serializer = serializers.FriendFollowRequestSerializer(
                     friendRequest)
-                print(f"{object.host}/service/authors/{object.username}/inbox")
-                print(json.dumps(serializer.data))
 
-                # TODO: Su: change this once the 2nd network heroku has been update
                 objectNode = connectionNodes.filter(
                     url=f"{object.host}service/").first()
-
                 req = requests.Request(
                     'POST',
                     f"{objectNode.url}authors/{object.username}/inbox",
@@ -131,8 +140,10 @@ def follow(request):
 
                 s = requests.Session()
                 resp = s.send(prepared)
+                print(f"sending remote friend request to: "\
+                    f"{object.host}/service/authors/{object.username}/inbox")
 
-                print("status code, ", resp.status_code)
+                print("remote request status code, ", resp.status_code)
         return redirect('authors:profile', user_id=objectName)
     else:
         return redirect('/')
@@ -174,18 +185,16 @@ def getuser(request):
     try:
         current_author_info = Author.objects.get(displayName=username)
     except:
-        current_author_info = None
-    if current_author_info == None:
+        # if requested author is does not exist
         author_list = Author.objects.all()
         context = {
             'username': username,
             'author_list': author_list,
         }
         return render(request, 'profileNotFound.html', context)
-    # current_author_info = get_object_or_404(Author, displayName = username)
-    else:
-        user_id = current_author_info.username
-        return redirect('authors:profile', user_id=user_id)
+    # if requested user exists
+    user_id = current_author_info.username
+    return redirect('authors:profile', user_id=user_id)
 
 
 #
@@ -212,14 +221,15 @@ class AuthorsAPIView(ListAPIView):
     # resource https://www.youtube.com/watch?v=eaWzTMtrcrE&list=PLx-q4INfd95FWHy9M3Gt6NkUGR2R2yqT8&index=9
     serializer_class = serializers.AuthorSerializer
     pagination_class = CustomPageNumberPagination
-    # renderer_classes = (renderers.AuthorsRenderer, )
     http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
+        # breakpoint()
+        url = request.build_absolute_uri('/')
         serializer = serializers.AuthorSerializer(
-            Author.objects.filter(host="https://" + request.get_host()),
-            many=True)
+            Author.objects.filter(host=url), many=True)
         return Response({"type": "authors", "items": serializer.data})
+
 
 # TODO rewrite FollowersAPIView
 # class FollowersAPIView(RetrieveAPIView):

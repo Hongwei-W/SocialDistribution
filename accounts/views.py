@@ -12,7 +12,7 @@ def signup(request):
         form = SignUpForm(request.POST)
         author_form = AuthorInfoForm(request.POST)
         if form.is_valid() and author_form.is_valid():
-            # user need to go back to log in
+            #TODO: Probably can remove this line since the next one saves?
             form.save()
             user = form.save()
 

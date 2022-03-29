@@ -4,7 +4,7 @@ from rest_framework.serializers import ModelSerializer
 
 from authors.models import Author, FriendFollowRequest
 from authors.serializers import FriendFollowRequestSerializer
-from posts.models import Comment, Post
+from posts.models import Comment, Like, Post
 from posts.serializers import PostSerializer, LikesSerializer, CommentsSerializer
 from .models import Inbox
 
@@ -19,8 +19,7 @@ class InboxSerializer(ModelSerializer):
         depth = 1
 
     def get_author(self, obj):
-        inbox = model_to_dict(obj)
-        author_username = inbox.get("author")
+        author_username = obj.to_dict().get("author")
         author = Author.objects.filter(username=author_username).first()
         return model_to_dict(author).get("id")
 

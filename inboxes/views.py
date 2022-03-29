@@ -14,7 +14,7 @@ from common.models import ConnectionNode
 from common.pagination import CustomPageNumberPagination
 from posts.models import Post, Category, Like
 from . import serializers
-from .models import Inbox
+from .models import Inbox, InboxItem
 
 localHostList = [
     'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
@@ -41,8 +41,9 @@ class PostListView(View):
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 
+        # make get request to other nodes, to get remote authors
+        # TODO: This is going to change once the other groups implement pagination
         for node in connectionNodes:
-            # make get request to other nodes
             response = requests.get(f"{node.url}authors/",
                                     params=request.GET,
                                     auth=HTTPBasicAuth(node.auth_username,
@@ -66,13 +67,14 @@ class PostListView(View):
         context = {
             'postList': responsePosts,
             'author_list': author_list,
-            # 'form': form,
         }
         return render(request, 'feed.html', context)
+
 
 #
 # API
 #
+
 
 class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
     """ GET inbox POST post/follow/like DELETE inbox_obj"""
@@ -90,18 +92,20 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
         uuid = self.kwargs['author']
         current_user = Author.objects.filter(uuid=uuid).first()
         if current_user is None:
-            return HttpResponseNotFound("author (in url) not exist")
+            return HttpResponseNotFound("author (in url) does not exist")
         data = request.data
 
         # try:
         # 1. publish a post
-        # don't care if these two have a friend relation, just push the post into its follower's inbox
+        # don't care if these two have a friend relation,
+        # just push the post into its follower's inbox
         if data["type"] == "post":
             # check if user in the body (who post the post) exists
             author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
                 return HttpResponseNotFound("author (in body) not exist")
 
+            # creating new post
             new_post = Post.objects.create(
                 title=data["title"],
                 description=data["description"],
@@ -111,6 +115,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 unparsedCategories=data["categories"],
                 visibility=data["visibility"],
                 image_b64=data["image_b64"])
+
             unparsed_cat = new_post.unparsedCategories
             for cat in unparsed_cat:
                 new_cat = Category()
@@ -119,10 +124,6 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 new_post.categories.add(new_cat)
                 new_post.save()
 
-            try:
-                new_post.save()
-            except Exception as e:
-                return HttpResponseNotFound(e)
             new_post.id = request.get_host() + "/authors/" + str(
                 new_post.author.uuid) + "/posts/" + str(new_post.uuid)
             new_post.source = request.get_host() + "/post/" + str(
@@ -130,14 +131,25 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             new_post.origin = request.get_host() + "/post/" + str(
                 new_post.uuid)
             new_post.comments = request.get_host() + "/post/" + str(
-                new_post.uuid)
-            new_post.save()
-            Inbox.objects.filter(
-                author__username=current_user.username)[0].items.add(new_post)
+                new_post.uuid) + '/comments'
+
+            try:
+                new_post.save()
+            except Exception as e:
+                return HttpResponseNotFound(e)
+
+            # adding post to author inbox via InboxItem
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=author.username).first(),
+                item=new_post,
+                inbox_item_type="post",
+            )
 
             serializer = serializers.PostSerializer(new_post)
             return Response(serializer.data)
 
+        # 2. adding follow to user inbox
         elif data["type"].lower() == "follow":
             remote_author = Author.objects.filter(
                 id=data['actor']['id']).first()
@@ -148,6 +160,14 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 actor=remote_author,
                 object=our_author)
             friend_request.save()
+
+            # add friendfollowrequest to the inbox as well
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=author.username).first(),
+                item=friend_request,
+                inbox_item_type="friend_follow_request",
+            )
 
             serializer = serializers.FriendFollowRequestSerializer(
                 friend_request)
@@ -166,13 +186,18 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             new_like.save()
             post.likes += 1
             post.save()
-            # TODO like could be comments/posts
-            serializer = serializers.LikeSerializer(new_like)
-            # TODO push into inbox
-            return Response(serializer.data)
 
-        # except Exception as e:
-        #     return HttpResponseNotFound(e)
+            # adding like to user inbox via InboxItem
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=author.username).first(),
+                item=new_like,
+                inbox_item_type="like",
+            )
+
+            # TODO: like could be comments/posts -- what does this mean?? -darren
+            serializer = serializers.LikeSerializer(new_like)
+            return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
