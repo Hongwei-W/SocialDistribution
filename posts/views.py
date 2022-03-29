@@ -407,7 +407,7 @@ class PostEditView(UpdateView):
 class PostDeleteView(DeleteView):
     model = Post
     template_name = 'postDelete.html'
-    success_url = reverse_lazy('posts:postList')
+    success_url = reverse_lazy('inboxes:postList')
 
 
 #
