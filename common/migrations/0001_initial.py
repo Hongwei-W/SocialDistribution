@@ -7,14 +7,38 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
+
+    def create_connection_nodes(apps, schema_editor):
+        """
+        Create some connection nodes
+        """
+        ConnectionNode = apps.get_model('common', 'ConnectionNode')
+        ConnectionNode.objects.create(
+            name='Team 2 - Lefan',
+            url='https://social-dist-wed.herokuapp.com/service/',
+            auth_username='team02admin',
+            auth_password='admin')
+        ConnectionNode.objects.create(
+            name='Team 5 - Kerry',
+            url='https://cmput404-w22-project-backend.herokuapp.com/service/',
+            auth_username='proxy',
+            auth_password='proxy123!')
+        ConnectionNode.objects.create(
+            name='Self Connection - Team 7',
+            url="https://cmput4042ndnetwork.herokuapp.com/service/",
+            auth_username='admin',
+            auth_password='admin')
 
     operations = [
         migrations.CreateModel(
             name='ConnectionNode',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('name', models.CharField(max_length=255)),
                 ('url', models.URLField()),
                 ('auth_username', models.CharField(max_length=255)),
@@ -25,4 +49,5 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'connection nodes',
             },
         ),
+        migrations.RunPython(create_connection_nodes),
     ]
