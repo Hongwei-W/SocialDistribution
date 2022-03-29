@@ -4,9 +4,10 @@ import requests
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from requests.auth import HTTPBasicAuth
+from django.contrib import messages
 from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
-
+from .forms import UpdateProfileForm
 from common.models import *
 from common.pagination import CustomPageNumberPagination
 from inboxes.models import InboxItem, Inbox
@@ -77,7 +78,21 @@ def profile(request, user_id):
     # breakpoint()
     return render(request, 'profile.html', context)
 
+@login_required(login_url='/accounts/login')
+def editProfile(request, user_id):
+    if request.method == 'POST':
+        username = request.user.username
+        profile_form = UpdateProfileForm(request.POST, instance=Author.objects.filter(username=user_id).first())
 
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, 'Your profile is updated successfully')
+            return redirect('authors:profile', user_id=username)
+    else:
+        profile_form = UpdateProfileForm(instance=Author.objects.filter(username=user_id).first())
+
+    return render(request, 'editProfile.html', {'profile_form': profile_form})
+    
 @login_required(login_url='/accounts/login')
 def follow(request):
     # TODO: maybe change name to something else instead of object?
