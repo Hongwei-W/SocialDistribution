@@ -3,12 +3,13 @@ import json
 
 import requests
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, JsonResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import UpdateView, DeleteView
 from requests.auth import HTTPBasicAuth
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, \
@@ -53,9 +54,7 @@ class NewPostView(View):
             # creating post from form and adding attributes
             newPost = form.save(commit=False)
             newPost.author = Author.objects.get(username=request.user.username)
-            newPost.id = request.get_host() + "/authors/" + str(
-                newPost.author.uuid) + "/posts/" + str(newPost.uuid)
-
+            newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
             # adding categories to post
             unparsedCat = newPost.unparsedCategories
             catList = unparsedCat.split()
@@ -69,12 +68,9 @@ class NewPostView(View):
 
             # not sure what its for but it works
             if newPost.type == 'post':
-                newPost.source = request.get_host() + "/post/" + str(
-                    newPost.uuid)
-                newPost.origin = request.get_host() + "/post/" + str(
-                    newPost.uuid)
-                newPost.comments = request.get_host() + "/post/" + str(
-                    newPost.uuid) + '/comments'
+                newPost.source = newPost.id
+                newPost.origin = newPost.id
+                newPost.comments = newPost.id + '/comments'
                 newPost.save()
 
             # if its an image
@@ -241,7 +237,7 @@ class SharedPostView(View):
             new_post = Post(
                 #TODO: Su: please confirm that type is allowed to be updated
                 # eg if author.user is not the same as the user who is sharing the post
-                type='share',
+                type='post',
                 title=self.request.POST.get('title'),
                 source=source_text + str(pk),
                 origin=original_post.origin,
@@ -250,10 +246,12 @@ class SharedPostView(View):
                 contentType='text',
                 author=Author.objects.get(username=request.user.username),
                 visibility=original_post.visibility,
+                shared=True,
             )
             new_post.save()
-            new_post.id = request.get_host() + "/authors/" + str(
-                new_post.author.uuid) + "/posts/" + str(new_post.uuid)
+            new_post.id = f"{request.build_absolute_uri('/')}authors/{str(new_post.author.uuid)}/posts/{str(new_post.uuid)}"
+            new_post.save()
+            new_post.comments = new_post.id + '/comments'
             new_post.save()
 
         # adding post to request.user's inbox
@@ -289,40 +287,79 @@ class SharedPostView(View):
         return redirect('inboxes:postList')
 
 
-@login_required(login_url='/accounts/login')
-def like(request):
-    username = request.user.username
-    author = Author.objects.get(username=username)
-    post_id = request.GET.get('post_id')
-    post = Post.objects.get(uuid=post_id)
-    summary = username + ' Likes your post'
-    like_filter = Like.objects.filter(object=post, author=author).first()
-    if like_filter == None:
-        print(post, author)
-        new_like = Like.objects.create(author=author, object=post)
-        new_like.save()
-        post.likes += 1
-        post.save()
+@method_decorator(login_required, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
+class LikeHandlerView(View):
 
-        # push like object into inbox
-        InboxItem.objects.create(
-            inbox=Inbox.objects.filter(
-                author__username=post.author.username).first(),
-            inbox_item_type='like',
-            item=new_like,
+    def post(self, request):
+        author_id = request.POST['author_id']
+        author_uuid = author_id.split('/')[-1]
+        author = Author.objects.get(id=author_id)
+        object_id = request.POST['object_id']
+        object_uuid = object_id.split('/')[-1]
+        host = request.POST['author_host']
+        summary = author.displayName + ' Likes your post'
+        node = ConnectionNode.objects.filter(url__contains=host).first()
+
+        req = requests.Request(
+            'GET',
+            f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
+            auth=HTTPBasicAuth(node.auth_username,
+                               node.auth_password),
         )
 
-        # return redirect('inboxes:postList')
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-    else:
-        like_filter.delete()
-        # also delete InboxItem for that like (will never be none)
-        InboxItem.objects.filter(
-            inbox_item_type='like', item=like_filter).delete()
-        # like_text='Like'
-        post.likes -= 1
-        post.save()
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        prepared = req.prepare()
+
+        def pretty_print_POST(req):
+            """
+            At this point it is completely built and ready
+            to be fired; it is "prepared".
+
+            However pay attention at the formatting used in
+            this function because it is programmed to be pretty
+            printed and may differ from the actual request.
+            """
+            print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+                '-----------START-----------',
+                req.method + ' ' + req.url,
+                '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+                req.body,
+            ))
+
+        pretty_print_POST(prepared)
+
+        s = requests.Session()
+        resp = s.send(prepared)
+        content = resp.json()
+        author_lst = []
+        for i in content['items']:
+            author_lst.append(i['author']['id'])
+
+        if author_id in author_lst:
+            return JsonResponse({"liked": "before"})
+        else:
+            # send the like object into the inbox, local or foreign, whatever, I am using API!
+
+            new_like = Like(author=author, object=object_id, summary=summary)
+            if host not in localHostList:
+                new_like.save()
+            serializer = serializers.LikesSerializer(new_like)
+            req = requests.Request(
+                'POST',
+                f"{node.url}authors/{author_uuid}/inbox",
+                data=json.dumps(serializer.data),
+                auth=HTTPBasicAuth(node.auth_username,
+                                   node.auth_password),
+                headers={'Content-Type': 'application/json'}
+            )
+            prepared = req.prepare()
+            s = requests.Session()
+            resp = s.send(prepared)
+
+            if resp.status_code == 200 or resp.status_code == 201:
+                return JsonResponse({"liked": "success"})
+            else:
+                return JsonResponse({"liked": "fail"})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -621,9 +658,6 @@ class CommentsAPIView(CreateModelMixin, ListAPIView):
         return Response(serializer.data)
 
 
-# TODO Like API - 1: send a like object
-
-
 class LikesAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
@@ -631,8 +665,13 @@ class LikesAPIView(ListAPIView):
     lookup_fields = ('object', )
 
     def get_queryset(self):
-        post_id = self.kwargs['post']
-        return Like.objects.filter(object=post_id)
+        object_id = self.kwargs['post']
+        if 'comment' in object_id:
+            # this is a comment
+            pass
+        else:
+            # this is a post
+            return Like.objects.filter(object__contains=object_id)
 
 
 # TODO Like API - 3: comment likes

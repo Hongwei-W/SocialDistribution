@@ -38,6 +38,9 @@ class PostListView(View):
         responsePosts = []
         for post in posts:
             responsePosts.append(post.item)
+            breakpoint()
+        for responsePost in responsePosts:
+            responsePost['uuid'] = responsePost['id'].split('/')[-1]
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 
@@ -174,30 +177,38 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             return Response(serializer.data)
 
         elif data["type"] == "like":
-            # check if post in the body (the post that user gives a like) exists
-            post = Post.objects.filter(uuid=data["object"]).first()
-            if post is None:
-                return HttpResponseNotFound("post not exist")
-            like_before = Like.objects.filter(author=current_user,
-                                              object=post).first()
-            if like_before is not None:
-                return HttpResponseNotFound("user has given a like before")
-            new_like = Like.objects.create(author=current_user, object=post)
-            new_like.save()
-            post.likes += 1
-            post.save()
+            # check if this is a comment or a post
+            if "comment" in data["object"]:
+                # TODO like a comment
+                pass
+            else:
+                # like a post
+                # check if post in the body (the post that user gives a like) exists
+                post = Post.objects.filter(id=data["object"]).first()
+                # people only send like object on posts that is originated from our node, so a checking is a must
+                if post is None:
+                    return HttpResponseNotFound("post not exist")
+                like_before = Like.objects.filter(author__id=data['author']['id'],
+                                                  object=post.id).first()
+                # breakpoint()
+                if like_before is not None:
+                    return HttpResponseNotFound("user has given a like before")
+                author = Author.objects.filter(id=data['author']['id']).first()
+                new_like = Like.objects.create(author=author, object=data["object"], summary=data['summary'])
+                new_like.save()
+                post.likes += 1
+                post.save()
 
-            # adding like to user inbox via InboxItem
-            InboxItem.objects.create(
-                inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
-                item=new_like,
-                inbox_item_type="like",
-            )
+                # adding like to user inbox via InboxItem
+                InboxItem.objects.create(
+                    inbox=Inbox.objects.filter(
+                        author__username=current_user.username).first(),
+                    item=new_like,
+                    inbox_item_type="like",
+                )
 
-            # TODO: like could be comments/posts -- what does this mean?? -darren
-            serializer = serializers.LikeSerializer(new_like)
-            return Response(serializer.data)
+                serializer = serializers.LikesSerializer(new_like)
+                return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']

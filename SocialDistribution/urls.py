@@ -56,7 +56,6 @@ urlpatterns = [
     path('service/authors/<str:author>/posts/', posts_views.PostsAPIView.as_view(), name='service-posts'),
     path('service/authors/<str:author>/posts/<slug:pk>/image', posts_views.ImagePostAPIView.as_view(), name='service-image_post'),
     path('service/authors/<str:author>/posts/<slug:post>/comments', posts_views.CommentsAPIView.as_view(), name='service-comments'),
-    # TODO like api - 1
     path('service/authors/<str:author>/posts/<slug:post>/likes', posts_views.LikesAPIView.as_view(), name='service-likes'),
     # TODO like api - 3
     path('service/authors/<str:author>/liked', posts_views.LikedAPIView.as_view(), name='service-liked'),
