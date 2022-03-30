@@ -239,7 +239,7 @@ class SharedPostView(View):
                 origin=original_post.origin,
                 description=Post.objects.get(pk=pk).description,
                 content=Post.objects.get(pk=pk).content,
-                contentType='text',
+                contentType=original_post.contentType,
                 author=Author.objects.get(username=request.user.username),
                 visibility=original_post.visibility,
             )

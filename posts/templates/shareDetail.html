@@ -4,6 +4,7 @@
 
 {% block content %}
 {% load static %}
+{% load markdownify %}
 
 <link rel="stylesheet" type="text/css" href="{% static 'posts/css/postDetail.css' %}">
     <body>
@@ -23,9 +24,15 @@
                         {% endif%}
                             <div class="postBody">
                                 <div class="singlePost" style="background-color: rgba(193, 199, 201, 0.283); margin-left: 6%; margin-top: 0%; border-radius: 4%;">   
-                                    <div class="authorName" style="left: 2%; text-indent: 0%;" >{{source_post.author.displayName}}</div>                   
-                                    <div class="postTitle">{{ source_post.title }}</div> 
+                                    <div class="authorName" style="left: 2%; text-indent: 0%;" >{{source_post.author.displayName}}</div>      
+                                    {% if source_post.title != None %}             
+                                        <div class="postTitle">{{ source_post.title }}</div> 
+                                    {% endif %}
+                                    {% if source_post.contentType == "text/markdown" %}
+                                        <div class="postBody">{{ source_post.content | markdownify}}</div>
+                                    {% else %}
                                         <div class="postBody">{{ source_post.content }}</div>
+                                    {% endif %}
                                     <div class="postTime" style="font-size: small;">{{ source_post.published }}<div class="postVis" style="font-size: 12px;">Visibility: {{ post.visibility}}</div></div>  
                                 </div>
                             </div>
