@@ -1,5 +1,6 @@
 import requests
 from django.contrib.auth.decorators import login_required
+from django.forms import model_to_dict
 from django.http import HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -37,10 +38,10 @@ class PostListView(View):
         posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
         responsePosts = []
         for post in posts:
-            responsePosts.append(post.item)
-            breakpoint()
-        for responsePost in responsePosts:
-            responsePost['uuid'] = responsePost['id'].split('/')[-1]
+            post_obj = post.item
+            post_obj.uuid = post_obj.id.split('/')[-1]
+            responsePosts.append(post_obj)
+
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 
