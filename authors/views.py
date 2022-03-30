@@ -179,7 +179,7 @@ def acceptFriendRequest(request, actor_id):
             posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
             responsePosts = []
             for post in posts:
-                if post.item.visibility == 'FRIENDS':
+                if (post.item.visibility == 'FRIENDS' or post.item.visibility == 'PUBLIC') and post.item.author == object:
                     responsePosts.append(post.item)
             # sort responsePosts by published
             responsePosts.sort(key=lambda x: x.published, reverse=True)
