@@ -37,14 +37,14 @@
                 {% comment %} {% for post in postList.all|dictsortreversed:"published"%} {% endcomment %}
                 {% for post in postList %}
                     <div class="singlePost position-relative">
-                        {% if post.uuid not in post.origin %}
+                        {% if post.source != post.id %}
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->
-                            <div class="postBody" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared a post.</div>
+                            <div class="postBody" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.displayName}}</span> shared a post.</div>
                             <div class="postBody">Share note: {{post.title}}</div>
                             <div class="postBody" style="color: #F28482; background-color: #d5d5d584; margin-left: 5%;">Original Post Content:<br>{{post.content}}</div>
                             <!-- <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div> -->
                         {% else %}
-                            <div class="authorName">Author: {{ post.author.username }}</div>
+                            <div class="authorName">Author: {{ post.author.displayName }}</div>
                             <div class="postTitle">{{ post.title }}</div>
                             <!-- pip install django-markdownify -->
                             {% if post.contentType == "text/markdown" %}
@@ -64,7 +64,7 @@
                             <i class="fa-solid fa-heart like_btn" onclick="like_handler('{{ post.id }}','{{ post.author.host }}', '{{ post.author.id }}', '{{ post.likes }}')" style="cursor: pointer;"></i>&ensp;<span id="{{ post.id }}">{{ post.likes }}</span>
                             <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
                         </div>
-                        {% if post.type == 'post'%}
+                        {% if post.source == post.id %}
                         <a href="{% url 'posts:postDetail' post.uuid %}" class="stretched-link"></a>
                         {% else %}
                         <a href="{% url 'posts:shareDetail' post.uuid %}" class="stretched-link"></a>
