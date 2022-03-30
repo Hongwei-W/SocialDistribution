@@ -86,53 +86,58 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 
-            # add post to InboxItem which links to Inbox
-            InboxItem.objects.create(
-                inbox=Inbox.objects.filter(
-                    author__username=request.user.username).first(),
-                inbox_item_type="post",
-                item=newPost,
-            )
+            
 
-            user = Author.objects.get(username=request.user.username)
-            try:
-                followersID = Followers.objects.filter(
-                    user__username=user.username).first().items.all()
-                for follower in followersID:
-                    # follower is <author> object
-                    # if follower is local
-                    if follower.host in localHostList:
-                        # add it to inbox of follower
-                        InboxItem.objects.create(
-                            inbox=Inbox.objects.filter(
-                                author__username=follower.username).first(),
-                            inbox_item_type="post",
-                            item=newPost,
-                        )
-                    else:
-                        # if author is not local make post request to add to other user inbox
-                        serializer = serializers.PostSerializer(newPost)
+            if newPost.visibility == 'PRIVATE':
+                # context = {
+                #     'newPost': newPost,
+                # }
+                return redirect('posts:selectPerson')
+            else:
+                # add post to InboxItem which links to Inbox
+                InboxItem.objects.create(
+                    inbox=Inbox.objects.filter(
+                        author__username=request.user.username).first(),
+                    inbox_item_type="post",
+                    item=newPost,
+                )
+                user = Author.objects.get(username=request.user.username)
+                try:
+                    followersID = Followers.objects.filter(
+                        user__username=user.username).first().items.all()
+                    for follower in followersID:
+                        # follower is <author> object
+                        # if follower is local
+                        if follower.host in localHostList:
+                            # add it to inbox of follower
+                            InboxItem.objects.create(
+                                inbox=Inbox.objects.filter(
+                                    author__username=follower.username).first(),
+                                inbox_item_type="post",
+                                item=newPost,
+                            )
+                        else:
+                            # if author is not local make post request to add to other user inbox
+                            serializer = serializers.PostSerializer(newPost)
+                            # get follower node object
+                            followerNode = connectionNodes.filter(
+                                url=f"{follower.host}service/").first()
+                            req = requests.Request(
+                                'POST',
+                                f"{followerNode.url}authors/{follower.username}/inbox",
+                                data=json.dumps(serializer.data),
+                                auth=HTTPBasicAuth(followerNode.auth_username,
+                                                followerNode.auth_password),
+                                headers={'Content-Type': 'application/json'})
 
-                        # get follower node object
-                        followerNode = connectionNodes.filter(
-                            url=f"{follower.host}service/").first()
-                        req = requests.Request(
-                            'POST',
-                            f"{followerNode.url}authors/{follower.username}/inbox",
-                            data=json.dumps(serializer.data),
-                            auth=HTTPBasicAuth(followerNode.auth_username,
-                                               followerNode.auth_password),
-                            headers={'Content-Type': 'application/json'})
+                            prepared = req.prepare()
+                            s = requests.Session()
+                            resp = s.send(prepared)
 
-                        prepared = req.prepare()
+                            print("status code, ", resp.status_code)
 
-                        s = requests.Session()
-                        resp = s.send(prepared)
-
-                        print("status code, ", resp.status_code)
-
-            except AttributeError as e:
-                print(e, 'No followers for this author')
+                except AttributeError as e:
+                    print(e, 'No followers for this author')
 
         return redirect('inboxes:postList')
 
@@ -206,6 +211,168 @@ class PostDetailView(View):
 
         return render(request, 'postDetail.html', context)
 
+@method_decorator(login_required, name='dispatch')
+# def selectPerson(request):
+#     author_list = Author.objects.all()
+#     context = {
+#             'author_list':author_list,
+#         }
+#     return render(request, 'selectPerson.html', context)
+class selectPersonView(View):
+    def get(self, request, *args, **kwargs):
+        form = PostForm()
+        share_form = ShareForm()
+        author_list = Author.objects.all()
+        context = {
+            'form': form,
+            'author_list': author_list,
+            # 'source_post': source_post,
+            # 'original_post': original_post,
+        }
+        return render(request, 'selectPerson.html', context)
+
+    def post(self, request, *args, **kwargs):
+        # form = PostForm(request.POST, request.FILES)
+        # author_list = Author.objects.all()
+        username = request.POST.get('specificUserName', '')
+        # print(username)
+        try:
+            selected_author = Author.objects.get(displayName = username)
+        except:
+            selected_author = None
+
+        try:
+            post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
+            # print(Post.objects.filter(author__username=request.user.username))
+            # print(post)
+        except:
+            post = []
+
+        # check if they are true friend.
+        user = Author.objects.get(username=request.user.username)
+        try:
+            myfollowers = Followers.objects.filter(
+                user__username=user.username).first().items.all()
+        except:
+            myfollowers = []
+        if selected_author in myfollowers:
+            # if the host is local
+            if selected_author.host in localHostList:
+                try:
+                    hisfollowers = Followers.objects.filter(
+                                user__username=selected_author.username).first().items.all()
+                except:
+                    hisfollowers = []
+                if user in hisfollowers:
+                    # in this case you are true friends
+                    try:
+                        # Inbox.objects.filter(author__username=selected_author_info.username).first().items.add(post)
+                        # add the new post to my own inbox
+                        InboxItem.objects.create(
+                            inbox=Inbox.objects.filter(
+                                author__username=selected_author.username).first(),
+                            inbox_item_type="post",
+                            item=post,
+                        )
+                        try:
+                            InboxItem.objects.create(
+                                inbox=Inbox.objects.filter(
+                                    author__username=request.user.username).first(),
+                                inbox_item_type="post",
+                                item=post,
+                            )
+                        except AttributeError as e:
+                            print(e, 'Cannot add to my 1to1. Something went wrong!')
+                    except:
+                        context = {
+                            'username':username,
+                        }
+                        return render(request, 'authors/profileNotFound.html', context)
+                else:
+                    context = {
+                        'username': username,
+                    }
+                    return render(request, 'notFriend.html', context)
+            else:
+                # if author is not local
+                # get follower node object
+                try:
+                    followerNode = connectionNodes.filter(
+                        url=f"{selected_author.host}service/").first()
+                    response = requests.get(
+                        f"{followerNode.url}authors/{selected_author.username}/followers",
+                        params=request.GET,
+                        auth=HTTPBasicAuth(followerNode.auth_username,
+                                        followerNode.auth_password)
+                        )
+                    if response.status_code == 200:
+                        # print('------------Congratulations!!---------')
+                        hisfollowers = response.json()['items']
+                    else:
+                        pass
+                        # print(hisfollowers)
+                        # prepared = req.prepare()
+                        # s = requests.Session()
+                        # resp = s.send(prepared)
+
+                        # print("status code, ", resp.status_code)
+                except:
+                    hisfollowers = []
+                if user in hisfollowers:
+                    # You are TRUE friends
+                    try:
+                        serializer = serializers.PostSerializer(post)
+                        # get follower node object
+                        followerNode = connectionNodes.filter(
+                            url=f"{selected_author.host}service/").first()
+                        req = requests.Request(
+                            'POST',
+                            f"{followerNode.url}authors/{selected_author.username}/inbox",
+                            data=json.dumps(serializer.data),
+                            auth=HTTPBasicAuth(followerNode.auth_username,
+                                            followerNode.auth_password),
+                            headers={'Content-Type': 'application/json'})
+
+                        prepared = req.prepare()
+
+                        s = requests.Session()
+                        resp = s.send(prepared)
+                        
+                        # ADD to my own 1 to 1
+                        try:
+                            InboxItem.objects.create(
+                                inbox=Inbox.objects.filter(
+                                    author__username=request.user.username).first(),
+                                inbox_item_type="post",
+                                item=post,
+                            )
+                        except AttributeError as e:
+                            print(e, 'Cannot add to my 1to1. Something went wrong!')
+                    except:
+                        context = {
+                            'username':username,
+                        }
+                        return render(request, 'authors/profileNotFound.html', context)
+                else:
+                    context = {
+                        'username': username,
+                    }
+                    return render(request, 'notFriend.html', context)
+        else:
+            context = {
+                'username': username,
+            }
+            return render(request, 'notFriend.html', context)
+
+        # add the new post to my own inbox
+        # Inbox.objects.filter(author__username=request.user.username).first().items.add(post)
+        # posts = Post.objects.all()
+        # context = {
+        #     'postList': posts,
+        #     # 'form': form,
+        # }
+        # return render(request,'myapp/newpost.html', context)
+        return redirect('inboxes:postList')
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
@@ -395,7 +562,7 @@ def liked(request, post_id):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title', 'content', 'contentType', 'visibility']
+    fields = ['title','description','contentType','categories']
     template_name = 'postEdit.html'
 
     def get_success_url(self):

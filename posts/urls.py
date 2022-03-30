@@ -1,11 +1,14 @@
 from django.urls import path
 
 from . import views
+from .views import selectPersonView
 
 app_name = 'posts'
 urlpatterns = [
     # ex: /polls/
     path('newpost/', views.NewPostView.as_view(), name='newpost'),
+    path('newpost/select/', selectPersonView.as_view(), name='selectPerson'),
+    # path('newpost/select/notyourfriend/', selectPersonView.as_view(), name='selectPerson'),
     path('post/<uuid:pk>',views.PostDetailView.as_view(), name='postDetail'),
     path('post/edit/<uuid:pk>',views.PostEditView.as_view(), name='postEdit'),
     path('post/delete/<uuid:pk>',views.PostDeleteView.as_view(), name='postDelete'),

@@ -70,6 +70,29 @@ class PostListView(View):
         }
         return render(request, 'feed.html', context)
 
+@method_decorator(login_required, name='dispatch')
+class OneToOneView(View):
+    def get(self, request, *args, **kwargs):
+        # posts = Post.objects.all().order_by('-published')
+        currentUser = request.user
+        currentInbox = Inbox.objects.filter(
+            author__username=currentUser.username).first()
+        posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
+        responsePosts = []
+        for post in posts:
+            responsePosts.append(post.item)
+        # sort responsePosts by published
+        responsePosts.sort(key=lambda x: x.published, reverse=True)
+
+        author_list = Author.objects.all()
+        context = {
+            'postList': responsePosts,
+            'author_list':author_list,
+
+            # 'form': form,
+        }
+        return render(request,'1to1.html', context)
+
 
 #
 # API

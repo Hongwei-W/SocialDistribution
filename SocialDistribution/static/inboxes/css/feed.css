@@ -171,6 +171,12 @@ input[id^="postBar"]{
     position: relative;
 }
 
+#OneToOne {
+    padding: 0 0 0 0;
+    height: 100%;
+    width: 100%;
+}
+
 /*#searchBar {*/
 /*    background-color: #e9e9e9;*/
 /*    height: 40px;*/

@@ -173,6 +173,21 @@ def acceptFriendRequest(request, actor_id):
             else:
                 Followers.objects.create(user=object)
                 Followers.objects.get(user=object).items.add(actor)
+
+            # Add posts to the followers' Inbox
+            currentUser = request.user
+            currentInbox = Inbox.objects.filter(
+                author__username=currentUser.username).first()
+            posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
+            responsePosts = []
+            for post in posts:
+                if post.visibility == 'FRIENDS':
+                    responsePosts.append(post.item)
+            # sort responsePosts by published
+            responsePosts.sort(key=lambda x: x.published, reverse=True)
+            
+
+
             return render(request, 'feed.html')
 
 
