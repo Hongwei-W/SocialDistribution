@@ -2,19 +2,25 @@ from django.shortcuts import redirect, render
 
 from accounts.forms import AuthorInfoForm, SignUpForm
 from authors.models import Author
+from common.models import ServerSetting
 from inboxes.models import Inbox
 
 
 def signup(request):
+    needs_admin_approval = not ServerSetting.objects.first()\
+    .allow_independent_user_login
+
     # if request.user.is_authenticated:
     #     return redirect('myapp:postList')  # TODO: Redirect to account page
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         author_form = AuthorInfoForm(request.POST)
         if form.is_valid() and author_form.is_valid():
-            #TODO: Probably can remove this line since the next one saves?
-            form.save()
             user = form.save()
+
+            if needs_admin_approval:
+                user.is_active = False
+                user.save()
 
             try:
                 profile_image_string = author_form.cleaned_data['profileImage']
@@ -37,8 +43,8 @@ def signup(request):
                                 github=github)
 
             author.save()
-            author.id = author.host+"authors/"+str(author.uuid)
-            print("author id is "+author.id)
+            author.id = author.host + "authors/" + str(author.uuid)
+            print("author id is " + author.id)
             author.save()
             inbox = Inbox(author=author)
             inbox.save()
@@ -46,5 +52,9 @@ def signup(request):
     else:
         form = SignUpForm()
         author_form = AuthorInfoForm()
-    context = {'form': form, 'author_info_form': AuthorInfoForm}
+    context = {
+        'form': form,
+        'author_info_form': AuthorInfoForm,
+        'needs_admin_approval': needs_admin_approval
+    }
     return render(request, 'registration/signup.html', context)
