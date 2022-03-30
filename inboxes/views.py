@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from authors.models import Author, FriendFollowRequest
 from common.models import ConnectionNode
 from common.pagination import CustomPageNumberPagination
-from posts.models import Post, Category, Like
+from posts.models import Post, Category, Like, Comment
 from . import serializers
 from .models import Inbox, InboxItem
 
@@ -180,11 +180,17 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
         elif data["type"] == "like":
             # check if this is a comment or a post
             if "comment" in data["object"]:
-                # TODO like a comment
-                pass
+                # check if the comment exists
+                comment = Comment.objects.filter(id=data["object"]).first()
+                if comment is None:
+                    return HttpResponseNotFound("comment not exist")
+                like_before = Like.objects.filter(author__id=data['author']['id'],
+                                                  object=comment.id).first()
+                if like_before is not None:
+                    return HttpResponseNotFound("user has given a like before")
             else:
                 # like a post
-                # check if post in the body (the post that user gives a like) exists
+                # check if post (the post that user gives a like) exists
                 post = Post.objects.filter(id=data["object"]).first()
                 # people only send like object on posts that is originated from our node, so a checking is a must
                 if post is None:
@@ -194,22 +200,28 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 # breakpoint()
                 if like_before is not None:
                     return HttpResponseNotFound("user has given a like before")
-                author = Author.objects.filter(id=data['author']['id']).first()
+
+            author = Author.objects.filter(id=data['author']['id']).first()
+            try:
                 new_like = Like.objects.create(author=author, object=data["object"], summary=data['summary'])
                 new_like.save()
+            except Exception as e:
+                return HttpResponseNotFound(f"there was a problem when processing {e}")
+
+            if data['type'] == "post":
                 post.likes += 1
                 post.save()
 
-                # adding like to user inbox via InboxItem
-                InboxItem.objects.create(
-                    inbox=Inbox.objects.filter(
-                        author__username=current_user.username).first(),
-                    item=new_like,
-                    inbox_item_type="like",
-                )
+            # adding like to user inbox via InboxItem
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=current_user.username).first(),
+                item=new_like,
+                inbox_item_type="like",
+            )
 
-                serializer = serializers.LikesSerializer(new_like)
-                return Response(serializer.data)
+            serializer = serializers.LikesSerializer(new_like)
+            return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']

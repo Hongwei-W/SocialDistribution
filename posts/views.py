@@ -167,7 +167,7 @@ class PostDetailView(View):
                 username=request.user.username)
             newComment.post = post
             newComment.save()
-            newComment.id = request.get_host() + "/authors/" + str(
+            newComment.id = request.build_absolute_uri('/') + "authors/" + str(
                 post.author.uuid) + "/posts/" + str(pk) + "/comments/" + str(
                     newComment.uuid)
             newComment.save()
@@ -297,38 +297,31 @@ class LikeHandlerView(View):
         object_id = request.POST['object_id']
         object_uuid = object_id.split('/')[-1]
         host = request.POST['author_host']
-        summary = author.displayName + ' Likes your post'
         node = ConnectionNode.objects.filter(url__contains=host).first()
 
-        req = requests.Request(
-            'GET',
-            f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
-            auth=HTTPBasicAuth(node.auth_username,
-                               node.auth_password),
-        )
+        if "comments" in object_id:
+            summary = author.displayName + ' likes your comment'
+            post_uuid = object_id.split('/')[-3]
+            req = requests.Request(
+                'GET',
+                f"{node.url}authors/{author_uuid}/posts/{post_uuid}/comments/{object_uuid}/likes",
+                auth=HTTPBasicAuth(node.auth_username,
+                                   node.auth_password),
+            )
+        else:
+            summary = author.displayName + ' likes your post'
+            req = requests.Request(
+                'GET',
+                f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
+                auth=HTTPBasicAuth(node.auth_username,
+                                   node.auth_password),
+            )
 
         prepared = req.prepare()
-
-        def pretty_print_POST(req):
-            """
-            At this point it is completely built and ready
-            to be fired; it is "prepared".
-
-            However pay attention at the formatting used in
-            this function because it is programmed to be pretty
-            printed and may differ from the actual request.
-            """
-            print('{}\n{}\r\n{}\r\n\r\n{}'.format(
-                '-----------START-----------',
-                req.method + ' ' + req.url,
-                '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
-                req.body,
-            ))
-
-        pretty_print_POST(prepared)
-
         s = requests.Session()
         resp = s.send(prepared)
+        if resp.status_code >= 400:
+            return JsonResponse({"liked": "fail"})
         content = resp.json()
         author_lst = []
         for i in content['items']:
@@ -657,7 +650,7 @@ class CommentsAPIView(CreateModelMixin, ListAPIView):
         return Response(serializer.data)
 
 
-class LikesAPIView(ListAPIView):
+class PostLikesAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
     # renderer_classes = (renderers.LikesRenderer,)
@@ -665,15 +658,26 @@ class LikesAPIView(ListAPIView):
 
     def get_queryset(self):
         object_id = self.kwargs['post']
-        if 'comment' in object_id:
-            # this is a comment
-            pass
-        else:
-            # this is a post
-            return Like.objects.filter(object__contains=object_id)
+        # this is a post
+        likes = Like.objects.filter(object__contains=object_id)
+        likes = likes.exclude(object__contains="comments")
+        return likes
 
 
-# TODO Like API - 3: comment likes
+class CommentLikesAPIView(ListAPIView):
+    serializer_class = serializers.LikesSerializer
+    pagination_class = CustomPageNumberPagination
+    # renderer_classes = (renderers.LikesRenderer,)
+    lookup_fields = ('object',)
+
+    def get_queryset(self):
+        post_id = self.kwargs['post']
+        comment_id = self.kwargs['comment']
+        # this is a post
+        likes = Like.objects.filter(object__contains=post_id)
+        likes = likes.filter(object__contains="comments")
+        likes = likes.filter(object__contains=comment_id)
+        return likes
 
 
 class LikedAPIView(ListAPIView):
