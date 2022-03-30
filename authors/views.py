@@ -107,10 +107,14 @@ def follow(request):
         # objectName = object.displayName
 
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
-            pass
-            # delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
-            # delete_follower.delete()
-            # raise Exception('Friend request canceled')
+            if object.host in localHostList:
+                print("canceling requets to local users...", object.username)
+                delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
+                InboxItem.objects.filter(inbox_item_type='friendfollowrequest', object_id=delete_request.id).first().delete()
+                delete_request.delete()
+            if actor in Followers.objects.get(user=object).items.all():
+                Followers.objects.get(user=object).items.remove(actor)
+                    
         else:
             if object.host in localHostList:
                 print("following local users...", object.username)
@@ -118,14 +122,14 @@ def follow(request):
                     actor=actor,
                     object=object,
                     summary=
-                    f'created request: {actorName} wants to follow {objectName}'
+                    f'created request: {actor.displayName} wants to follow {object.displayName}'
                 )
 
                 # when created, also push into recepients inbox
                 InboxItem.objects.create(inbox=Inbox.objects.filter(
                     author__username=objectName).first(),
                                          item=friendRequest,
-                                         inbox_item_type='FriendFollowRequest')
+                                         inbox_item_type='friendfollowrequest')
 
                 friendRequest.save()
             else:
@@ -133,7 +137,7 @@ def follow(request):
                     actor=actor,
                     object=object,
                     summary=
-                    f'created request: {actorName} wants to follow {objectName}'
+                    f'created request: {actor.displayName} wants to follow {object.displayName}'
                 )
                 friendRequest.save()
                 print(f'following remote author {object.username}')
