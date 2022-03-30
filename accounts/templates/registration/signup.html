@@ -124,7 +124,7 @@
 </div>
 
 <!-- Rest of the file -->
-<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 5%;">
+<div class="container text-font h-100" style="background-color: #FBFBFB; padding-top: 2%;">
     <div class="row justify-content-center">
         <div class="col-8 justify-content-center">
             <!-- Row for Headers -->
@@ -150,9 +150,12 @@
                         </div>
                         <div class="text-font">
                             replace with your avatar with an URL
-                            <form id="profile-pic-form">
-                            
-                            </form>
+                            <br>
+                            {% if needs_admin_approval %}
+                            <span style="color: red">
+                                Please note that new accounts created currently require admin approval to be activated.
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -180,7 +183,7 @@
                             <label class="text-font" for="password2">Enter Image Url</label>
                             {{author_info_form.profileImage}}
                         </div>
-                        <div class="" style="padding-bottom: 2em;">
+                        <div class="" style="padding-bottom: 1em;">
                             {{form.errors}}
                         </div>
                         <div class="row justify-content-center">
@@ -190,7 +193,7 @@
                 </div>
             </div>
             <!--  -->
-            <div class="row">
+            <div class="row pt-4">
                 <div class="col-12">
                     <div class="redirect text-center">
                         <span>

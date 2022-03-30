@@ -3,6 +3,7 @@ import uuid
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.timezone import localtime
+from django.contrib import admin
 
 
 class Category(models.Model):
@@ -55,7 +56,6 @@ class Post(models.Model):
     #         img_file = open(self.post_image.url, "rb")
     #         self.image_b64 = base64.b64encode(img_file.read())
     #         super(Image, self).save(*args, **kwargs)
-
 
 class Like(models.Model):
     type = models.CharField(default='like', max_length=200)

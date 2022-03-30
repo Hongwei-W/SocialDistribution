@@ -148,7 +148,16 @@ class PostDetailView(View):
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(uuid=pk)
         form = CommentForm()
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        # if post is a friend post and current user is not the author of the post, then only show comments of current user
+        if post.visibility == 'FRIENDS' and post.author.username != request.user.username:
+            comments = Comment.objects.filter(post=post).order_by('-published')
+            for comment in comments:
+                if comment.author.username != request.user.username:
+                    comments = comments.exclude(
+                        author__username=comment.author.username)
+        # else, show all comments
+        else:
+            comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:

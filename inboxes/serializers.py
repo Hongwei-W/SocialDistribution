@@ -33,22 +33,22 @@ class InboxSerializer(ModelSerializer):
         for item in items:
             if item.inbox_item_type == "post":
                 postObject = Post.objects\
-                    .filter(uuid=item.item_id).first()
+                    .filter(uuid=item.object_id).first()
                 itemArray.append(PostSerializer(postObject).data)
 
             elif item.inbox_item_type == "comment":
                 commentObject = Comment.objects\
-                    .filter(uuid=item.item_id).first()
+                    .filter(uuid=item.object_id).first()
                 itemArray.append(CommentsSerializer(commentObject).data)
 
             elif item.inbox_item_type == "like":
                 likeObject = Like.objects\
-                    .filter(id=item.item_id).first()
+                    .filter(id=item.object_id).first()
                 itemArray.append(LikesSerializer(likeObject).data)
 
             elif item.inbox_item_type == "friend_follow_request":
                 friendFollowRequestObject = FriendFollowRequest.objects\
-                    .filter(id=item.item_id).first()
+                    .filter(id=item.object_id).first()
                 itemArray.append(
                     FriendFollowRequestSerializer(friendFollowRequestObject)\
                         .data)
