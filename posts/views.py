@@ -246,7 +246,6 @@ class SharedPostView(View):
                 contentType='text',
                 author=Author.objects.get(username=request.user.username),
                 visibility=original_post.visibility,
-                shared=True,
             )
             new_post.save()
             new_post.id = f"{request.build_absolute_uri('/')}authors/{str(new_post.author.uuid)}/posts/{str(new_post.uuid)}"
