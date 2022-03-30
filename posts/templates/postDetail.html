@@ -18,7 +18,9 @@
                     <div class="singlePost">
                         <div class="postTitle">{{ post.title }}</div> 
                         {% if request.user.username == post.author.username %}
-                            <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            {% if post.visibility == "PUBLIC" %}
+                                <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            {% endif %}
                             <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
                         {% endif%}
 

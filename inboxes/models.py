@@ -36,16 +36,16 @@ class InboxItem(models.Model):
 
     # GFK to {like, post, comment, friendfollowrequest}
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    item_id = models.CharField(max_length=255)
-    item = GenericForeignKey('content_type', 'item_id')
+    object_id = models.CharField(max_length=255)
+    item = GenericForeignKey('content_type', 'object_id')
 
     def __str__(self) -> str:
-        return f"{self.inbox.author.username}'s {self.inbox_item_type}: {self.content_type}, {self.item_id}"
+        return f"{self.inbox.author.username}'s {self.inbox_item_type}: {self.content_type}, {self.object_id}"
 
     def to_dict(self) -> dict:
         return {
             'inbox_item_type': self.inbox_item_type,
             'content_type': self.content_type,
-            'item_id': self.item_id,
+            'object_id': self.object_id,
             'item': self.item.to_dict()
         }
