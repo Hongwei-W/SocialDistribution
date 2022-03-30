@@ -24,11 +24,13 @@
                             <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
                         {% endif%}
 
-                        
-                        {% if post.contentType == "text/markdown" %}
-                                <div class="postBody">{{ post.content | markdownify}}</div>
-                            {% else %}
-                                <div class="postBody">{{ post.content }}</div>
+                        <!-- if user entered valid text content -->
+                        {% if post.content != "" %}
+                            {% if post.contentType == "text/markdown" %}
+                                    <div class="postBody">{{ post.content | markdownify}}</div>
+                                {% else %}
+                                    <div class="postBody">{{ post.content }}</div>
+                            {% endif %}
                         {% endif %}
 
                         

@@ -48,13 +48,29 @@ class NewPostView(View):
 
     def post(self, request, *args, **kwargs):
         form = PostForm(request.POST, request.FILES)
-
-        if form.is_valid():
+        # form content is not None or image is not None
+        if form.is_valid() and (form['content'].value() != "" or form['post_image'].value() is not None):
             # creating post from form and adding attributes
             newPost = form.save(commit=False)
+
             newPost.author = Author.objects.get(username=request.user.username)
             newPost.id = request.get_host() + "/authors/" + str(
                 newPost.author.uuid) + "/posts/" + str(newPost.uuid)
+
+            # if post has text, set contentType to text
+            if newPost.content != "":
+                newPost.contentType = "text/plain"
+                if newPost.textType != None:
+                    newPost.contentType = newPost.textType
+            # if post has image, set contentType to image
+            else:
+                if "jpeg" in newPost.post_image.name:
+                    newPost.contentType = "image/jpeg;base64"
+                elif "png" in newPost.post_image.name:
+                    newPost.contentType = "image/png;base64"
+                else:
+                    newPost.contentType = "application/base64"
+
 
             # adding categories to post
             unparsedCat = newPost.unparsedCategories

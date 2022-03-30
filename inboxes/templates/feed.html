@@ -47,11 +47,14 @@
                             <div class="authorName">Author: {{ post.author.username }}</div>
                             <div class="postTitle">{{ post.title }}</div>
                             <!-- pip install django-markdownify -->
-                            {% if post.contentType == "text/markdown" %}
-                                <div class="postBody">{{ post.content | markdownify}}</div>
-                            {% else %}
-                                <div class="postBody">{{ post.content}}</div>
+                            {% if post.content != "" %}
+                                {% if post.contentType == "text/markdown" %}
+                                    <div class="postBody">{{ post.content | markdownify}}</div>
+                                {% else %}
+                                    <div class="postBody">{{ post.content }}</div>
+                                {% endif %}
                             {% endif %}
+
                             {% if post.post_image %}
                                 <img src="{{ post.post_image.url }}" width="100%">
                             {% endif %}
