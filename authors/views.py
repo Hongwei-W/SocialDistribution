@@ -175,17 +175,51 @@ def acceptFriendRequest(request, actor_id):
                 Followers.objects.get(user=object).items.add(actor)
 
             # Add posts to the followers' Inbox
-            currentUser = request.user
-            currentInbox = Inbox.objects.filter(
-                author__username=currentUser.username).first()
+            currentInbox = Inbox.objects.filter(author__username=object.username).first()
             posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
             responsePosts = []
             for post in posts:
-                if post.visibility == 'FRIENDS':
+                if post.item.visibility == 'FRIENDS':
                     responsePosts.append(post.item)
             # sort responsePosts by published
             responsePosts.sort(key=lambda x: x.published, reverse=True)
+
             
+            try:
+                # follower is <author> object
+                # if follower is local
+                if actor.host in localHostList:
+                    # add it to inbox of follower
+                    for post in responsePosts:
+                        InboxItem.objects.create(
+                            inbox=Inbox.objects.filter(
+                                author__username=actor.username).first(),
+                            inbox_item_type="post",
+                            item=post,
+                        )
+                else:
+                    # if author is not local make post request to add to other user inbox
+                    for post in responsePosts:
+                        serializer = serializers.PostSerializer(post)
+                        # get follower node object
+                        followerNode = connectionNodes.filter(
+                            url=f"{actor.host}service/").first()
+                        req = requests.Request(
+                            'POST',
+                            f"{followerNode.url}authors/{actor.username}/inbox",
+                            data=json.dumps(serializer.data),
+                            auth=HTTPBasicAuth(followerNode.auth_username,
+                                            followerNode.auth_password),
+                            headers={'Content-Type': 'application/json'})
+
+                        prepared = req.prepare()
+                        s = requests.Session()
+                        resp = s.send(prepared)
+
+                        print("status code, ", resp.status_code)
+
+            except AttributeError as e:
+                print(e, 'No followers for this author')
 
 
             return render(request, 'feed.html')
