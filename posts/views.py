@@ -225,10 +225,7 @@ class SharedPostView(View):
         # source_post is the currently selected post to be shared
         source_post = Post.objects.get(pk=pk)
         # TODO: SU: please confirm that this is accepted behaviour.
-        if source_post.type == 'post':
-            source_text = request.get_host() + '/post/'
-        else:
-            source_text = request.get_host() + '/post/shared/'
+        source_post_id = source_post.id.split('/')[-1]
         original_post_id = source_post.origin.split('/')[-1]
         original_post = Post.objects.get(uuid=original_post_id)
         form = ShareForm(request.POST)
@@ -239,14 +236,14 @@ class SharedPostView(View):
                 # eg if author.user is not the same as the user who is sharing the post
                 type='post',
                 title=self.request.POST.get('title'),
-                source=source_text + str(pk),
                 origin=original_post.origin,
                 description=Post.objects.get(pk=pk).description,
                 content=Post.objects.get(pk=pk).content,
-                contentType='text',
+                contentType=original_post.contentType,
                 author=Author.objects.get(username=request.user.username),
                 visibility=original_post.visibility,
             )
+            new_post.source = f"{request.build_absolute_uri('/')}authors/{str(new_post.author.uuid)}/posts/{str(source_post_id)}"
             new_post.save()
             new_post.id = f"{request.build_absolute_uri('/')}authors/{str(new_post.author.uuid)}/posts/{str(new_post.uuid)}"
             new_post.save()
