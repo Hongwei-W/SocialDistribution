@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from authors.models import Author, FriendFollowRequest
 from common.models import ConnectionNode
 from common.pagination import CustomPageNumberPagination
-from posts.models import Post, Category, Like
+from posts.models import Post, Category, Like, Comment
 from . import serializers
 from .models import Inbox, InboxItem
 
@@ -190,13 +190,52 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # adding like to user inbox via InboxItem
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
+                    author__username=current_user.username).first(),
                 item=new_like,
                 inbox_item_type="like",
             )
 
             # TODO: like could be comments/posts -- what does this mean?? -darren
-            serializer = serializers.LikeSerializer(new_like)
+            serializer = serializers.CommentsSerializer(new_comment)
+            return Response(serializer.data)
+
+        elif data["type"] == "comment":
+            split_contents = data['id'].split('/')
+            # post id
+            post_id = split_contents[split_contents.index('posts') + 1]
+            # comment id
+            comment_id = split_contents[split_contents.index('comments') + 1]
+            
+            # check if post exists in db
+            if not Post.objects.filter(id__contains=post_id).first():
+                return HttpResponseNotFound("post does not exist")
+
+            # # check if the comment already exists in db for specific post
+            # if Post.objects.filter(id__contains=post_id):
+            #     return HttpResponseNotFound("comment on post already exists")
+            # creating comment object
+            try:
+                # must create author first
+                new_author = Author.objects.get(id=data['author']['id'])
+                new_comment = Comment.objects.create(author=new_author, comment=data['comment'], contentType=data['contentType'], id=data['id'])
+                new_comment.save()
+            except Exception as e:
+                return HttpResponseNotFound(f"there was a problem when processing {e}")
+
+            # adding comment to post object
+            post = Post.objects.filter(id__contains=post_id).first()
+            post.count += 1   
+            post.save()
+
+            # adding comment to user inbox via InboxItem
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=current_user.username).first(),
+                item=new_comment,
+                inbox_item_type="comment",
+            )
+
+            serializer = serializers.CommentsSerializer(new_comment)
             return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):

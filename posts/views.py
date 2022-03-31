@@ -152,7 +152,8 @@ class PostDetailView(View):
                         author__username=comment.author.username)
         # else, show all comments
         else:
-            comments = Comment.objects.filter(post=post).order_by('-published')
+            comments = Comment.objects.filter(id__contains=post.id).order_by('-published')
+        breakpoint()
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -176,17 +177,60 @@ class PostDetailView(View):
         author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
+            print(newComment.uuid)
             newComment.author = Author.objects.get(
                 username=request.user.username)
-            newComment.post = post
-            newComment.save()
+            newComment.comment = form['comment'].value()
+            newComment.contentType = form['contentType'].value()
             newComment.id = request.get_host() + "/authors/" + str(
                 post.author.uuid) + "/posts/" + str(pk) + "/comments/" + str(
                     newComment.uuid)
-            newComment.save()
-            post.count += 1
-            post.save()
-            # reset form
+            newComment.post = post
+
+            # url
+            comment_author = newComment.author.id.split('/')[-1]
+            post_author = newComment.post.author.id.split('/')[-1]
+            comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
+            post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
+        
+            #comment json for commenter
+            comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
+            
+            # push to commenters inbox
+            print(f"FJKASKLDFJALKSJDLKASJDLKA {comment_node.url}authors/{comment_author}/inbox")
+            print(f"{post_node.url}authors/{post_author}/inbox")
+            comment_author_req = requests.Request(
+                'POST', 
+                f"{comment_node.url}authors/{comment_author}/inbox",
+                auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
+                headers={'Content-Type': 'application/json'},
+                data=comment_json,
+            )
+            comment_prepare = comment_author_req.prepare()
+            comment_s = requests.Session()
+            comment_resp= comment_s.send(comment_prepare)
+
+            if comment_resp.status_code >= 400:
+                    print('Error has occured while sending things')
+
+            if post_author != comment_author:    
+                # push to post authors inbox
+                post_author_req = requests.Request(
+                    'POST',
+                    f"{post_node.url}authors/{post_author}/inbox",
+                    data = comment_json,
+                    auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                    headers={'Content-Type': 'application/json'},
+                )
+
+                post_prep = post_author_req.prepare()
+                post_session = requests.Session()
+                post_resp = post_session.send(post_prep)
+                
+                if post_resp.status_code >= 400:
+                    print('Error has occured while sending things')
+            
+
             form = CommentForm()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
@@ -308,7 +352,7 @@ def like(request):
     like_filter = Like.objects.filter(object=post, author=author).first()
     if like_filter == None:
         print(post, author)
-        new_like = Like.objects.create(author=author, object=post)
+        new_like = Like.objects.create(author=author, object=post, summary=summary)
         new_like.save()
         post.likes += 1
         post.save()

@@ -59,7 +59,7 @@ class Post(models.Model):
 
 class Like(models.Model):
     type = models.CharField(default='like', max_length=200)
-    # summary = models.TextField()
+    summary = models.TextField()
     # content = models.TextField()
     author = models.ForeignKey(to="authors.Author", on_delete=models.CASCADE)
     object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
@@ -68,7 +68,9 @@ class Like(models.Model):
 
 class Comment(models.Model):
     type = models.CharField(default='comment', max_length=200)
+    id = models.CharField(max_length=200)
     author = models.ForeignKey(to="authors.Author", on_delete=models.CASCADE)
+    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, null=True)
     comment = models.TextField()
     CONTENT_CHOICES = [("text/plain", "Plaintext"),
                        ("text/markdown", "Markdown")]
@@ -80,6 +82,4 @@ class Comment(models.Model):
                             editable=False,
                             unique=True,
                             primary_key=True)
-    id = models.CharField(max_length=200)
-    post = models.ForeignKey(to=Post, on_delete=models.CASCADE, null=True)
     inbox = GenericRelation("inboxes.InboxItem")
