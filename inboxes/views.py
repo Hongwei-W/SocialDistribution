@@ -197,9 +197,11 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                     return HttpResponseNotFound("post not exist")
                 like_before = Like.objects.filter(author__id=data['author']['id'],
                                                   object=post.id).first()
-                # breakpoint()
                 if like_before is not None:
                     return HttpResponseNotFound("user has given a like before")
+
+                post.likes += 1
+                post.save()
 
             author = Author.objects.filter(id=data['author']['id']).first()
             try:
