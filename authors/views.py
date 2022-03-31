@@ -74,7 +74,6 @@ def profile(request, user_id):
         'posts': posts,
         'author_list': author_list,
     }
-    # breakpoint()
     return render(request, 'profile.html', context)
 
 
@@ -162,6 +161,7 @@ def friendRequests(request):
     commentInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="comment")
     context = {
         'currentUser_uuid': currentAuthor.id.split('/')[-1],
+        'currentUser_displayName': currentAuthor.displayName,
         'likes': [item.item for item in likeInboxItems],
         'friendRequests': [item.item for item in friendFollowInboxItems],
         'comments': [item.item for item in commentInboxItems],
@@ -235,7 +235,6 @@ class AuthorsAPIView(ListAPIView):
     http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
-        # breakpoint()
         url = request.build_absolute_uri('/')
         serializer = serializers.AuthorSerializer(
             Author.objects.filter(host=url), many=True)
