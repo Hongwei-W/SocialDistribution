@@ -51,18 +51,13 @@ class Post(models.Model):
     post_image = models.ImageField(null=True, blank=True, upload_to='images/')
     image_b64 = models.BinaryField(blank=True, null=True)
     inbox = GenericRelation("inboxes.InboxItem")
-    # def save(self, *args, **kwargs):
-    #     if self.post_image:
-    #         img_file = open(self.post_image.url, "rb")
-    #         self.image_b64 = base64.b64encode(img_file.read())
-    #         super(Image, self).save(*args, **kwargs)
 
 class Like(models.Model):
     type = models.CharField(default='like', max_length=200)
-    # summary = models.TextField()
+    summary = models.TextField()
     # content = models.TextField()
     author = models.ForeignKey(to="authors.Author", on_delete=models.CASCADE)
-    object = models.ForeignKey(to=Post, on_delete=models.CASCADE)
+    object = models.CharField(max_length=200)
     inbox = GenericRelation("inboxes.InboxItem")
 
 

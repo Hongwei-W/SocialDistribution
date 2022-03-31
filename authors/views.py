@@ -51,7 +51,6 @@ def profile(request, user_id):
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
-
     # get follow
     if FriendFollowRequest.objects.filter(
             actor__username=actor.username,
