@@ -21,9 +21,10 @@ class Post(models.Model):
                             unique=True,
                             primary_key=True)
     id = models.CharField(max_length=200)
+    url = models.CharField(max_length=200)
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     content = models.TextField(null=True, blank=True)
     CONTENT_CHOICES = [("text/plain", "Plaintext"),
                        ("text/markdown", "Markdown"),

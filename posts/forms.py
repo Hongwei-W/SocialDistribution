@@ -14,6 +14,7 @@ class PostForm(forms.ModelForm):
         })
     )
     description = forms.CharField(label='description', 
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Give a brief description of the post.',
             'rows':1,
@@ -30,6 +31,7 @@ class PostForm(forms.ModelForm):
         })
     )
     unparsedCategories = forms.CharField(label='categories',
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Separate your categories with space e.g. web_dev CMPUT404',
             'rows':2,

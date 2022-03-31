@@ -56,20 +56,56 @@ class NewPostView(View):
             newPost.author = Author.objects.get(username=request.user.username)
             newPost.id = request.get_host() + "/authors/" + str(
                 newPost.author.uuid) + "/posts/" + str(newPost.uuid)
+            newPost.url = newPost.author.host + "post/" + str(newPost.uuid)
+            
+            # not sure what its for but it works
+            if newPost.type == 'post':
+                newPost.source = request.get_host() + "/post/" + str(
+                    newPost.uuid)
+                newPost.origin = request.get_host() + "/post/" + str(
+                    newPost.uuid)
+                newPost.comments = request.get_host() + "/post/" + str(
+                    newPost.uuid) + '/comments'
+                newPost.save()
 
-            # if post has text, set contentType to text
-            if newPost.content != "":
+            # if it has an image, then create an unlisted image post
+            if newPost.post_image:
+                # print("------url", newPost.post_image.path)
+                # print(str(newPost.post_image))
+                img_file = open(newPost.post_image.path, "rb")
+                # newPost.image_b64 = base64.b64encode(img_file.read())
+                # create an embedded image post 
+                newImagePost = Post(
+                    author=newPost.author,
+                    unlisted = True,
+                    source = newPost.source,
+                    origin = newPost.origin,
+                    comments = newPost.comments,
+                    visibility = newPost.visibility,
+                    post_image = newPost.post_image,
+                    image_b64 = base64.b64encode(img_file.read())
+                )
+                # newImagePost.save(commit=False)
+                if "jpeg" in newPost.post_image.name:
+                    newImagePost.contentType = "image/jpeg;base64"
+                elif "png" in newPost.post_image.name:
+                    newImagePost.contentType = "image/png;base64"
+                else:
+                    newImagePost.contentType = "application/base64"
+                newImagePost.url = newPost.author.host + "post/" + str(newImagePost.uuid)
+                newPost.id = request.get_host() + "/authors/" + str(
+                    newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
+                # print(newPost.image_b64[:20])
+                newImagePost.save()
+                newPost.contentType = "text/markdown"
+                newPost.content += "\n[View image here](" + newImagePost.url + ")"
+                newPost.post_image = None
+                newPost.save()
+            else:
+                # Set text post to plain/markdown
                 newPost.contentType = "text/plain"
                 if newPost.textType != None:
                     newPost.contentType = newPost.textType
-            # if post has image, set contentType to image
-            else:
-                if "jpeg" in newPost.post_image.name:
-                    newPost.contentType = "image/jpeg;base64"
-                elif "png" in newPost.post_image.name:
-                    newPost.contentType = "image/png;base64"
-                else:
-                    newPost.contentType = "application/base64"
 
 
             # adding categories to post
@@ -83,24 +119,6 @@ class NewPostView(View):
                 newPost.categories.add(newCat)
                 newPost.save()
 
-            # not sure what its for but it works
-            if newPost.type == 'post':
-                newPost.source = request.get_host() + "/post/" + str(
-                    newPost.uuid)
-                newPost.origin = request.get_host() + "/post/" + str(
-                    newPost.uuid)
-                newPost.comments = request.get_host() + "/post/" + str(
-                    newPost.uuid) + '/comments'
-                newPost.save()
-
-            # if its an image
-            if newPost.post_image:
-                # print("------url", newPost.post_image.path)
-                # print(str(newPost.post_image))
-                img_file = open(newPost.post_image.path, "rb")
-                newPost.image_b64 = base64.b64encode(img_file.read())
-                # print(newPost.image_b64[:20])
-                newPost.save()
 
             # add post to InboxItem which links to Inbox
             InboxItem.objects.create(
