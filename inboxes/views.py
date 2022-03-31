@@ -145,7 +145,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # adding post to author inbox via InboxItem
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
+                    author__username=current_user.username).first(),
                 item=new_post,
                 inbox_item_type="post",
             )
@@ -168,7 +168,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # add friendfollowrequest to the inbox as well
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
+                    author__username=current_user.username).first(),
                 item=friend_request,
                 inbox_item_type="friend_follow_request",
             )
