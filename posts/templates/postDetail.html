@@ -53,10 +53,15 @@
 
 
                         <div class="postActions">
-                            
-                            <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
-                            <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Likes</a>&emsp;
-                            <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>
+                            {% if post.visibility != 'PRIVATE' %}
+                                <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
+                                <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Likes</a>&emsp;
+                                <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
+                            {% else %}
+                                <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Likes</a>&emsp;
+                                <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
+                            {% endif %}
+                        </div>
                     </div>
                     <form method="POST">
                         {% csrf_token %}

@@ -248,7 +248,10 @@ class selectPersonView(View):
         try:
             selected_author = Author.objects.get(displayName = username)
         except:
-            selected_author = None
+            context = {
+                'username':username,
+            }
+            return render(request, 'authors/profileNotFound.html', context)
 
         try:
             post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
@@ -315,58 +318,51 @@ class selectPersonView(View):
                                         followerNode.auth_password)
                         )
                     if response.status_code == 200:
-                        # print('------------Congratulations!!---------')
                         hisfollowers = response.json()['items']
+                        print(hisfollowers)
                     else:
-                        pass
-                        # print(hisfollowers)
-                        # prepared = req.prepare()
-                        # s = requests.Session()
-                        # resp = s.send(prepared)
-
-                        # print("status code, ", resp.status_code)
+                        hisfollowers = []
                 except:
                     hisfollowers = []
-                if user in hisfollowers:
-                    # You are TRUE friends
-                    try:
-                        serializer = serializers.PostSerializer(post)
-                        # get follower node object
-                        followerNode = connectionNodes.filter(
-                            url=f"{selected_author.host}service/").first()
-                        req = requests.Request(
-                            'POST',
-                            f"{followerNode.url}authors/{selected_author.username}/inbox",
-                            data=json.dumps(serializer.data),
-                            auth=HTTPBasicAuth(followerNode.auth_username,
-                                            followerNode.auth_password),
-                            headers={'Content-Type': 'application/json'})
-
-                        prepared = req.prepare()
-
-                        s = requests.Session()
-                        resp = s.send(prepared)
-                        
-                        # ADD to my own 1 to 1
+                for follower in hisfollowers:
+                    if user.id in follower.values():
+                        # You are TRUE friends
                         try:
+                            serializer = serializers.PostSerializer(post)
+                            # get follower node object
+                            followerNode = connectionNodes.filter(
+                                url=f"{selected_author.host}service/").first()
+                            req = requests.Request(
+                                'POST',
+                                f"{followerNode.url}authors/{selected_author.username}/inbox",
+                                data=json.dumps(serializer.data),
+                                auth=HTTPBasicAuth(followerNode.auth_username,
+                                                followerNode.auth_password),
+                                headers={'Content-Type': 'application/json'})
+
+                            prepared = req.prepare()
+
+                            s = requests.Session()
+                            resp = s.send(prepared)
+                            
+                            print("status code, ", resp.status_code)
+                            # ADD to my own 1 to 1
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
                                     author__username=request.user.username).first(),
                                 inbox_item_type="post",
                                 item=post,
                             )
-                        except AttributeError as e:
-                            print(e, 'Cannot add to my 1to1. Something went wrong!')
-                    except:
+                        except:
+                            context = {
+                                'username':username,
+                            }
+                            return render(request, 'authors/profileNotFound.html', context)
+                    else:
                         context = {
-                            'username':username,
+                            'username': username,
                         }
-                        return render(request, 'authors/profileNotFound.html', context)
-                else:
-                    context = {
-                        'username': username,
-                    }
-                    return render(request, 'notFriend.html', context)
+                        return render(request, 'notFriend.html', context)
         else:
             context = {
                 'username': username,
