@@ -62,7 +62,7 @@ class FollowerCount(models.Model):
 
 
 class FriendFollowRequest(models.Model):
-    type = models.CharField(default='Follow', max_length=200)
+    type = models.CharField(default='follow', max_length=200)
     summary = models.TextField()
     actor = models.ForeignKey(to=Author,
                               on_delete=models.CASCADE,
