@@ -137,7 +137,7 @@ class NewPostView(View):
 class PostDetailView(View):
 
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(uuid=pk)
+        post = Post.objects.get(id__contains=f'posts/{pk}')
         post_uuid = post.id.split('/')[-1]
         form = CommentForm()
         # if post is a friend post and current user is not the author of the post, then only show comments of current user
@@ -149,7 +149,7 @@ class PostDetailView(View):
                         author__username=comment.author.username)
         # else, show all comments
         else:
-            comments = Comment.objects.filter(id__contains=post_uuid).order_by('-published')
+            comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -168,7 +168,7 @@ class PostDetailView(View):
         return render(request, 'postDetail.html', context)
 
     def post(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(uuid=pk)
+        post = Post.objects.get(id__contains=f'posts/{pk}')
         form = CommentForm(request.POST)
         author_list = Author.objects.all()
         if form.is_valid():
@@ -178,8 +178,7 @@ class PostDetailView(View):
                 username=request.user.username)
             newComment.comment = form['comment'].value()
             newComment.contentType = form['contentType'].value()
-            newComment.id = request.get_host() + "/authors/" + str(
-                post.author.uuid) + "/posts/" + str(pk) + "/comments/" + str(
+            newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
 
@@ -281,9 +280,9 @@ class selectPersonView(View):
             selected_author = Author.objects.get(displayName = username)
         except:
             context = {
-                'username':username,
+                'username': username,
             }
-            return render(request, 'authors/profileNotFound.html', context)
+            return render(request, 'personNotFound.html', context)
 
         try:
             post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
@@ -418,7 +417,7 @@ class SharedPostView(View):
     """
 
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(uuid=pk)
+        post = Post.objects.get(id__contains=f'posts/{pk}')
         share_form = ShareForm()
 
         context = {
@@ -435,7 +434,7 @@ class SharedPostView(View):
         # TODO: SU: please confirm that this is accepted behaviour.
         source_post_id = source_post.id.split('/')[-1]
         original_post_id = source_post.origin.split('/')[-1]
-        original_post = Post.objects.get(uuid=original_post_id)
+        original_post = Post.objects.get(id__contains=f'posts/{original_post_id}')
         form = ShareForm(request.POST)
 
         if form.is_valid():
@@ -564,16 +563,17 @@ class LikeHandlerView(View):
 class ShareDetailView(View):
 
     def get(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(uuid=pk)
+        post = Post.objects.get(id__contains=f'posts/{pk}')
 
         form = CommentForm()
         comments = Comment.objects.filter(post=post).order_by('-published')
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
-        source_post = Post.objects.filter(uuid=source_post_id).first()
+
+        source_post = Post.objects.filter(id__contains=f'posts/{source_post_id}').first()
         original_post_id = post.origin.split('/')[-1]
-        original_post = Post.objects.filter(uuid=original_post_id).first()
+        original_post = Post.objects.filter(id__contains=f'posts/{original_post_id}').first()
         if source_post == None:
             source_deleted = True
         else: 
@@ -597,7 +597,7 @@ class ShareDetailView(View):
         return render(request, 'shareDetail.html', context)
 
     def post(self, request, pk, *args, **kwargs):
-        post = Post.objects.get(uuid=pk)
+        post = Post.objects.get(id__contains=f'posts/{pk}')
         form = CommentForm(request.POST)
 
         if form.is_valid():
@@ -628,7 +628,7 @@ class ShareDetailView(View):
 
 @login_required(login_url='/accounts/login')
 def liked(request, post_id):
-    post = Post.objects.get(uuid=post_id)
+    post = Post.objects.get(id__contains=f'posts/{post_id}')
     username = request.user.username
     likes_list = Like.objects.filter(object=post)
     context = {'likes_list': likes_list}
@@ -672,14 +672,14 @@ class PostAPIView(CreateModelMixin, RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         author_uuid = self.kwargs['author']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id__contains=author_uuid).first()
         post_id = self.kwargs['pk']
-        return Post.objects.filter(uuid=post_id, author=author.username)
+        return Post.objects.filter(id__contains=f'posts/{post_id}', author=author.username)
 
     def post(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
         post_id = self.kwargs['pk']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id__contains=author_uuid).first()
         if author is None:
             return HttpResponseNotFound("author not exist")
         data = request.data
@@ -750,7 +750,7 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
 
     def post(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id__contains=author_uuid).first()
         if author is None:
             return HttpResponseNotFound("author not exist")
         data = request.data
@@ -807,7 +807,7 @@ class PostsAPIView(CreateModelMixin, ListAPIView):
 
     def list(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id__contains=author_uuid).first()
         posts = Post.objects.filter(author__username=author.username,
                                     visibility="PUBLIC")
         serializer = serializers.PostSerializer(posts, many=True)
@@ -823,9 +823,9 @@ class ImagePostAPIView(RetrieveAPIView):
 
     def get_queryset(self):
         author_uuid = self.kwargs['author']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id__contains=author_uuid).first()
         post_id = self.kwargs['pk']
-        return Post.objects.filter(uuid=post_id, author=author.username)
+        return Post.objects.filter(id__contains=f'posts/{post_id}', author=author.username)
 
 
 class CommentsAPIView(CreateModelMixin, ListAPIView):
@@ -844,9 +844,9 @@ class CommentsAPIView(CreateModelMixin, ListAPIView):
 
     def post(self, request, *args, **kwargs):
         current_user_uuid = self.kwargs['author']
-        current_user = Author.objects.filter(uuid=current_user_uuid).first()
-        post_id = self.kwargs['post']
-        post = Post.objects.filter(uuid=post_id).first()
+        current_user = Author.objects.filter(id__contains=current_user_uuid).first()
+        pk = self.kwargs['post']
+        post = Post.objects.filter(id__contains=f'posts/{pk}').first()
         if current_user is None or post is None:
             return HttpResponseNotFound("author or post not exist")
 
@@ -904,7 +904,7 @@ class LikedAPIView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         author_uuid = self.kwargs['author']
-        author = Author.objects.filter(uuid=author_uuid).first()
+        author = Author.objects.filter(id_contains=author_uuid).first()
         like = Like.objects.filter(object__visibility="PUBLIC",
                                    author=author.username)
         serializer = serializers.LikesSerializer(like, many=True)

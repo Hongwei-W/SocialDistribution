@@ -136,7 +136,12 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 author=author,
                 unparsedCategories=data["categories"],
                 visibility=data["visibility"],
-                image_b64=data["image_b64"])
+                image_b64=data["image_b64"],
+                id=data['id'],
+                source=data['source'],
+                origin=data['origin'],
+                comments=data['comments']
+            )
 
             unparsed_cat = new_post.unparsedCategories
             for cat in unparsed_cat:
@@ -146,14 +151,14 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 new_post.categories.add(new_cat)
                 new_post.save()
 
-            new_post.id = request.get_host() + "/authors/" + str(
-                new_post.author.uuid) + "/posts/" + str(new_post.uuid)
-            new_post.source = request.get_host() + "/post/" + str(
-                new_post.uuid)
-            new_post.origin = request.get_host() + "/post/" + str(
-                new_post.uuid)
-            new_post.comments = request.get_host() + "/post/" + str(
-                new_post.uuid) + '/comments'
+            # new_post.id = request.get_host() + "/authors/" + str(
+            #     new_post.author.uuid) + "/posts/" + str(new_post.uuid)
+            # new_post.source = request.get_host() + "/post/" + str(
+            #     new_post.uuid)
+            # new_post.origin = request.get_host() + "/post/" + str(
+            #     new_post.uuid)
+            # new_post.comments = request.get_host() + "/post/" + str(
+            #     new_post.uuid) + '/comments'
 
             try:
                 new_post.save()
@@ -188,7 +193,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 inbox=Inbox.objects.filter(
                     author__username=current_user.username).first(),
                 item=friend_request,
-                inbox_item_type="friend_follow_request",
+                inbox_item_type="follow",
             )
 
             serializer = serializers.FriendFollowRequestSerializer(
