@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title%}Edit Account{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'posts/css/newpost.css' %}">
+    <body>
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <div>
+                        <a href="{% url 'authors:profile' user.username %}" class="btn btn-light"> Back To Profile </a>
+                    </div>
+                    <div id="newPostContainer">
+                        <div class="poster-font logo-color" id="newPostText">Update Profile</div>
+                        <hr>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <!-- {{ form.as_table }} -->
+                            <div class="postDetail">
+                                <!-- <label for="title">Title:</label> -->
+                                {{ profile_form.github }}
+                            </div>
+                            <div class="postDetail">
+                                <!-- <label for="description">Description:</label> -->
+                                {{ profile_form.profileImage }}
+                            </div>
+                            <div class="postDetail">
+                                <button class="btnShare">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% include "sidebarRight.html" %}
+        </div>
+
+        {% endblock %}
