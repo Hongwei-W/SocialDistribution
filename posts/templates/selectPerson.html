@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title%}New Post{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'posts/css/newpost.css' %}">
+    <body>
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <div>
+                        <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
+                    </div>
+                    <div id="newPostContainer">
+                        <div class="poster-font logo-color" id="newPostText">Specific Person</div>
+                        <hr>
+                        <form id="nav-search" class="form-search" action="{% url 'posts:selectPerson' %}" method="POST">
+                            <input list="usernames" id="search-query" class="form-search" type="text" placeholder="Search"
+                                   name="specificUserName"/>
+                            <!-- <button class="searchButton" type="submit"><i class="fa fa-search"></i></button> -->
+                            <datalist id="usernames">
+                                {% for author in author_list %}
+                                    <option value="{{ author.displayName }}"></option>
+                                {% endfor %}
+                            </datalist>
+                            {% csrf_token %}
+                            <!-- {{ form.as_table }} -->
+                            <div><p>{{ newPost.title }}</p></div>
+                            <div><p>{{ newPost.description }}</p></div>
+                            <div class="postDetail">
+                                <button class="btnShare">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% include "sidebarRight.html" %}
+        </div>
+
+        {% endblock %}

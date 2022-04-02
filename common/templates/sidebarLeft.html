@@ -5,10 +5,10 @@
 <div class="column float-left left rounded">
     <h1 class="poster-font logo-color" id="logo" style="margin:20px 10px">H</h1>
     <div>
-        <div class="options"><a href="{% url "inboxes:postList" %}"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</a></div>
-        <div class="options"><a href=""><i class="fa-solid fa-at"></i>&ensp;1-to-1</a></div>
-        <div class="options"><a href="{% url "authors:friendRequests" %}"><i class="fa-solid fa-envelope-open"></i>&ensp;Notification</a></div>
-        <div class="options"><a href="{% url "authors:profile" user.username %}"><i class="fa-solid fa-user"></i>&ensp;Profile</a></div>
+        <div class="options"><a href="{% url 'inboxes:postList' %}"><i class="fa-solid fa-wand-sparkles"></i>&ensp;Feed</a></div>
+        <div class="options"><a href="{% url 'inboxes:1to1' %}"><i class="fa-solid fa-at"></i>&ensp;1-to-1</a></div>
+        <div class="options"><a href="{% url 'authors:friendRequests' %}"><i class="fa-solid fa-envelope-open"></i>&ensp;Notification</a></div>
+        <div class="options"><a href="{% url 'authors:profile' user.username %}"><i class="fa-solid fa-user"></i>&ensp;Profile</a></div>
     </div>
 </div>
 

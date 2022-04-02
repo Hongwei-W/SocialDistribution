@@ -16,15 +16,7 @@
         {% include "sidebarLeft.html" %}
 
         <div class="middle">
-            <div id="postDiv">
-                <form action="{% url 'posts:newpost' %}">
-                    <input id="postBar" type="submit" value="What's on your mind?">
-                </form>
-                <div id="prompt">
-                    <h3>Let's post something!</h3>
-                </div>
-            </div>
-            <div id="postHolder">
+            <div id="OneToOne">
                 <!-- <div class="singlePost">
                                                         <div class="authorName">{name}</div>
                                                         <div class="postTitle">Title</div>
@@ -36,22 +28,16 @@
                 <!-- https://docs.djangoproject.com/en/dev/ref/templates/builtins/#std:templatefilter-dictsort -->
                 {% comment %} {% for post in postList.all|dictsortreversed:"published"%} {% endcomment %}
                 {% for post in postList %}
-                    {% if post.visibility != 'PRIVATE' %}
+                    {% if post.visibility == 'PRIVATE' %}
                         <div class="singlePost position-relative">
-                            {% if post.source != post.id %}
+                            {% if post.type == 'share'%}
                                 <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->
-                                <div class="postBody" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.displayName}}</span> shared a post.</div>
+                                <div class="postBody" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared a post.</div>
                                 <div class="postBody">Share note: {{post.title}}</div>
-                                <div class="postBody" style="color: #F28482; background-color: #d5d5d584; margin-left: 5%;">Original Post Content:<br>
-                                {% if post.contentType == "text/markdown" %}
-                                    <div class="postBody">{{ post.content | markdownify}}</div>
-                                {% else %}
-                                    <div class="postBody">{{ post.content }}</div>
-                                {% endif %}
-                                </div>
+                                <div class="postBody" style="color: #F28482; background-color: #d5d5d584; margin-left: 5%;">Original Post Content:<br>{{post.content}}</div>
                                 <!-- <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div> -->
                             {% else %}
-                                <div class="authorName">Author: {{ post.author.displayName }}</div>
+                                <div class="authorName">Author: {{ post.author.username }}</div>
                                 <div class="postTitle">{{ post.title }}</div>
                                 <!-- pip install django-markdownify -->
                                 {% if post.contentType == "text/markdown" %}
@@ -67,11 +53,12 @@
                                 <div class="postVis">Visibility: {{ post.visibility }}</div>
                             </div>
                             <!-- <div>UUID: {{ post.id }}</div> -->
-                            <div class="postActions"><a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
-                                <i class="fa-solid fa-heart like_btn" onclick="like_handler('{{ post.id }}','{{ post.author.host }}', '{{ post.author.id }}', '{{ post.likes }}')" style="cursor: pointer;"></i>&ensp;<span id="{{ post.id }}">{{ post.likes }}</span>
+                            <div class="postActions">
+                                <!-- <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp; -->
+                                <a href="/like?post_id={{post.uuid}}"><i class="fa-solid fa-heart"></i>&ensp;{{post.likes}}</a>&emsp;
                                 <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
                             </div>
-                            {% if post.source == post.id %}
+                            {% if post.type == 'post'%}
                             <a href="{% url 'posts:postDetail' post.uuid %}" class="stretched-link"></a>
                             {% else %}
                             <a href="{% url 'posts:shareDetail' post.uuid %}" class="stretched-link"></a>
@@ -83,9 +70,6 @@
         </div>
         {% include "sidebarRight.html" %}
     </div>
-
-    {% load static %}
-    <script src="{% static 'inboxes/js/like_handler.js' %}"></script>
 
     {% else %}
     <p>You are not logged in</p>

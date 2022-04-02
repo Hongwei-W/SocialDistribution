@@ -7,7 +7,7 @@ class AuthorSerializer(ModelSerializer):
 
     class Meta:
         model = models.Author
-        fields = ('type', 'id', 'username', "host", "displayName", "github",
+        fields = ('type', 'id', "host", "displayName", "github",
                   "profileImage")
 
 
