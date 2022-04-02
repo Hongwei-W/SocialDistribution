@@ -281,9 +281,9 @@ class selectPersonView(View):
             selected_author = Author.objects.get(displayName = username)
         except:
             context = {
-                'username':username,
+                'username': username,
             }
-            return render(request, 'authors/profileNotFound.html', context)
+            return render(request, 'personNotFound.html', context)
 
         try:
             post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'authors/css/profile.css' %}">
+
+    <link rel="stylesheet" href="https://unpkg.com/github-calendar@latest/dist/github-calendar-responsive.css"/>
+
+    <div class="colContainer">
+        {% include "sidebarLeft.html" %}
+        <div class="column middle">
+            <div>
+                <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>                  
+            </div>
+
+            <div class="singlePost">
+                <h2 style="color: #F28482;">The user with username "{{ username }}" is not found</h2>
+            </div>
+        </div>
+        {% include "sidebarRight.html" %}
+    </div>
+{% endblock %}
