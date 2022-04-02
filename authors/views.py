@@ -13,12 +13,7 @@ from common.pagination import CustomPageNumberPagination
 from inboxes.models import InboxItem, Inbox
 from . import serializers
 from .models import *
-
-localHostList = [
-    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
-    'http://localhost:8000', 'http://localhost:8000/',
-    'https://c404-social-distribution.herokuapp.com/'
-]
+from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
 

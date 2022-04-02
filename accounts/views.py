@@ -28,19 +28,12 @@ def signup(request):
                 profile_image_string = 'https://www.ibm.com/support/pages/system/files/support/swg/rattech.nsf/0/a857b0395de747c085257bcf0037ccb6/Symptom/0.126.gif'
 
             github = author_form.cleaned_data['github']
-            host = request.get_host()
-            if 'localhost' in host or '127.0.0.1' in host:
-                author = Author(username=user.username,
-                                host=f"http://{host}/",
-                                displayName=user.username,
-                                profileImage=profile_image_string,
-                                github=github)
-            else:
-                author = Author(username=user.username,
-                                host=f"https://{host}/",
-                                displayName=user.username,
-                                profileImage=profile_image_string,
-                                github=github)
+            host = request.build_absolute_uri('/')
+            author = Author(username=user.username,
+                            host=host,
+                            displayName=user.username,
+                            profileImage=profile_image_string,
+                            github=github)
 
             author.save()
             author.id = author.host + "authors/" + str(author.uuid)

@@ -24,12 +24,7 @@ from inboxes.models import Inbox, InboxItem
 from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
-
-localHostList = [
-    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
-    'http://localhost:8000', 'http://localhost:8000/',
-    'https://c404-social-distribution.herokuapp.com/'
-]
+from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
 
