@@ -4,7 +4,7 @@ import json
 import requests
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound, JsonResponse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -24,7 +24,8 @@ from inboxes.models import Inbox, InboxItem
 from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
-from common.views import localHostList
+from django.template.loader import render_to_string
+
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -44,12 +45,66 @@ class NewPostView(View):
 
     def post(self, request, *args, **kwargs):
         form = PostForm(request.POST, request.FILES)
-
-        if form.is_valid():
+        # form content is not None or image is not None
+        if form.is_valid() and (form['content'].value() != "" or form['post_image'].value() is not None):
             # creating post from form and adding attributes
             newPost = form.save(commit=False)
+
             newPost.author = Author.objects.get(username=request.user.username)
-            newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
+            newPost.id = request.get_host() + "/authors/" + str(
+                newPost.author.uuid) + "/posts/" + str(newPost.uuid)
+            
+            if newPost.unlisted:
+                newPost.url = newPost.author.host + "post/unlisted/" + str(newPost.uuid)
+            else:
+                newPost.url = newPost.author.host + "post/" + str(newPost.uuid)
+                
+            # not sure what its for but it works
+            if newPost.type == 'post':
+                newPost.source = newPost.id
+                newPost.origin = newPost.id
+                newPost.comments = newPost.id + '/comments'
+                newPost.save()
+
+            # if it has an image, then create an unlisted image post
+            if newPost.post_image:
+                # print("------url", newPost.post_image.path)
+                # print(str(newPost.post_image))
+                img_file = open(newPost.post_image.path, "rb")
+                # newPost.image_b64 = base64.b64encode(img_file.read())
+                # create an embedded image post 
+                newImagePost = Post(
+                    author=newPost.author,
+                    unlisted = True,
+                    source = newPost.source,
+                    origin = newPost.origin,
+                    visibility = "PUBLIC",
+                    post_image = newPost.post_image,
+                    image_b64 = base64.b64encode(img_file.read())
+                )
+                # newImagePost.save(commit=False)
+                if "jpeg" in newPost.post_image.name:
+                    newImagePost.contentType = "image/jpeg;base64"
+                elif "png" in newPost.post_image.name:
+                    newImagePost.contentType = "image/png;base64"
+                else:
+                    newImagePost.contentType = "application/base64"
+                newImagePost.url = newPost.author.host + "post/unlisted/" + str(newImagePost.uuid)
+                newPost.id = request.get_host() + "/authors/" + str(
+                    newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
+                # print(newPost.image_b64[:20])
+                newImagePost.save()
+                newPost.contentType = "text/markdown"
+                newPost.content += "\n[View image here](" + newImagePost.url + ")"
+                newPost.post_image = None
+                newPost.save()
+            else:
+                # Set text post to plain/markdown
+                newPost.contentType = "text/plain"
+                if newPost.textType != None:
+                    newPost.contentType = newPost.textType
+
+
             # adding categories to post
             unparsedCat = newPost.unparsedCategories
             catList = unparsedCat.split()
@@ -61,74 +116,55 @@ class NewPostView(View):
                 newPost.categories.add(newCat)
                 newPost.save()
 
-            # not sure what its for but it works
-            if newPost.type == 'post':
-                newPost.source = newPost.id
-                newPost.origin = newPost.id
-                newPost.comments = newPost.id + '/comments'
-                newPost.save()
 
-            # if its an image
-            if newPost.post_image:
-                # print("------url", newPost.post_image.path)
-                # print(str(newPost.post_image))
-                img_file = open(newPost.post_image.path, "rb")
-                newPost.image_b64 = base64.b64encode(img_file.read())
-                # print(newPost.image_b64[:20])
-                newPost.save()
+            # add post to InboxItem which links to Inbox
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=request.user.username).first(),
+                inbox_item_type="post",
+                item=newPost,
+            )
 
-            
+            user = Author.objects.get(username=request.user.username)
+            try:
+                followersID = Followers.objects.filter(
+                    user__username=user.username).first().items.all()
+                # breakpoint()
+                for follower in followersID:
+                    # follower is <author> object
+                    # if follower is local
+                    if follower.host in localHostList:
+                        # add it to inbox of follower
+                        InboxItem.objects.create(
+                            inbox=Inbox.objects.filter(
+                                author__username=follower.username).first(),
+                            inbox_item_type="post",
+                            item=newPost,
+                        )
+                    else:
+                        # if author is not local make post request to add to other user inbox
+                        serializer = serializers.PostSerializer(newPost)
 
-            if newPost.visibility == 'PRIVATE':
-                # context = {
-                #     'newPost': newPost,
-                # }
-                return redirect('posts:selectPerson')
-            else:
-                # add post to InboxItem which links to Inbox
-                InboxItem.objects.create(
-                    inbox=Inbox.objects.filter(
-                        author__username=request.user.username).first(),
-                    inbox_item_type="post",
-                    item=newPost,
-                )
-                user = Author.objects.get(username=request.user.username)
-                try:
-                    followersID = Followers.objects.filter(
-                        user__username=user.username).first().items.all()
-                    for follower in followersID:
-                        # follower is <author> object
-                        # if follower is local
-                        if follower.host in localHostList:
-                            # add it to inbox of follower
-                            InboxItem.objects.create(
-                                inbox=Inbox.objects.filter(
-                                    author__username=follower.username).first(),
-                                inbox_item_type="post",
-                                item=newPost,
-                            )
-                        else:
-                            # if author is not local make post request to add to other user inbox
-                            serializer = serializers.PostSerializer(newPost)
-                            # get follower node object
-                            followerNode = connectionNodes.filter(
-                                url=f"{follower.host}service/").first()
-                            req = requests.Request(
-                                'POST',
-                                f"{followerNode.url}authors/{follower.username}/inbox",
-                                data=json.dumps(serializer.data),
-                                auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
-                                headers={'Content-Type': 'application/json'})
+                        # get follower node object
+                        followerNode = connectionNodes.filter(
+                            url=f"{follower.host}service/").first()
+                        req = requests.Request(
+                            'POST',
+                            f"{followerNode.url}authors/{follower.uuid}/inbox",
+                            data=json.dumps(serializer.data),
+                            auth=HTTPBasicAuth(followerNode.auth_username,
+                                               followerNode.auth_password),
+                            headers={'Content-Type': 'application/json'})
 
-                            prepared = req.prepare()
-                            s = requests.Session()
-                            resp = s.send(prepared)
+                        prepared = req.prepare()
 
-                            print("status code, ", resp.status_code)
+                        s = requests.Session()
+                        resp = s.send(prepared)
 
-                except AttributeError as e:
-                    print(e, 'No followers for this author')
+                        print("status code, ", resp.status_code)
+
+            except AttributeError as e:
+                print(e, 'No followers for this author')
 
         return redirect('inboxes:postList')
 
@@ -251,164 +287,21 @@ class PostDetailView(View):
 
         return render(request, 'postDetail.html', context)
 
-@method_decorator(login_required, name='dispatch')
-# def selectPerson(request):
-#     author_list = Author.objects.all()
-#     context = {
-#             'author_list':author_list,
-#         }
-#     return render(request, 'selectPerson.html', context)
-class selectPersonView(View):
-    def get(self, request, *args, **kwargs):
-        form = PostForm()
-        share_form = ShareForm()
-        author_list = Author.objects.all()
-        context = {
-            'form': form,
-            'author_list': author_list,
-            # 'source_post': source_post,
-            # 'original_post': original_post,
-        }
-        return render(request, 'selectPerson.html', context)
+class UnlistedPostDetailView(View):
 
-    def post(self, request, *args, **kwargs):
-        # form = PostForm(request.POST, request.FILES)
-        # author_list = Author.objects.all()
-        username = request.POST.get('specificUserName', '')
-        # print(username)
-        try:
-            selected_author = Author.objects.get(displayName = username)
-        except:
-            context = {
-                'username': username,
-            }
-            return render(request, 'personNotFound.html', context)
-
-        try:
-            post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
-            # print(Post.objects.filter(author__username=request.user.username))
-            # print(post)
-        except:
-            post = []
-
-        # check if they are true friend.
-        user = Author.objects.get(username=request.user.username)
-        try:
-            myfollowers = Followers.objects.filter(
-                user__username=user.username).first().items.all()
-        except:
-            myfollowers = []
-        if selected_author in myfollowers:
-            # if the host is local
-            if selected_author.host in localHostList:
-                try:
-                    hisfollowers = Followers.objects.filter(
-                                user__username=selected_author.username).first().items.all()
-                except:
-                    hisfollowers = []
-                if user in hisfollowers:
-                    # in this case you are true friends
-                    try:
-                        # Inbox.objects.filter(author__username=selected_author_info.username).first().items.add(post)
-                        # add the new post to my own inbox
-                        InboxItem.objects.create(
-                            inbox=Inbox.objects.filter(
-                                author__username=selected_author.username).first(),
-                            inbox_item_type="post",
-                            item=post,
-                        )
-                        try:
-                            InboxItem.objects.create(
-                                inbox=Inbox.objects.filter(
-                                    author__username=request.user.username).first(),
-                                inbox_item_type="post",
-                                item=post,
-                            )
-                        except AttributeError as e:
-                            print(e, 'Cannot add to my 1to1. Something went wrong!')
-                    except:
-                        context = {
-                            'username':username,
-                        }
-                        return render(request, 'authors/profileNotFound.html', context)
-                else:
-                    context = {
-                        'username': username,
-                    }
-                    return render(request, 'notFriend.html', context)
-            else:
-                # if author is not local
-                # get follower node object
-                try:
-                    followerNode = connectionNodes.filter(
-                        url=f"{selected_author.host}service/").first()
-                    response = requests.get(
-                        f"{followerNode.url}authors/{selected_author.username}/followers",
-                        params=request.GET,
-                        auth=HTTPBasicAuth(followerNode.auth_username,
-                                        followerNode.auth_password)
-                        )
-                    if response.status_code == 200:
-                        hisfollowers = response.json()['items']
-                        print(hisfollowers)
-                    else:
-                        hisfollowers = []
-                except:
-                    hisfollowers = []
-                for follower in hisfollowers:
-                    if user.id in follower.values():
-                        # You are TRUE friends
-                        try:
-                            serializer = serializers.PostSerializer(post)
-                            # get follower node object
-                            followerNode = connectionNodes.filter(
-                                url=f"{selected_author.host}service/").first()
-                            req = requests.Request(
-                                'POST',
-                                f"{followerNode.url}authors/{selected_author.username}/inbox",
-                                data=json.dumps(serializer.data),
-                                auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
-                                headers={'Content-Type': 'application/json'})
-
-                            prepared = req.prepare()
-
-                            s = requests.Session()
-                            resp = s.send(prepared)
-                            
-                            print("status code, ", resp.status_code)
-                            # ADD to my own 1 to 1
-                            InboxItem.objects.create(
-                                inbox=Inbox.objects.filter(
-                                    author__username=request.user.username).first(),
-                                inbox_item_type="post",
-                                item=post,
-                            )
-                        except:
-                            context = {
-                                'username':username,
-                            }
-                            return render(request, 'authors/profileNotFound.html', context)
-                    else:
-                        context = {
-                            'username': username,
-                        }
-                        return render(request, 'notFriend.html', context)
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.filter(uuid=pk).first()
+        if post.image_b64 != None:
+            image_b64 = post.image_b64.decode('utf-8')
         else:
-            context = {
-                'username': username,
-            }
-            return render(request, 'notFriend.html', context)
+            image_b64 = None
+        context = {
+            'post': post,
+            'image_b64': image_b64,
+        }
+        rendered = render_to_string('unlistedPostDetail.html', context)
+        return HttpResponse(rendered)
 
-        # add the new post to my own inbox
-        # Inbox.objects.filter(author__username=request.user.username).first().items.add(post)
-        # posts = Post.objects.all()
-        # context = {
-        #     'postList': posts,
-        #     # 'form': form,
-        # }
-        # return render(request,'myapp/newpost.html', context)
-        return redirect('inboxes:postList')
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
@@ -653,6 +546,19 @@ class PostDeleteView(DeleteView):
     model = Post
     template_name = 'postDelete.html'
     success_url = reverse_lazy('inboxes:postList')
+
+    def delete(self, request, *args, **kwargs):
+        listed_post_id = self.kwargs['pk']
+        listed_post = Post.objects.get(uuid=listed_post_id)
+        # if this post contains an image
+        if "[View image here]" in listed_post.content and str(listed_post.uuid) in listed_post.origin:
+            unlisted_url = listed_post.content.split('[View image here]')[1].strip("()")
+            unlisted_post_id = unlisted_url.split('/')[-1]
+            unlisted_post = Post.objects.get(uuid=unlisted_post_id)
+            unlisted_post.delete()
+        # listed_post.delete()
+        return super(PostDeleteView, self).delete(request, *args, **kwargs)
+
 
 
 #

@@ -8,36 +8,32 @@
 
     <link rel="stylesheet" type="text/css" href="{% static 'posts/css/postDetail.css' %}">
     <body>
-    <div class="colContainer">
-        {% include "sidebarLeft.html" %}
-        <div class="column middle">
-            <div>
-                <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
-            </div>
-            <div>
-                <div class="singlePost">
-                    <div class="postTitle">{{ post.title }}</div>
-                    {% if request.user.username == post.author.username %}
-                        {% if post.visibility == "PUBLIC" %}
-                            <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
-                        {% endif %}
-                        <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
-                    {% endif%}
-
-
-                    {% if post.contentType == "text/markdown" %}
-                        <div class="postBody">{{ post.content | markdownify }}</div>
-                    {% else %}
-                        <div class="postBody">{{ post.content }}</div>
-                    {% endif %}
-
-
-                    <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
-                    <!-- <div class="postBody">{{ post.contentType }}</div> -->
-                    <!-- <div class="postBody">{{ post.count }}</div> -->
-                    <div class="postBody">
-                        {% if post.post_image %}
-                            <img src="data:image/jpg;base64, {{ image_b64 }}" width=100%>
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
+                </div>
+                <div>
+                    <div class="singlePost">
+                        <div class="postTitle">
+                            {% if post.title != None %}
+                                {{ post.title }}
+                            {% endif %}
+                        </div> 
+                        {% if request.user.username == post.author.username %}
+                            {% if post.visibility == "PUBLIC" %}
+                                <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            {% endif %}
+                            <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
+                        {% endif%}
+                        
+                        {% if post.content != None %}
+                            {% if post.contentType == "text/markdown" %}
+                                    <div class="postBody">{{ post.content | markdownify}}</div>
+                                {% else %}
+                                    <div class="postBody">{{ post.content }}</div>
+                            {% endif %}
                         {% endif %}
 
                     </div>

@@ -7,6 +7,7 @@ app_name = 'posts'
 urlpatterns = [
     # ex: /polls/
     path('newpost/', views.NewPostView.as_view(), name='newpost'),
+<<<<<<< HEAD
     path('newpost/select/', selectPersonView.as_view(), name='selectPerson'),
     # path('newpost/select/notyourfriend/', selectPersonView.as_view(), name='selectPerson'),
     path('post/<uuid:pk>', views.PostDetailView.as_view(), name='postDetail'),
@@ -14,6 +15,13 @@ urlpatterns = [
     path('post/delete/<uuid:pk>', views.PostDeleteView.as_view(), name='postDelete'),
     # path('like', views.LikeHandler.as_view(), name='like'),
     path('like', views.LikeHandlerView.as_view(), name='like'),
+=======
+    path('post/<uuid:pk>',views.PostDetailView.as_view(), name='postDetail'),
+    path('post/unlisted/<uuid:pk>',views.UnlistedPostDetailView.as_view(), name='unlistedPostDetail'),
+    path('post/edit/<uuid:pk>',views.PostEditView.as_view(), name='postEdit'),
+    path('post/delete/<uuid:pk>',views.PostDeleteView.as_view(), name='postDelete'),
+    path('like', views.like, name='like'),
+>>>>>>> 58719124e8e4d41815a0c10b86b7f54bdcc1f5d6
     path('liked/<uuid:post_id>', views.liked, name='liked'),
     path('post/<uuid:pk>/share', views.SharedPostView.as_view(), name='sharePost'),
     path('post/shared/<uuid:pk>', views.ShareDetailView.as_view(), name='shareDetail'),

@@ -33,10 +33,16 @@ class PostListView(View):
         posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
         responsePosts = []
         for post in posts:
+<<<<<<< HEAD
             post_obj = post.item
             post_obj.uuid = post_obj.id.split('/')[-1]
             responsePosts.append(post_obj)
 
+=======
+            # display only if it is not unlisted
+            if not post.item.unlisted:
+                responsePosts.append(post.item)
+>>>>>>> 58719124e8e4d41815a0c10b86b7f54bdcc1f5d6
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 

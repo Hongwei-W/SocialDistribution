@@ -15,22 +15,26 @@ class Category(models.Model):
 
 class Post(models.Model):
     type = models.CharField(default='post', max_length=200)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200,null=True, blank=True)
     uuid = models.UUIDField(default=uuid.uuid4,
                             editable=True,
                             unique=True,
                             primary_key=True)
     id = models.CharField(max_length=200)
+    url = models.CharField(max_length=200)
     source = models.CharField(max_length=200)
     origin = models.CharField(max_length=200)
-    description = models.TextField()
-    content = models.TextField()
+    description = models.TextField(null=True, blank=True)
+    content = models.TextField(null=True, blank=True)
     CONTENT_CHOICES = [("text/plain", "Plaintext"),
                        ("text/markdown", "Markdown"),
                        ("application/base64", "app"),
                        ("image/png;base64", "png"),
                        ("image/jpeg;base64", "jpeg")]
     contentType = models.CharField(max_length=30, choices=CONTENT_CHOICES)
+    TEXT_CHOICES = [("text/plain", "Plaintext"),
+                       ("text/markdown", "Markdown")]
+    textType = models.CharField(max_length=30, choices=TEXT_CHOICES, null=True, blank=True)
     author = models.ForeignKey(to="authors.Author", on_delete=models.CASCADE)
     unparsedCategories = models.CharField(max_length=100, default="")
     categories = models.ManyToManyField(Category)
