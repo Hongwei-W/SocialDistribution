@@ -81,7 +81,7 @@ class NewPostView(View):
                     source = newPost.source,
                     origin = newPost.origin,
                     comments = newPost.comments,
-                    visibility = newPost.visibility,
+                    visibility = "PUBLIC",
                     post_image = newPost.post_image,
                     image_b64 = base64.b64encode(img_file.read())
                 )
