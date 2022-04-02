@@ -40,14 +40,14 @@ class CommentsSerializer(ModelSerializer):
 
 class LikesSerializer(ModelSerializer):
     author = AuthorSerializer()
-    object = serializers.SerializerMethodField('get_object')
+    # object = serializers.SerializerMethodField('get_object')
 
     class Meta:
         model = models.Like
-        fields = ("type", "author", "object")
+        fields = ("type", "author", "object", "summary")
 
-    def get_object(self, obj):
-        like = model_to_dict(obj)
-        post_uuid = like.get("object")
-        post = Post.objects.filter(uuid=post_uuid).first()
-        return model_to_dict(post).get("id")
+    # def get_object(self, obj):
+    #     like = model_to_dict(obj)
+    #     post_uuid = like.get("object")
+    #     post = Post.objects.filter(uuid=post_uuid).first()
+    #     return model_to_dict(post).get("id")
