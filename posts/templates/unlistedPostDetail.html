@@ -1,0 +1,32 @@
+<!-- <head>
+    <link rel="stylesheet" href="../../SocialDistribution/static/posts/css/postDetail.css">
+</head> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body {font-family: 'Lato', sans-serif;font-size: 15px;}
+    .title {font-weight: bold; font-size: 25px;}
+</style>
+</head>
+
+<body>
+    <div class="singlePost" style="margin:0 auto;width:800px;">
+        <p>
+            {% if post.title != None %}
+                <div>Title: {{ post.title }}</div>
+            {% endif %}
+            <div>Author: {{ post.author.username }}</div>
+            {% if post.content != None %}
+                <div>Content: {{ post.content }}</div>
+            {% endif %}
+            <div>Published: {{ post.published }}</div>
+        </p>       
+        {% if image_b64 != None %}
+            <img src="data:image/jpg;base64, {{ image_b64 }}" width=100%>
+        {% endif %}
+                        
+    </div>
+                    
+</body>

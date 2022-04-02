@@ -7,6 +7,7 @@ urlpatterns = [
     # ex: /polls/
     path('newpost/', views.NewPostView.as_view(), name='newpost'),
     path('post/<uuid:pk>',views.PostDetailView.as_view(), name='postDetail'),
+    path('post/unlisted/<uuid:pk>',views.UnlistedPostDetailView.as_view(), name='unlistedPostDetail'),
     path('post/edit/<uuid:pk>',views.PostEditView.as_view(), name='postEdit'),
     path('post/delete/<uuid:pk>',views.PostDeleteView.as_view(), name='postDelete'),
     path('like', views.like, name='like'),

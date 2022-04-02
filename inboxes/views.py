@@ -37,7 +37,9 @@ class PostListView(View):
         posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
         responsePosts = []
         for post in posts:
-            responsePosts.append(post.item)
+            # display only if it is not unlisted
+            if not post.item.unlisted:
+                responsePosts.append(post.item)
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 

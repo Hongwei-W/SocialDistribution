@@ -3,7 +3,7 @@ import json
 
 import requests
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -23,6 +23,7 @@ from inboxes.models import Inbox, InboxItem
 from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
+from django.template.loader import render_to_string
 
 localHostList = [
     'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
@@ -56,8 +57,12 @@ class NewPostView(View):
             newPost.author = Author.objects.get(username=request.user.username)
             newPost.id = request.get_host() + "/authors/" + str(
                 newPost.author.uuid) + "/posts/" + str(newPost.uuid)
-            newPost.url = newPost.author.host + "post/" + str(newPost.uuid)
             
+            if newPost.unlisted:
+                newPost.url = newPost.author.host + "post/unlisted/" + str(newPost.uuid)
+            else:
+                newPost.url = newPost.author.host + "post/" + str(newPost.uuid)
+                
             # not sure what its for but it works
             if newPost.type == 'post':
                 newPost.source = request.get_host() + "/post/" + str(
@@ -80,7 +85,6 @@ class NewPostView(View):
                     unlisted = True,
                     source = newPost.source,
                     origin = newPost.origin,
-                    comments = newPost.comments,
                     visibility = "PUBLIC",
                     post_image = newPost.post_image,
                     image_b64 = base64.b64encode(img_file.read())
@@ -92,7 +96,7 @@ class NewPostView(View):
                     newImagePost.contentType = "image/png;base64"
                 else:
                     newImagePost.contentType = "application/base64"
-                newImagePost.url = newPost.author.host + "post/" + str(newImagePost.uuid)
+                newImagePost.url = newPost.author.host + "post/unlisted/" + str(newImagePost.uuid)
                 newPost.id = request.get_host() + "/authors/" + str(
                     newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
                 # print(newPost.image_b64[:20])
@@ -132,6 +136,7 @@ class NewPostView(View):
             try:
                 followersID = Followers.objects.filter(
                     user__username=user.username).first().items.all()
+                # breakpoint()
                 for follower in followersID:
                     # follower is <author> object
                     # if follower is local
@@ -152,7 +157,7 @@ class NewPostView(View):
                             url=f"{follower.host}service/").first()
                         req = requests.Request(
                             'POST',
-                            f"{followerNode.url}authors/{follower.username}/inbox",
+                            f"{followerNode.url}authors/{follower.uuid}/inbox",
                             data=json.dumps(serializer.data),
                             auth=HTTPBasicAuth(followerNode.auth_username,
                                                followerNode.auth_password),
@@ -248,6 +253,21 @@ class PostDetailView(View):
             }
 
         return render(request, 'postDetail.html', context)
+
+class UnlistedPostDetailView(View):
+
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.filter(uuid=pk).first()
+        if post.image_b64 != None:
+            image_b64 = post.image_b64.decode('utf-8')
+        else:
+            image_b64 = None
+        context = {
+            'post': post,
+            'image_b64': image_b64,
+        }
+        rendered = render_to_string('unlistedPostDetail.html', context)
+        return HttpResponse(rendered)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -451,6 +471,19 @@ class PostDeleteView(DeleteView):
     model = Post
     template_name = 'postDelete.html'
     success_url = reverse_lazy('inboxes:postList')
+
+    def delete(self, request, *args, **kwargs):
+        listed_post_id = self.kwargs['pk']
+        listed_post = Post.objects.get(uuid=listed_post_id)
+        # if this post contains an image
+        if "[View image here]" in listed_post.content and str(listed_post.uuid) in listed_post.origin:
+            unlisted_url = listed_post.content.split('[View image here]')[1].strip("()")
+            unlisted_post_id = unlisted_url.split('/')[-1]
+            unlisted_post = Post.objects.get(uuid=unlisted_post_id)
+            unlisted_post.delete()
+        # listed_post.delete()
+        return super(PostDeleteView, self).delete(request, *args, **kwargs)
+
 
 
 #
