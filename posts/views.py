@@ -380,7 +380,7 @@ class selectPersonView(View):
 
                                 s = requests.Session()
                                 resp = s.send(prepared)
-                                
+
                                 print("status code, ", resp.status_code)
                                 # ADD to my own 1 to 1
                                 InboxItem.objects.create(
@@ -581,6 +581,14 @@ class ShareDetailView(View):
         source_post = Post.objects.get(id__contains=f'posts/{source_post_id}')
         original_post_id = post.origin.split('/')[-1]
         original_post = Post.objects.get(id__contains=f'posts/{original_post_id}')
+        if source_post == None:
+            source_deleted = True
+        else:
+            source_deleted = False
+        if original_post == None:
+            original_deleted = True
+        else:
+            original_deleted = False
 
         context = {
             'post': post,
@@ -589,6 +597,8 @@ class ShareDetailView(View):
             'likes': likes,
             'source_post': source_post,
             'original_post': original_post,
+            'source_deleted': source_deleted,
+            'original_deleted': original_deleted,
         }
 
         return render(request, 'shareDetail.html', context)
