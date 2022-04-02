@@ -298,6 +298,9 @@ class FollowersAPIView(ListAPIView):
         uuid = self.kwargs['author']
         author = Author.objects.filter(uuid=uuid).first()
         follower_lst = Followers.objects.filter(user=author).first()
+        if not follower_lst:
+            response = {'type': 'followers', 'items': '[]'}
+            return Response(response)
         serializer = serializers.AuthorSerializer(follower_lst.items, many=True)
         response = {"type": "followers", "items": serializer.data}
         return Response(response)
