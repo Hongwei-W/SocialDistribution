@@ -51,6 +51,7 @@ def profile(request, user_id):
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
+
     # get follow
     if FriendFollowRequest.objects.filter(
             actor__username=actor.username,
@@ -73,7 +74,6 @@ def profile(request, user_id):
         'posts': posts,
         'author_list': author_list,
     }
-    # breakpoint()
     return render(request, 'profile.html', context)
 
 
@@ -107,9 +107,9 @@ def follow(request):
 
                 # when created, also push into recepients inbox
                 InboxItem.objects.create(inbox=Inbox.objects.filter(
-                    author__username=objectName).first(),
-                                         item=friendRequest,
-                                         inbox_item_type='FriendFollowRequest')
+                        author__username=objectName).first(),
+                        item=friendRequest,
+                        inbox_item_type='friendfollowrequest')
 
                 friendRequest.save()
             else:
@@ -151,11 +151,23 @@ def follow(request):
 @login_required(login_url='/accounts/login')
 def friendRequests(request):
     context = {}
-    actorName = request.user.username
-    actor = Author.objects.get(username=actorName)
-    friendRequests = FriendFollowRequest.objects.filter(object=actor)
-    context['friendRequests'] = friendRequests
+    currentUser = request.user
+    currentAuthor = Author.objects.filter(username=currentUser.username).first()
+    currentInbox = Inbox.objects.filter(
+        author__username=currentUser.username).first()
+
+    friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="friendfollowrequest")
+    likeInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="like")
+    commentInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="comment")
+    context = {
+        'currentUser_uuid': currentAuthor.id.split('/')[-1],
+        'currentUser_displayName': currentAuthor.displayName,
+        'likes': [item.item for item in likeInboxItems],
+        'friendRequests': [item.item for item in friendFollowInboxItems],
+        'comments': [item.item for item in commentInboxItems],
+    }
     return render(request, 'friendRequests.html', context)
+
 
 
 @login_required(login_url='/accounts/login')
@@ -223,7 +235,6 @@ class AuthorsAPIView(ListAPIView):
     http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
-        # breakpoint()
         url = request.build_absolute_uri('/')
         serializer = serializers.AuthorSerializer(
             Author.objects.filter(host=url), many=True)

@@ -108,19 +108,12 @@
                             <div class="postVis">Visibility: {{ post.visibility }}</div>
                         </div>
                         <div>UUID: {{ post.id }}</div>
-                        <div class="postActions"><a href="{% url 'posts:sharePost' post.uuid %}"><i
-                                class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
+                        <div class="postActions">
                             <i class="fa-solid fa-heart like_btn"
-                               onclick="like_handler('{{ post.id }}','{{ post.author.host }}', '{{ post.author.id }}', '{{ post.likes }}')"
-                               style="cursor: pointer;"></i>&ensp;<span id="{{ post.id }}">{{ post.likes }}</span>
-                            <a href="{% url 'posts:postDetail' post.uuid %}"><i
-                                    class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
+                                style="cursor: pointer;"></i>&ensp;<span id="{{ post.id }}">{{ post.likes }}</span>
+                            <i
+                                class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;
                         </div>
-                        {% if post.type == 'post' %}
-                            <a href="{% url 'posts:postDetail' post.uuid %}" class="stretched-link"></a>
-                        {% else %}
-                            <a href="{% url 'posts:shareDetail' post.uuid %}" class="stretched-link"></a>
-                        {% endif %}
                     </div>
                 {% endfor %}
             </div>

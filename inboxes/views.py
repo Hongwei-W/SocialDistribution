@@ -145,7 +145,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # adding post to author inbox via InboxItem
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
+                    author__username=current_user.username).first(),
                 item=new_post,
                 inbox_item_type="post",
             )
@@ -168,7 +168,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             # add friendfollowrequest to the inbox as well
             InboxItem.objects.create(
                 inbox=Inbox.objects.filter(
-                    author__username=author.username).first(),
+                    author__username=current_user.username).first(),
                 item=friend_request,
                 inbox_item_type="friend_follow_request",
             )
@@ -221,8 +221,46 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 item=new_like,
                 inbox_item_type="like",
             )
-
             serializer = serializers.LikesSerializer(new_like)
+            return Response(serializer.data)
+
+        elif data["type"] == "comment":
+            split_contents = data['id'].split('/')
+            # post id
+            post_id = split_contents[split_contents.index('posts') + 1]
+            # comment id
+            comment_id = split_contents[split_contents.index('comments') + 1]
+            
+            # check if post exists in db
+            if not Post.objects.filter(id__contains=post_id).first():
+                return HttpResponseNotFound("post does not exist")
+
+            # # check if the comment already exists in db for specific post
+            # if Post.objects.filter(id__contains=post_id):
+            #     return HttpResponseNotFound("comment on post already exists")
+            # creating comment object
+            try:
+                # must create author first
+                new_author = Author.objects.get(id=data['author']['id'])
+                new_comment = Comment.objects.create(author=new_author, comment=data['comment'], contentType=data['contentType'], id=data['id'])
+                new_comment.save()
+            except Exception as e:
+                return HttpResponseNotFound(f"there was a problem when processing {e}")
+
+            # adding comment to post object
+            post = Post.objects.filter(id__contains=post_id).first()
+            post.count += 1   
+            post.save()
+
+            # adding comment to user inbox via InboxItem
+            InboxItem.objects.create(
+                inbox=Inbox.objects.filter(
+                    author__username=current_user.username).first(),
+                item=new_comment,
+                inbox_item_type="comment",
+            )
+
+            serializer = serializers.CommentsSerializer(new_comment)
             return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):

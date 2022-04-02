@@ -138,6 +138,7 @@ class PostDetailView(View):
 
     def get(self, request, pk, *args, **kwargs):
         post = Post.objects.get(uuid=pk)
+        post_uuid = post.id.split('/')[-1]
         form = CommentForm()
         # if post is a friend post and current user is not the author of the post, then only show comments of current user
         if post.visibility == 'FRIENDS' and post.author.username != request.user.username:
@@ -148,7 +149,7 @@ class PostDetailView(View):
                         author__username=comment.author.username)
         # else, show all comments
         else:
-            comments = Comment.objects.filter(post=post).order_by('-published')
+            comments = Comment.objects.filter(id__contains=post_uuid).order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -172,17 +173,57 @@ class PostDetailView(View):
         author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
+            print(newComment.uuid)
             newComment.author = Author.objects.get(
                 username=request.user.username)
-            newComment.post = post
-            newComment.save()
-            newComment.id = request.build_absolute_uri('/') + "authors/" + str(
+            newComment.comment = form['comment'].value()
+            newComment.contentType = form['contentType'].value()
+            newComment.id = request.get_host() + "/authors/" + str(
                 post.author.uuid) + "/posts/" + str(pk) + "/comments/" + str(
                     newComment.uuid)
-            newComment.save()
-            post.count += 1
-            post.save()
-            # reset form
+            newComment.post = post
+
+            # url
+            comment_author = newComment.author.id.split('/')[-1]
+            post_author = newComment.post.author.id.split('/')[-1]
+            comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
+            post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
+        
+            #comment json for commenter
+            comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
+            
+            # # push to commenters inbox
+            # comment_author_req = requests.Request(
+            #     'POST', 
+            #     f"{comment_node.url}authors/{comment_author}/inbox",
+            #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
+            #     headers={'Content-Type': 'application/json'},
+            #     data=comment_json,
+            # )
+            # comment_prepare = comment_author_req.prepare()
+            # comment_s = requests.Session()
+            # comment_resp= comment_s.send(comment_prepare)
+
+            # if comment_resp.status_code >= 400:
+            #         print('Error has occured while sending things')
+   
+            # push to post authors inbox
+            post_author_req = requests.Request(
+                'POST',
+                f"{post_node.url}authors/{post_author}/inbox",
+                data = comment_json,
+                auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                headers={'Content-Type': 'application/json'},
+            )
+
+            post_prep = post_author_req.prepare()
+            post_session = requests.Session()
+            post_resp = post_session.send(post_prep)
+            
+            if post_resp.status_code >= 400:
+                print('Error has occured while sending things')
+            
+
             form = CommentForm()
 
         comments = Comment.objects.filter(post=post).order_by('-published')
@@ -297,6 +338,7 @@ class SharedPostView(View):
 class LikeHandlerView(View):
 
     def post(self, request):
+        commenter = Author.objects.filter(username=request.user.username).first()
         author_id = request.POST['author_id']
         author_uuid = author_id.split('/')[-1]
         author = Author.objects.get(id=author_id)
@@ -306,7 +348,7 @@ class LikeHandlerView(View):
         node = ConnectionNode.objects.filter(url__contains=host).first()
 
         if "comments" in object_id:
-            summary = author.displayName + ' likes your comment'
+            summary = commenter.displayName + ' likes your comment'
             post_uuid = object_id.split('/')[-3]
             req = requests.Request(
                 'GET',
@@ -315,7 +357,7 @@ class LikeHandlerView(View):
                                    node.auth_password),
             )
         else:
-            summary = author.displayName + ' likes your post'
+            summary = commenter.displayName + ' likes your post'
             req = requests.Request(
                 'GET',
                 f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
@@ -333,12 +375,12 @@ class LikeHandlerView(View):
         for i in content['items']:
             author_lst.append(i['author']['id'])
 
-        if author_id in author_lst:
+        if commenter.id in author_lst:
             return JsonResponse({"liked": "before"})
         else:
             # send the like object into the inbox, local or foreign, whatever, I am using API!
 
-            new_like = Like(author=author, object=object_id, summary=summary)
+            new_like = Like(author=commenter, object=object_id, summary=summary)
             if host not in localHostList:
                 new_like.save()
             serializer = serializers.LikesSerializer(new_like)
