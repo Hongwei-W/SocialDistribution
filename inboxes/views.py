@@ -188,7 +188,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 inbox=Inbox.objects.filter(
                     author__username=current_user.username).first(),
                 item=friend_request,
-                inbox_item_type="friend_follow_request",
+                inbox_item_type="follow",
             )
 
             serializer = serializers.FriendFollowRequestSerializer(

@@ -34,6 +34,7 @@ def profile(request, user_id):
     current_author_original_uuid = current_author_info.id.split('/')[-1]
 
     for node in connectionNodes:
+        print(node)
         response = requests.get(
             f"{node.url}authors/{current_author_original_uuid}/posts/",
             params=request.GET,
@@ -105,7 +106,7 @@ def follow(request):
                 InboxItem.objects.create(inbox=Inbox.objects.filter(
                         author__username=objectName).first(),
                         item=friendRequest,
-                        inbox_item_type='friendfollowrequest')
+                        inbox_item_type='follow')
 
                 friendRequest.save()
             else:
@@ -152,7 +153,7 @@ def friendRequests(request):
     currentInbox = Inbox.objects.filter(
         author__username=currentUser.username).first()
 
-    friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="friendfollowrequest")
+    friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="follow")
     likeInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="like")
     commentInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="comment")
     context = {
