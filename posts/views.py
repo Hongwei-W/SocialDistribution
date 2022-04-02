@@ -571,9 +571,17 @@ class ShareDetailView(View):
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
-        source_post = Post.objects.get(uuid=source_post_id)
+        source_post = Post.objects.filter(uuid=source_post_id).first()
         original_post_id = post.origin.split('/')[-1]
-        original_post = Post.objects.get(uuid=original_post_id)
+        original_post = Post.objects.filter(uuid=original_post_id).first()
+        if source_post == None:
+            source_deleted = True
+        else: 
+            source_deleted = False
+        if original_post == None:
+            original_deleted = True
+        else:
+            original_deleted = False
 
         context = {
             'post': post,
@@ -582,6 +590,8 @@ class ShareDetailView(View):
             'likes': likes,
             'source_post': source_post,
             'original_post': original_post,
+            'source_deleted': source_deleted,
+            'original_deleted': original_deleted,
         }
 
         return render(request, 'shareDetail.html', context)
