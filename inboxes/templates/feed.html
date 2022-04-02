@@ -57,30 +57,10 @@
                                 {% if post.contentType == "text/markdown" %}
                                     <div class="postBody">{{ post.content | markdownify}}</div>
                                 {% else %}
-                                    <div class="authorName">Author: {{ post.author.username }}</div>
-                                    <div class="postTitle">{{ post.title }}</div>
-                                    <!-- pip install django-markdownify -->
-                                    {% if post.contentType == "text/markdown" %}
-                                        <div class="postBody">{{ post.content | markdownify}}</div>
-                                    {% else %}
-                                        <div class="postBody">{{ post.content}}</div>
-                                    {% endif %}
-                                    {% if post.post_image %}
-                                        <img src="{{ post.post_image.url }}" width="100%">
-                                    {% endif %}
+                                    <div class="postBody">{{ post.content}}</div>
                                 {% endif %}
-                                <div class="postTime">{{ post.published }}
-                                    <div class="postVis">Visibility: {{ post.visibility }}</div>
-                                </div>
-                                <!-- <div>UUID: {{ post.id }}</div> -->
-                                <div class="postActions"><a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;<a
-                                        href="/like?post_id={{post.uuid}}"><i class="fa-solid fa-heart"></i>&ensp;{{post.likes}}</a>&emsp;<a
-                                        href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
-                                </div>
-                                {% if post.type == 'post'%}
-                                <a href="{% url 'posts:postDetail' post.uuid %}" class="stretched-link"></a>
-                                {% else %}
-                                <a href="{% url 'posts:shareDetail' post.uuid %}" class="stretched-link"></a>
+                                {% if post.post_image %}
+                                    <img src="{{ post.post_image.url }}" width="100%">
                                 {% endif %}
                             {% endif %}
                             <div class="postTime">{{ post.published }}
