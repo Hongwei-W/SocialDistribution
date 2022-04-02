@@ -51,9 +51,7 @@ class NewPostView(View):
             newPost = form.save(commit=False)
 
             newPost.author = Author.objects.get(username=request.user.username)
-            newPost.id = request.get_host() + "/authors/" + str(
-                newPost.author.uuid) + "/posts/" + str(newPost.uuid)
-            
+            newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
             if newPost.unlisted:
                 newPost.url = newPost.author.host + "post/unlisted/" + str(newPost.uuid)
             else:
