@@ -82,8 +82,6 @@ class NewPostView(View):
                 # print(newPost.image_b64[:20])
                 newPost.save()
 
-            
-
             if newPost.visibility == 'PRIVATE':
                 # context = {
                 #     'newPost': newPost,
@@ -108,7 +106,8 @@ class NewPostView(View):
                             # add it to inbox of follower
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
-                                    author__username=follower.username).first(),
+                                    author__username=follower.username).first(
+                                    ),
                                 inbox_item_type="post",
                                 item=newPost,
                             )
@@ -123,7 +122,7 @@ class NewPostView(View):
                                 f"{followerNode.url}authors/{follower.username}/inbox",
                                 data=json.dumps(serializer.data),
                                 auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
+                                                   followerNode.auth_password),
                                 headers={'Content-Type': 'application/json'})
 
                             prepared = req.prepare()
@@ -154,7 +153,8 @@ class PostDetailView(View):
                         author__username=comment.author.username)
         # else, show all comments
         else:
-            comments = Comment.objects.filter(id__contains=post_uuid).order_by('-published')
+            comments = Comment.objects.filter(
+                id__contains=post_uuid).order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -191,15 +191,18 @@ class PostDetailView(View):
             # url
             comment_author = newComment.author.id.split('/')[-1]
             post_author = newComment.post.author.id.split('/')[-1]
-            comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
-            post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
-        
+            comment_node = ConnectionNode.objects.filter(
+                url__contains=newComment.author.host).first()
+            post_node = ConnectionNode.objects.filter(
+                url__contains=newComment.post.author.host).first()
+
             #comment json for commenter
-            comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
-            
+            comment_json = json.dumps(
+                serializers.CommentsSerializer(newComment).data)
+
             # # push to commenters inbox
             # comment_author_req = requests.Request(
-            #     'POST', 
+            #     'POST',
             #     f"{comment_node.url}authors/{comment_author}/inbox",
             #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
             #     headers={'Content-Type': 'application/json'},
@@ -211,23 +214,23 @@ class PostDetailView(View):
 
             # if comment_resp.status_code >= 400:
             #         print('Error has occured while sending things')
-   
+
             # push to post authors inbox
             post_author_req = requests.Request(
                 'POST',
                 f"{post_node.url}authors/{post_author}/inbox",
-                data = comment_json,
-                auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                data=comment_json,
+                auth=HTTPBasicAuth(post_node.auth_username,
+                                   post_node.auth_password),
                 headers={'Content-Type': 'application/json'},
             )
 
             post_prep = post_author_req.prepare()
             post_session = requests.Session()
             post_resp = post_session.send(post_prep)
-            
+
             if post_resp.status_code >= 400:
                 print('Error has occured while sending things')
-            
 
             form = CommentForm()
 
@@ -257,6 +260,7 @@ class PostDetailView(View):
 
         return render(request, 'postDetail.html', context)
 
+
 @method_decorator(login_required, name='dispatch')
 # def selectPerson(request):
 #     author_list = Author.objects.all()
@@ -265,6 +269,7 @@ class PostDetailView(View):
 #         }
 #     return render(request, 'selectPerson.html', context)
 class selectPersonView(View):
+
     def get(self, request, *args, **kwargs):
         form = PostForm()
         share_form = ShareForm()
@@ -283,15 +288,16 @@ class selectPersonView(View):
         username = request.POST.get('specificUserName', '')
         # print(username)
         try:
-            selected_author = Author.objects.get(displayName = username)
+            selected_author = Author.objects.get(displayName=username)
         except:
             context = {
-                'username':username,
+                'username': username,
             }
             return render(request, 'authors/profileNotFound.html', context)
 
         try:
-            post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
+            post = Post.objects.filter(author__username=request.user.username
+                                       ).order_by('-published').first()
             # print(Post.objects.filter(author__username=request.user.username))
             # print(post)
         except:
@@ -309,7 +315,8 @@ class selectPersonView(View):
             if selected_author.host in localHostList:
                 try:
                     hisfollowers = Followers.objects.filter(
-                                user__username=selected_author.username).first().items.all()
+                        user__username=selected_author.username).first(
+                        ).items.all()
                 except:
                     hisfollowers = []
                 if user in hisfollowers:
@@ -319,24 +326,29 @@ class selectPersonView(View):
                         # add the new post to my own inbox
                         InboxItem.objects.create(
                             inbox=Inbox.objects.filter(
-                                author__username=selected_author.username).first(),
+                                author__username=selected_author.username).
+                            first(),
                             inbox_item_type="post",
                             item=post,
                         )
                         try:
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
-                                    author__username=request.user.username).first(),
+                                    author__username=request.user.username).
+                                first(),
                                 inbox_item_type="post",
                                 item=post,
                             )
                         except AttributeError as e:
-                            print(e, 'Cannot add to my 1to1. Something went wrong!')
+                            print(
+                                e,
+                                'Cannot add to my 1to1. Something went wrong!')
                     except:
                         context = {
-                            'username':username,
+                            'username': username,
                         }
-                        return render(request, 'authors/profileNotFound.html', context)
+                        return render(request, 'authors/profileNotFound.html',
+                                      context)
                 else:
                     context = {
                         'username': username,
@@ -352,8 +364,7 @@ class selectPersonView(View):
                         f"{followerNode.url}authors/{selected_author.username}/followers",
                         params=request.GET,
                         auth=HTTPBasicAuth(followerNode.auth_username,
-                                        followerNode.auth_password)
-                        )
+                                           followerNode.auth_password))
                     if response.status_code == 200:
                         hisfollowers = response.json()['items']
                         print(hisfollowers)
@@ -374,27 +385,30 @@ class selectPersonView(View):
                                 f"{followerNode.url}authors/{selected_author.username}/inbox",
                                 data=json.dumps(serializer.data),
                                 auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
+                                                   followerNode.auth_password),
                                 headers={'Content-Type': 'application/json'})
 
                             prepared = req.prepare()
 
                             s = requests.Session()
                             resp = s.send(prepared)
-                            
+
                             print("status code, ", resp.status_code)
                             # ADD to my own 1 to 1
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
-                                    author__username=request.user.username).first(),
+                                    author__username=request.user.username).
+                                first(),
                                 inbox_item_type="post",
                                 item=post,
                             )
                         except:
                             context = {
-                                'username':username,
+                                'username': username,
                             }
-                            return render(request, 'authors/profileNotFound.html', context)
+                            return render(request,
+                                          'authors/profileNotFound.html',
+                                          context)
                     else:
                         context = {
                             'username': username,
@@ -415,6 +429,7 @@ class selectPersonView(View):
         # }
         # return render(request,'myapp/newpost.html', context)
         return redirect('inboxes:postList')
+
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
@@ -474,18 +489,48 @@ class SharedPostView(View):
         try:
             followers = Followers.objects.get(
                 user__username=request.user.username).items.all()
-            # followersID = FollowerCount.objects.filter(user=request.user.username)
-            for follower in followers:
-                # follower is <author> object
-                InboxItem.objects.create(
-                    inbox=Inbox.objects.filter(
-                        author__username=follower.username).first(),
-                    inbox_item_type='post',
-                    item=new_post,
-                )
-                # TODO: darren make this work for remote authors too (just call API or something lol)
         except Exception as e:
             print(e, 'No followers for this author')
+
+        # followersID = F ollowerCount.objects.filter(user=request.user.username)
+        for follower in followers:
+            try:
+                # TODO: darren make this work for remote authors too (just call API or something lol)
+                # follower is <author> object
+                serializer = serializers.PostSerializer(new_post)
+                # get follower node object
+                followerNode = connectionNodes.filter(
+                    url=f"{follower.host}service/").first()
+
+                # since API uses UUID, it is different for local
+                if follower.host in localHostList:
+                    post_destination_url = f"{followerNode.url}authors/{follower.uuid}/inbox"
+                else:
+                    post_destination_url = f"{followerNode.url}authors/{follower.username}/inbox"
+
+                req = requests.Request(
+                    'POST',
+                    post_destination_url,
+                    data=json.dumps(serializer.data),
+                    auth=HTTPBasicAuth(followerNode.auth_username,
+                                       followerNode.auth_password),
+                    headers={'Content-Type': 'application/json'})
+
+                prepared = req.prepare()
+                s = requests.Session()
+                resp = s.send(prepared)
+                print("status code, ", resp.status_code)
+
+                if resp.ok:
+                    print(
+                        f"Successfully send shared post to {followerNode.url}authors/{follower.username}/inbox"
+                    )
+                else:
+                    print(
+                        f"Failed to send shared post to {followerNode.url}authors/{follower.username}/inbox"
+                    )
+            except Exception as e:
+                print(e, 'Failed to send shared post to follower')
 
         context = {
             'new_post': new_post,
