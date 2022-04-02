@@ -18,7 +18,7 @@
 
         <div class="middle">
             <div id="postHolder">
-                <span class="postBody">Here is your recent friendRequest</span>
+                <span class="postBody" style="color: #F5CAC3; font-weight: bold;">Here is your recent friendRequest</span>
                 {% for friendRequest in friendRequests%}
                     <div class="singlePost position-relative">
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->
@@ -31,7 +31,8 @@
                         <!-- <div>UUID: {{ post.id }}</div> -->
                     </div>
                 {% endfor %}
-                <span class="postBody">Here is your recent likes</span>
+                <span class="postBody" style="color: #F5CAC3;">------------------------------------------------------------</span>
+                <span class="postBody" style="color: #F5CAC3; font-weight: bold;">Here is your recent likes</span>
                 {% for like in likes%}
                     <div class="singlePost position-relative">
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->
@@ -41,7 +42,8 @@
                         <!-- <div>UUID: {{ post.id }}</div> -->
                     </div>
                 {% endfor %}
-                <span class="postBody">Here is your recent comments</span>
+                <span class="postBody" style="color: #F5CAC3;">------------------------------------------------------------</span>
+                <span class="postBody" style="color: #F5CAC3; font-weight: bold;">Here is your recent comments</span>
                 {% for comment in comments%}
                     <div class="singlePost position-relative">
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->                            
@@ -56,6 +58,7 @@
                         <!-- <div>UUID: {{ post.id }}</div> -->
                     </div>
                 {% endfor %}
+                <span class="postBody" style="color: #F5CAC3;">------------------------------------------------------------</span>
 
             </div>
         </div>
