@@ -49,9 +49,7 @@ class NewPostView(View):
         if form.is_valid() and (form['content'].value() != "" or form['post_image'].value() is not None):
             # creating post from form and adding attributes
             newPost = form.save(commit=False)
-
             newPost.author = Author.objects.get(username=request.user.username)
-
             newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
 
             # deal with unlisted post
@@ -152,7 +150,7 @@ class NewPostView(View):
                                 f"{followerNode.url}authors/{follower.username}/inbox",
                                 data=json.dumps(serializer.data),
                                 auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
+                                                   followerNode.auth_password),
                                 headers={'Content-Type': 'application/json'})
 
                             prepared = req.prepare()
@@ -243,7 +241,7 @@ class PostDetailView(View):
             post_author_req = requests.Request(
                 'POST',
                 f"{post_node.url}authors/{post_author}/inbox",
-                data = comment_json,
+                data=comment_json,
                 auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
                 headers={'Content-Type': 'application/json'},
             )
@@ -254,7 +252,6 @@ class PostDetailView(View):
 
             if post_resp.status_code >= 400:
                 print('Error has occured while sending things')
-
 
             form = CommentForm()
 
@@ -303,6 +300,7 @@ class UnlistedPostDetailView(View):
 
 @method_decorator(login_required, name='dispatch')
 class selectPersonView(View):
+
     def get(self, request, *args, **kwargs):
         form = PostForm()
         share_form = ShareForm()
@@ -321,7 +319,7 @@ class selectPersonView(View):
         username = request.POST.get('specificUserName', '')
         # print(username)
         try:
-            selected_author = Author.objects.get(displayName = username)
+            selected_author = Author.objects.get(displayName=username)
         except:
             context = {
                 'username': username,
@@ -347,7 +345,8 @@ class selectPersonView(View):
             if selected_author.host in localHostList:
                 try:
                     hisfollowers = Followers.objects.filter(
-                                user__username=selected_author.username).first().items.all()
+                        user__username=selected_author.username).first(
+                        ).items.all()
                 except:
                     hisfollowers = []
                 if user in hisfollowers:
@@ -357,22 +356,26 @@ class selectPersonView(View):
                         # add the new post to my own inbox
                         InboxItem.objects.create(
                             inbox=Inbox.objects.filter(
-                                author__username=selected_author.username).first(),
+                                author__username=selected_author.username).
+                            first(),
                             inbox_item_type="post",
                             item=post,
                         )
                         try:
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
-                                    author__username=request.user.username).first(),
+                                    author__username=request.user.username).
+                                first(),
                                 inbox_item_type="post",
                                 item=post,
                             )
                         except AttributeError as e:
-                            print(e, 'Cannot add to my 1to1. Something went wrong!')
+                            print(
+                                e,
+                                'Cannot add to my 1to1. Something went wrong!')
                     except:
                         context = {
-                            'username':username,
+                            'username': username,
                         }
                         return render(request, 'personNotFound.html', context)
                 else:
@@ -390,8 +393,7 @@ class selectPersonView(View):
                         f"{followerNode.url}authors/{selected_author.username}/followers",
                         params=request.GET,
                         auth=HTTPBasicAuth(followerNode.auth_username,
-                                        followerNode.auth_password)
-                        )
+                                           followerNode.auth_password))
                     if response.status_code == 200:
                         hisfollowers = response.json()['items']
                     else:
@@ -497,7 +499,6 @@ class SharedPostView(View):
     def post(self, request, pk, *args, **kwargs):
         # source_post is the currently selected post to be shared
         source_post = Post.objects.get(id__contains=f'posts/{pk}')
-        # TODO: SU: please confirm that this is accepted behaviour.
         source_post_id = source_post.id.split('/')[-1]
         original_post_id = source_post.origin.split('/')[-1]
         original_post = Post.objects.get(id__contains=f'posts/{original_post_id}')
@@ -505,8 +506,6 @@ class SharedPostView(View):
 
         if form.is_valid():
             new_post = Post(
-                #TODO: Su: please confirm that type is allowed to be updated
-                # eg if author.user is not the same as the user who is sharing the post
                 type='post',
                 title=self.request.POST.get('title'),
                 origin=original_post.origin,
@@ -534,36 +533,47 @@ class SharedPostView(View):
         try:
             followers = Followers.objects.get(
                 user__username=request.user.username).items.all()
-            # followersID = FollowerCount.objects.filter(user=request.user.username)
-            for follower in followers:
-                # follower is <author> object
-                if follower.host in localHostList:
-                    InboxItem.objects.create(
-                        inbox=Inbox.objects.filter(
-                            author__username=follower.username).first(),
-                        inbox_item_type='post',
-                        item=new_post,
-                    )
-                else:
-                    serializer = serializers.PostSerializer(new_post)
-                    # get follower node object
-                    followerNode = connectionNodes.filter(
-                        url=f"{follower.host}service/").first()
-                    req = requests.Request(
-                        'POST',
-                        f"{followerNode.url}authors/{follower.username}/inbox",
-                        data=json.dumps(serializer.data),
-                        auth=HTTPBasicAuth(followerNode.auth_username,
-                                        followerNode.auth_password),
-                        headers={'Content-Type': 'application/json'})
-
-                    prepared = req.prepare()
-                    s = requests.Session()
-                    resp = s.send(prepared)
-
-                    print("status code, ", resp.status_code)
         except Exception as e:
             print(e, 'No followers for this author')
+
+        # followersID = F ollowerCount.objects.filter(user=request.user.username)
+        for follower in followers:
+            try:
+                # follower is <author> object
+                serializer = serializers.PostSerializer(new_post)
+                # get follower node object
+                followerNode = connectionNodes.filter(
+                    url=f"{follower.host}service/").first()
+
+                # since API uses UUID, it is different for local
+                if follower.host in localHostList:
+                    post_destination_url = f"{followerNode.url}authors/{follower.uuid}/inbox"
+                else:
+                    post_destination_url = f"{followerNode.url}authors/{follower.username}/inbox"
+
+                req = requests.Request(
+                    'POST',
+                    post_destination_url,
+                    data=json.dumps(serializer.data),
+                    auth=HTTPBasicAuth(followerNode.auth_username,
+                                       followerNode.auth_password),
+                    headers={'Content-Type': 'application/json'})
+
+                prepared = req.prepare()
+                s = requests.Session()
+                resp = s.send(prepared)
+                print("status code, ", resp.status_code)
+
+                if resp.ok:
+                    print(
+                        f"Successfully send shared post to {followerNode.url}authors/{follower.username}/inbox"
+                    )
+                else:
+                    print(
+                        f"Failed to send shared post to {followerNode.url}authors/{follower.username}/inbox"
+                    )
+            except Exception as e:
+                print(e, 'Failed to send shared post to follower')
 
         context = {
             'new_post': new_post,
