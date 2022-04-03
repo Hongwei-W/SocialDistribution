@@ -128,7 +128,6 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
                 return HttpResponseNotFound("author (in body) not exist")
-            breakpoint()
             if data['published']:
                 new_post = Post.objects.create(
                     title=data["title"],
@@ -197,7 +196,6 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
         # 2. adding follow to user inbox
         elif data["type"].lower() == "follow":
-            breakpoint()
             remote_author = Author.objects.filter(
                 id=data['actor']['id']).first()
             our_author = Author.objects.filter(
