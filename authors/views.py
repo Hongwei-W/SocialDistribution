@@ -172,7 +172,7 @@ def friendRequests(request):
 def acceptFriendRequest(request, actor_id):
     objectName = request.user.username
     object = Author.objects.get(username=objectName)
-    actor = Author.objects.get(id__contains=actor_id)
+    actor = Author.objects.get(username=actor_id)
     if request.method == 'GET':
         friendRequest_accept = FriendFollowRequest.objects.filter(actor=actor,
                                                                object=object).first()
