@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 
 from accounts.forms import AuthorInfoForm, SignUpForm
-from authors.models import Author
+from authors.models import Author, Followers
 from common.models import ServerSetting
 from inboxes.models import Inbox
 
@@ -41,6 +41,8 @@ def signup(request):
             author.save()
             inbox = Inbox(author=author)
             inbox.save()
+            followers = Followers(user=author)
+            followers.save()
             return redirect('/accounts/login')
     else:
         form = SignUpForm()

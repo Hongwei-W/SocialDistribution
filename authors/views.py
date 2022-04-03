@@ -137,8 +137,6 @@ def follow(request):
 
                 s = requests.Session()
                 resp = s.send(prepared)
-                print(f"sending remote friend request to: "\
-                    f"{object.host}/service/authors/{object.username}/inbox")
 
                 print("remote request status code, ", resp.status_code)
         return redirect('authors:profile', user_id=objectName)
@@ -179,11 +177,7 @@ def acceptFriendRequest(request, actor_id):
         friendRequest_accept = FriendFollowRequest.objects.filter(actor=actor,
                                                                object=object).first()
         if friendRequest_accept:
-            if Followers.objects.filter(user=object):
-                Followers.objects.get(user=object).items.add(actor)
-            else:
-                Followers.objects.create(user=object)
-                Followers.objects.get(user=object).items.add(actor)
+            Followers.objects.get(user=object).items.add(actor)
 
             # Add posts to the followers' Inbox
             currentInbox = Inbox.objects.filter(author__username=object.username).first()

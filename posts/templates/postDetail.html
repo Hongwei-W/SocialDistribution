@@ -79,7 +79,7 @@
                 </form>
                 {% for comment in comments %}
                     <div class="singlePost position-relative">
-                        <div class="postBody">{{ comment.author.username }}</div>
+                        <div class="postBody">{{ comment.author.displayName }}</div>
                         {% if post.contentType == "text/markdown" %}
                             <div class="postBody">{{ comment.comment | markdownify }}</div>
                         {% else %}
