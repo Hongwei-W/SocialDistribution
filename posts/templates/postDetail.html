@@ -8,52 +8,57 @@
 
     <link rel="stylesheet" type="text/css" href="{% static 'posts/css/postDetail.css' %}">
     <body>
-    <div class="colContainer">
-        {% include "sidebarLeft.html" %}
-        <div class="column middle">
-            <div>
-                <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
-            </div>
-            <div>
-                <div class="singlePost">
-                    <div class="postTitle">{{ post.title }}</div>
-                    {% if request.user.username == post.author.username %}
-                        {% if post.visibility == "PUBLIC" %}
-                            <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
-                        {% endif %}
-                        <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
-                    {% endif%}
+        <div class="colContainer">
+            {% include "sidebarLeft.html" %}
+            <div class="column middle">
+                <div>
+                    <a href="{% url 'inboxes:postList' %}" class="btn btn-light"> Back To Feed </a>
+                </div>
+                <div>
+                    <div class="singlePost">
+                        <div class="postTitle">
+                            {% if post.title != None %}
+                                {{ post.title }}
+                            {% endif %}
+                        </div>
+                        {% if request.user.username == post.author.username %}
+                            {% if post.visibility == "PUBLIC" %}
+                                <a href="{% url 'posts:postEdit' post.uuid %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            {% endif %}
+                            <a href="{% url 'posts:postDelete' post.uuid %}"><i class="fa-solid fa-trash-can"></i></a>
+                        {% endif%}
 
-
-                    {% if post.contentType == "text/markdown" %}
-                        <div class="postBody">{{ post.content | markdownify }}</div>
-                    {% else %}
-                        <div class="postBody">{{ post.content }}</div>
-                    {% endif %}
-
-
-                    <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
-                    <!-- <div class="postBody">{{ post.contentType }}</div> -->
-                    <!-- <div class="postBody">{{ post.count }}</div> -->
-                    <div class="postBody">
-                        {% if post.post_image %}
-                            <img src="data:image/jpg;base64, {{ image_b64 }}" width=100%>
+                        {% if post.content != None %}
+                            {% if post.contentType == "text/markdown" %}
+                                    <div class="postBody">{{ post.content | markdownify}}</div>
+                                {% else %}
+                                    <div class="postBody">{{ post.content }}</div>
+                            {% endif %}
                         {% endif %}
 
-                    </div>
-                    <div class="postBody">
-                        {% for category in post.categories.all %}
-                            <span class="badge bg-secondary">{{ category.cat }}</span>
-                        {% endfor %}
-                    </div>
 
-                    <div class="postTime">{{ post.published }}
-                        <div class="postVis">Visibility: {{ post.visibility }}</div>
-                    </div>
+                        <!-- <div class="postBody">Categories: {{ post.categories }}</div> -->
+                        <!-- <div class="postBody">{{ post.contentType }}</div> -->
+                        <!-- <div class="postBody">{{ post.count }}</div> -->
+                        <div class="postBody">
+                            {% if post.post_image %}
+                                <img src="data:image/jpg;base64, {{ image_b64 }}" width=100%>
+                            {% endif %}
+
+                        </div>
+                        <div class="postBody">
+                            {% for category in post.categories.all %}
+                                <span class="badge bg-secondary">{{ category.cat }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="postTime">{{ post.published }}
+                            <div class="postVis">Visibility: {{ post.visibility }}</div>
+                        </div>
 
 
-                    <div class="postActions">
-                        {% if post.visibility != 'PRIVATE' %}
+                        <div class="postActions">
+                            {% if post.visibility != 'PRIVATE' %}
                             <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
                             <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Liked by</a>&emsp;
                             <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>
@@ -61,43 +66,43 @@
                             <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Liked by</a>&emsp;
                             <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>
                         {% endif %}
-                </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    <!-- {{ form.as_table }} -->
-                    <div class="postDetail">
-                        <!-- <label for="title">Title:</label> -->
-                        {{ form.comment }}
                     </div>
-                    <div class="postDetail">
-                        <!-- <label for="title">Title:</label> -->
-                        {{ form.contentType }}
-                    </div>
-                    <div class="postDetail">
-                        <button class="btnShare">Share</button>
-                    </div>
-                </form>
-                {% for comment in comments %}
-                    <div class="singlePost position-relative">
-                        <div class="postBody">{{ comment.author.displayName }}</div>
-                        {% if post.contentType == "text/markdown" %}
-                            <div class="postBody">{{ comment.comment | markdownify }}</div>
-                        {% else %}
-                            <div class="postBody">{{ comment.comment }}</div>
-                        {% endif %}
-                        <div class="postTime">{{ comment.published }}
-                            <div class="postActions">
-                                <i class="fa-solid fa-heart like_btn"
+                    <form method="POST">
+                        {% csrf_token %}
+                        <!-- {{ form.as_table }} -->
+                        <div class="postDetail">
+                            <!-- <label for="title">Title:</label> -->
+                            {{ form.comment }}
+                        </div>
+                        <div class="postDetail">
+                            <!-- <label for="title">Title:</label> -->
+                            {{ form.contentType }}
+                        </div>
+                        <div class="postDetail">
+                            <button class="btnShare">Share</button>
+                        </div>
+                    </form>
+                    {% for comment in comments %}
+                        <div class="singlePost position-relative">
+                            <div class="postBody">{{ comment.author.displayName }}</div>
+                            {% if post.contentType == "text/markdown" %}
+                                <div class="postBody">{{ comment.comment | markdownify}}</div>
+                            {% else %}
+                                <div class="postBody">{{ comment.comment }}</div>
+                            {% endif %}
+                            <div class="postTime">{{ comment.published }}
+                                <div class="postActions">
+                                    <i class="fa-solid fa-heart like_btn"
                                    onclick="like_handler('{{ comment.id }}','{{ comment.author.host }}', '{{ comment.author.id }}', '-1')"
                                    style="cursor: pointer;"></i>&ensp;
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
+            {% include "sidebarRight.html" %}
         </div>
-        {% include "sidebarRight.html" %}
-    </div>
-    {% load static %}
-    <script src="{% static 'inboxes/js/like_handler.js' %}"></script>
-{% endblock %}
+        {% load static %}
+        <script src="{% static 'inboxes/js/like_handler.js' %}"></script>
+    {% endblock %}

@@ -34,8 +34,9 @@ class PostListView(View):
         responsePosts = []
         for post in posts:
             post_obj = post.item
-            post_obj.uuid = post_obj.id.split('/')[-1]
-            responsePosts.append(post_obj)
+            if not post_obj.unlisted:
+                post_obj.uuid = post_obj.id.split('/')[-1]
+                responsePosts.append(post_obj)
 
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
@@ -168,15 +169,6 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 new_cat.save()
                 new_post.categories.add(new_cat)
                 new_post.save()
-
-            # new_post.id = request.get_host() + "/authors/" + str(
-            #     new_post.author.uuid) + "/posts/" + str(new_post.uuid)
-            # new_post.source = request.get_host() + "/post/" + str(
-            #     new_post.uuid)
-            # new_post.origin = request.get_host() + "/post/" + str(
-            #     new_post.uuid)
-            # new_post.comments = request.get_host() + "/post/" + str(
-            #     new_post.uuid) + '/comments'
 
             try:
                 new_post.save()

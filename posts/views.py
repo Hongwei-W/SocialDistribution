@@ -3,7 +3,7 @@ import json
 
 import requests
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseNotFound, JsonResponse
+from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -25,6 +25,7 @@ from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
 from common.views import localHostList
+from django.template.loader import render_to_string
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -44,13 +45,20 @@ class NewPostView(View):
 
     def post(self, request, *args, **kwargs):
         form = PostForm(request.POST, request.FILES)
-
-        if form.is_valid():
+        # form content is not None or image is not None
+        if form.is_valid() and (form['content'].value() != "" or form['post_image'].value() is not None):
             # creating post from form and adding attributes
             newPost = form.save(commit=False)
+
             newPost.author = Author.objects.get(username=request.user.username)
             newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
-            # adding categories to post
+
+            # deal with unlisted post
+            if newPost.unlisted:
+                newPost.url = newPost.author.host + "post/unlisted/" + str(newPost.uuid)
+            else:
+                newPost.url = newPost.author.host + "post/" + str(newPost.uuid)
+
             unparsedCat = newPost.unparsedCategories
             catList = unparsedCat.split()
             newPost.save()
@@ -61,23 +69,49 @@ class NewPostView(View):
                 newPost.categories.add(newCat)
                 newPost.save()
 
-            # not sure what its for but it works
-            if newPost.type == 'post':
-                newPost.source = newPost.id
-                newPost.origin = newPost.id
-                newPost.comments = newPost.id + '/comments'
-                newPost.save()
 
-            # if its an image
+            newPost.source = newPost.id
+            newPost.origin = newPost.id
+            newPost.comments = newPost.id + '/comments'
+            newPost.save()
+
+            # if it has an image, then create an unlisted image post
             if newPost.post_image:
                 # print("------url", newPost.post_image.path)
                 # print(str(newPost.post_image))
                 img_file = open(newPost.post_image.path, "rb")
-                newPost.image_b64 = base64.b64encode(img_file.read())
+                # newPost.image_b64 = base64.b64encode(img_file.read())
+                # create an embedded image post
+                newImagePost = Post(
+                    author=newPost.author,
+                    unlisted=True,
+                    source=newPost.source,
+                    origin=newPost.origin,
+                    visibility="PUBLIC",
+                    post_image=newPost.post_image,
+                    image_b64=base64.b64encode(img_file.read())
+                )
+                # newImagePost.save(commit=False)
+                if "jpeg" in newPost.post_image.name:
+                    newImagePost.contentType = "image/jpeg;base64"
+                elif "png" in newPost.post_image.name:
+                    newImagePost.contentType = "image/png;base64"
+                else:
+                    newImagePost.contentType = "application/base64"
+                newImagePost.url = newPost.author.host + "post/unlisted/" + str(newImagePost.uuid)
+                newImagePost.id = request.get_host() + "/authors/" + str(
+                    newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
                 # print(newPost.image_b64[:20])
+                newImagePost.save()
+                newPost.contentType = "text/markdown"
+                newPost.content += "\n[View image here](" + newImagePost.url + ")"
+                newPost.post_image = None
                 newPost.save()
-
-            
+            else:
+                # Set text post to plain/markdown
+                newPost.contentType = "text/plain"
+                if newPost.textType != None:
+                    newPost.contentType = newPost.textType
 
             if newPost.visibility == 'PRIVATE':
                 # context = {
@@ -92,6 +126,7 @@ class NewPostView(View):
                     inbox_item_type="post",
                     item=newPost,
                 )
+
                 user = Author.objects.get(username=request.user.username)
                 try:
                     followersID = Followers.objects.filter(
@@ -110,6 +145,7 @@ class NewPostView(View):
                         else:
                             # if author is not local make post request to add to other user inbox
                             serializer = serializers.PostSerializer(newPost)
+
                             # get follower node object
                             followerNode = connectionNodes.filter(
                                 url=f"{follower.host}service/").first()
@@ -118,7 +154,7 @@ class NewPostView(View):
                                 f"{followerNode.url}authors/{follower.username}/inbox",
                                 data=json.dumps(serializer.data),
                                 auth=HTTPBasicAuth(followerNode.auth_username,
-                                                followerNode.auth_password),
+                                                   followerNode.auth_password),
                                 headers={'Content-Type': 'application/json'})
 
                             prepared = req.prepare()
@@ -173,7 +209,6 @@ class PostDetailView(View):
         author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
-            print(newComment.uuid)
             newComment.author = Author.objects.get(
                 username=request.user.username)
             newComment.comment = form['comment'].value()
@@ -187,13 +222,13 @@ class PostDetailView(View):
             post_author = newComment.post.author.id.split('/')[-1]
             comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
             post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
-        
+
             #comment json for commenter
             comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
-            
+
             # # push to commenters inbox
             # comment_author_req = requests.Request(
-            #     'POST', 
+            #     'POST',
             #     f"{comment_node.url}authors/{comment_author}/inbox",
             #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
             #     headers={'Content-Type': 'application/json'},
@@ -205,7 +240,7 @@ class PostDetailView(View):
 
             # if comment_resp.status_code >= 400:
             #         print('Error has occured while sending things')
-   
+
             # push to post authors inbox
             post_author_req = requests.Request(
                 'POST',
@@ -218,10 +253,10 @@ class PostDetailView(View):
             post_prep = post_author_req.prepare()
             post_session = requests.Session()
             post_resp = post_session.send(post_prep)
-            
+
             if post_resp.status_code >= 400:
                 print('Error has occured while sending things')
-            
+
 
             form = CommentForm()
 
@@ -414,6 +449,21 @@ class selectPersonView(View):
         # }
         # return render(request,'myapp/newpost.html', context)
         return redirect('inboxes:postList')
+class UnlistedPostDetailView(View):
+
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.filter(uuid=pk).first()
+        if post.image_b64 != None:
+            image_b64 = post.image_b64.decode('utf-8')
+        else:
+            image_b64 = None
+        context = {
+            'post': post,
+            'image_b64': image_b64,
+        }
+        rendered = render_to_string('unlistedPostDetail.html', context)
+        return HttpResponse(rendered)
+
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
@@ -678,6 +728,19 @@ class PostDeleteView(DeleteView):
     model = Post
     template_name = 'postDelete.html'
     success_url = reverse_lazy('inboxes:postList')
+
+    def delete(self, request, *args, **kwargs):
+        listed_post_id = self.kwargs['pk']
+        listed_post = Post.objects.get(uuid=listed_post_id)
+        # if this post contains an image
+        if "[View image here]" in listed_post.content and str(listed_post.uuid) in listed_post.origin:
+            unlisted_url = listed_post.content.split('[View image here]')[1].strip("()")
+            unlisted_post_id = unlisted_url.split('/')[-1]
+            unlisted_post = Post.objects.get(uuid=unlisted_post_id)
+            unlisted_post.delete()
+        # listed_post.delete()
+        return super(PostDeleteView, self).delete(request, *args, **kwargs)
+
 
 
 #
