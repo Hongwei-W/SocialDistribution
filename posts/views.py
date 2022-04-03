@@ -330,7 +330,7 @@ class selectPersonView(View):
                         context = {
                             'username':username,
                         }
-                        return render(request, 'authors/profileNotFound.html', context)
+                        return render(request, 'personNotFound.html', context)
                 else:
                     context = {
                         'username': username,
