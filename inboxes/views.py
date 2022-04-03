@@ -29,7 +29,7 @@ connectionNodes = ConnectionNode.objects.all()
 # Create your views here.
 @method_decorator(login_required, name='dispatch')
 class PostListView(View):
-
+    # post list only needs comment count and like count
     def get(self, request, *args, **kwargs):
         # getting all posts object from inbox
         currentUser = request.user
@@ -41,6 +41,45 @@ class PostListView(View):
             post_obj = post.item
             post_obj.uuid = post_obj.id.split('/')[-1]
             responsePosts.append(post_obj)
+
+        # update comment count and like count
+        for post in responsePosts:
+            # updating comment count
+            post_url = post.id.split('/')
+            post_url.insert(post_url.index('authors'), 'service')
+            service_post_url = '/'.join(post_url)
+
+            post_origin_host = post.id.split('/')[2]
+            post_origin_node = connectionNodes.filter(
+                url__contains=post_origin_host).first()
+
+            response = requests.get(service_post_url,
+                                    params=request.GET,
+                                    auth=HTTPBasicAuth(
+                                        post_origin_node.auth_username,
+                                        post_origin_node.auth_password))
+            if response.ok:
+                post.count = response.json()['count']
+                post.save()
+
+            # updating like count (not paginated so no need to check if it is paginated)
+            like_url = service_post_url + '/likes'
+            response = requests.get(like_url,
+                                    params=request.GET,
+                                    auth=HTTPBasicAuth(
+                                        post_origin_node.auth_username,
+                                        post_origin_node.auth_password))
+
+            if response.ok:
+                try:
+                    if 'items' in response.json():
+                        key = 'items'
+                    elif 'likes' in response.json():
+                        key = 'likes'
+                    # since we have no fucking idea what likes endpoints returns
+                    post.likes = len(response.json()[key])
+                except Exception as e:
+                    print(e)
 
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
@@ -74,8 +113,10 @@ class PostListView(View):
         }
         return render(request, 'feed.html', context)
 
+
 @method_decorator(login_required, name='dispatch')
 class OneToOneView(View):
+
     def get(self, request, *args, **kwargs):
         # posts = Post.objects.all().order_by('-published')
         currentUser = request.user
@@ -91,11 +132,11 @@ class OneToOneView(View):
         author_list = Author.objects.all()
         context = {
             'postList': responsePosts,
-            'author_list':author_list,
+            'author_list': author_list,
 
             # 'form': form,
         }
-        return render(request,'1to1.html', context)
+        return render(request, '1to1.html', context)
 
 
 #
@@ -207,8 +248,9 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 comment = Comment.objects.filter(id=data["object"]).first()
                 if comment is None:
                     return HttpResponseNotFound("comment not exist")
-                like_before = Like.objects.filter(author__id=data['author']['id'],
-                                                  object=comment.id).first()
+                like_before = Like.objects.filter(
+                    author__id=data['author']['id'],
+                    object=comment.id).first()
                 if like_before is not None:
                     return HttpResponseNotFound("user has given a like before")
             else:
@@ -218,8 +260,8 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 # people only send like object on posts that is originated from our node, so a checking is a must
                 if post is None:
                     return HttpResponseNotFound("post not exist")
-                like_before = Like.objects.filter(author__id=data['author']['id'],
-                                                  object=post.id).first()
+                like_before = Like.objects.filter(
+                    author__id=data['author']['id'], object=post.id).first()
                 if like_before is not None:
                     return HttpResponseNotFound("user has given a like before")
 
@@ -228,10 +270,13 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
             author = Author.objects.filter(id=data['author']['id']).first()
             try:
-                new_like = Like.objects.create(author=author, object=data["object"], summary=data['summary'])
+                new_like = Like.objects.create(author=author,
+                                               object=data["object"],
+                                               summary=data['summary'])
                 new_like.save()
             except Exception as e:
-                return HttpResponseNotFound(f"there was a problem when processing {e}")
+                return HttpResponseNotFound(
+                    f"there was a problem when processing {e}")
 
             if data['type'] == "post":
                 post.likes += 1
@@ -253,7 +298,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             post_id = split_contents[split_contents.index('posts') + 1]
             # comment id
             comment_id = split_contents[split_contents.index('comments') + 1]
-            
+
             # check if post exists in db
             if not Post.objects.filter(id__contains=post_id).first():
                 return HttpResponseNotFound("post does not exist")
@@ -265,14 +310,19 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             try:
                 # must create author first
                 new_author = Author.objects.get(id=data['author']['id'])
-                new_comment = Comment.objects.create(author=new_author, comment=data['comment'], contentType=data['contentType'], id=data['id'])
+                new_comment = Comment.objects.create(
+                    author=new_author,
+                    comment=data['comment'],
+                    contentType=data['contentType'],
+                    id=data['id'])
                 new_comment.save()
             except Exception as e:
-                return HttpResponseNotFound(f"there was a problem when processing {e}")
+                return HttpResponseNotFound(
+                    f"there was a problem when processing {e}")
 
             # adding comment to post object
             post = Post.objects.filter(id__contains=post_id).first()
-            post.count += 1   
+            post.count += 1
             post.save()
 
             # adding comment to user inbox via InboxItem

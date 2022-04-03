@@ -1,5 +1,6 @@
 import base64
 import json
+from pkg_resources import split_sections
 
 import requests
 from django.contrib.auth.decorators import login_required
@@ -32,6 +33,7 @@ localHostList = [
 ]
 
 connectionNodes = ConnectionNode.objects.all()
+
 
 @method_decorator(login_required, name='dispatch')
 class NewPostView(View):
@@ -151,10 +153,83 @@ class PostDetailView(View):
                 if comment.author.username != request.user.username:
                     comments = comments.exclude(
                         author__username=comment.author.username)
+            # sort comments by published date
+            comments = comments.order_by('-published')
         # else, show all comments
         else:
+            # get all related local comments, and convert them to json
             comments = Comment.objects.filter(
                 id__contains=post_uuid).order_by('-published')
+            import ast
+            comments_json = [
+                ast.literal_eval(
+                    json.dumps(serializers.CommentsSerializer(comment).data))
+                for comment in comments
+            ]
+            # for comment in comments:
+            #     comments_json.append(
+            #         json.dumps(serializers.CommentsSerializer(comment).data))
+            comments = comments_json
+            # get all related remote comments
+            remote_comment_pagination = 0
+            while True:
+                split_comment_url = post.comments.split('/')
+                split_comment_url.insert(split_comment_url.index('authors'),
+                                         'service')
+                comment_url = '/'.join(split_comment_url)
+
+                post_host = post.id.split('/')[2]
+                post_node = connectionNodes.filter(
+                    url__contains=post_host).first()
+
+                try:
+                    response = requests.get(
+                        f'{comment_url}?page={remote_comment_pagination}',
+                        params=request.GET,
+                        auth=HTTPBasicAuth(post_node.auth_username,
+                                           post_node.auth_password))
+                    # check dictionary key since its kinda fked
+                    if 'comments' in response.json():
+                        key = 'comments'
+                    elif 'items' in response.json():
+                        key = 'items'
+                    else:
+                        raise Exception('Invalid Keys in Response')
+                        break
+                    if response.ok and len(response.json()[key]) > 0:
+                        print(len(response.json()[key]))
+                        remote_comment_pagination += 1
+                        remote_comments = response.json()[key]
+
+                        # check if already added in remote_comments list, if so that means
+                        # the server does not support pagination, hence the same results
+                        comment_duplication = False
+                        for comment in remote_comments:
+                            if comment in comments:
+                                comment_duplication = True
+                            else:
+                                comments.append(comment)
+
+                        if comment_duplication:
+                            break
+                    else:
+                        # either post request is bad or no more comments
+                        if response.ok:
+                            print(
+                                f'No more remote comments for post "{post.__str__()}"'
+                            )
+                        else:
+                            print(f'Bad request for post "{post.__str__()}"')
+                        break
+                except Exception as e:
+                    print(
+                        f'Error while getting comments for post "{post.__str__()}": {e}'
+                    )
+                    break
+
+            # order list of dict by published date
+            comments = sorted(comments, key=lambda k: k['published'])
+
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -546,7 +621,8 @@ class SharedPostView(View):
 class LikeHandlerView(View):
 
     def post(self, request):
-        commenter = Author.objects.filter(username=request.user.username).first()
+        commenter = Author.objects.filter(
+            username=request.user.username).first()
         author_id = request.POST['author_id']
         author_uuid = author_id.split('/')[-1]
         author = Author.objects.get(id=author_id)
@@ -561,16 +637,14 @@ class LikeHandlerView(View):
             req = requests.Request(
                 'GET',
                 f"{node.url}authors/{author_uuid}/posts/{post_uuid}/comments/{object_uuid}/likes",
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
             )
         else:
             summary = commenter.displayName + ' likes your post'
             req = requests.Request(
                 'GET',
                 f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
             )
 
         prepared = req.prepare()
@@ -588,7 +662,9 @@ class LikeHandlerView(View):
         else:
             # send the like object into the inbox, local or foreign, whatever, I am using API!
 
-            new_like = Like(author=commenter, object=object_id, summary=summary)
+            new_like = Like(author=commenter,
+                            object=object_id,
+                            summary=summary)
             if host not in localHostList:
                 new_like.save()
             serializer = serializers.LikesSerializer(new_like)
@@ -596,10 +672,8 @@ class LikeHandlerView(View):
                 'POST',
                 f"{node.url}authors/{author_uuid}/inbox",
                 data=json.dumps(serializer.data),
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
-                headers={'Content-Type': 'application/json'}
-            )
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
+                headers={'Content-Type': 'application/json'})
             prepared = req.prepare()
             s = requests.Session()
             resp = s.send(prepared)
@@ -670,17 +744,46 @@ class ShareDetailView(View):
 def liked(request, post_id):
     post = Post.objects.get(uuid=post_id)
     username = request.user.username
-    likes_list = Like.objects.filter(object=post)
+
+    # getting local likes
+    likes_list = list(Like.objects.filter(object=post))
+
+    # getting remote likes
+    node = ConnectionNode.objects.filter(
+        url__contains=request.get_host()).first()
+    url = f"{node.url}authors/{username}/posts/{post_id}/likes"
+    response = requests.get(url,
+                            params=request.GET,
+                            auth=HTTPBasicAuth(node.auth_username,
+                                               node.auth_password))
+
+    if response.ok:
+        response_json = response.json()
+        #check what kind of format the likes are in
+        if 'items' in response_json:
+            key = 'items'
+        elif 'likes' in response_json:
+            key = 'likes'
+        else:
+            raise Exception(
+                'Invalid response key. Required "items" or "likes"')
+        # append likes to likes_list
+        # likes_list.append(response_json[key])
+        for like in response_json[key]:
+            likes_list.append(like)
+    else:
+        print(f"error while getting remote likes at {url}")
+
+    # breakpoint()
+    print(likes_list)
     context = {'likes_list': likes_list}
     return render(request, 'liked.html', context)
-    # if
-    # like_text = 'Like'
 
 
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','contentType','categories']
+    fields = ['title', 'description', 'contentType', 'categories']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
@@ -924,7 +1027,7 @@ class CommentLikesAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
     # renderer_classes = (renderers.LikesRenderer,)
-    lookup_fields = ('object',)
+    lookup_fields = ('object', )
 
     def get_queryset(self):
         post_id = self.kwargs['post']
