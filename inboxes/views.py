@@ -128,22 +128,39 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
                 return HttpResponseNotFound("author (in body) not exist")
-
-            # creating new post
-            new_post = Post.objects.create(
-                title=data["title"],
-                description=data["description"],
-                content=data["content"],
-                contentType=data["contentType"],
-                author=author,
-                unparsedCategories=data["categories"],
-                visibility=data["visibility"],
-                image_b64=data["image_b64"],
-                id=data['id'],
-                source=data['source'],
-                origin=data['origin'],
-                comments=data['comments']
-            )
+            breakpoint()
+            if data['published']:
+                new_post = Post.objects.create(
+                    title=data["title"],
+                    description=data["description"],
+                    content=data["content"],
+                    contentType=data["contentType"],
+                    author=author,
+                    unparsedCategories=data["categories"],
+                    visibility=data["visibility"],
+                    image_b64=data["image_b64"],
+                    id=data['id'],
+                    source=data['source'],
+                    origin=data['origin'],
+                    comments=data['comments'],
+                    published=data['published']
+                )
+            else:
+                # creating new post
+                new_post = Post.objects.create(
+                    title=data["title"],
+                    description=data["description"],
+                    content=data["content"],
+                    contentType=data["contentType"],
+                    author=author,
+                    unparsedCategories=data["categories"],
+                    visibility=data["visibility"],
+                    image_b64=data["image_b64"],
+                    id=data['id'],
+                    source=data['source'],
+                    origin=data['origin'],
+                    comments=data['comments']
+                )
 
             unparsed_cat = new_post.unparsedCategories
             for cat in unparsed_cat:
@@ -180,6 +197,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
 
         # 2. adding follow to user inbox
         elif data["type"].lower() == "follow":
+            breakpoint()
             remote_author = Author.objects.filter(
                 id=data['actor']['id']).first()
             our_author = Author.objects.filter(
