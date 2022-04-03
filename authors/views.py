@@ -15,6 +15,7 @@ from . import serializers
 from posts.serializers import PostSerializer
 from .models import *
 from common.views import localHostList
+from posts.models import Post
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -33,9 +34,10 @@ def profile(request, user_id):
     response_contents = None
     # original UUID from Original server for current_author_info
     current_author_original_uuid = current_author_info.id.split('/')[-1]
-
+    
+    currentNode = None
     for node in connectionNodes:
-        print(node)
+        print('this node is: ', node.url)
         response = requests.get(
             f"{node.url}authors/{current_author_original_uuid}/posts/",
             params=request.GET,
@@ -43,9 +45,10 @@ def profile(request, user_id):
         if response.status_code == 200:
             # TODO: Might have to accommodate for pagination once that is implemented
             posts = response.json()['items']
+            currentNode = node.url
+            break
         else:
             pass
-
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
@@ -70,6 +73,7 @@ def profile(request, user_id):
         'count_followers': count_followers,
         'github_username': github_username,
         'posts': posts,
+        'currentNode': currentNode,
         'author_list': author_list,
     }
     return render(request, 'profile.html', context)
