@@ -59,7 +59,13 @@
                     </div>
                 {% endfor %}
                 <span class="postBody" style="color: #F5CAC3;">------------------------------------------------------------</span>
-
+                <span class="postBody" style="color: #F5CAC3; font-weight: bold;">Here is your recent comments</span>
+                {% for post in unlistedPosts%}
+                <div class="singlePost position-relative">    
+                    <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 18px;">You posted an unlisted post:</div>              
+                    <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.url}}</div>
+                </div>
+                {% endfor %}
             </div>
         </div>
         {% include "sidebarRight.html" %}

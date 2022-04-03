@@ -51,7 +51,7 @@ class NewPostView(View):
             newPost = form.save(commit=False)
 
             newPost.author = Author.objects.get(username=request.user.username)
-            newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
+            newPost.id = f"{newPost.author.host}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
             if newPost.unlisted:
                 newPost.url = newPost.author.host + "post/unlisted/" + str(newPost.uuid)
             else:
@@ -88,8 +88,7 @@ class NewPostView(View):
                 else:
                     newImagePost.contentType = "application/base64"
                 newImagePost.url = newPost.author.host + "post/unlisted/" + str(newImagePost.uuid)
-                newPost.id = request.get_host() + "/authors/" + str(
-                    newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
+                newImagePost.id = f"{newPost.author.host}authors/{str(newPost.author.uuid)}/posts/{str(newImagePost.uuid)}"
                 # print(newPost.image_b64[:20])
                 newImagePost.save()
                 newPost.contentType = "text/markdown"

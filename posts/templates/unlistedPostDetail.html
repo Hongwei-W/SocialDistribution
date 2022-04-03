@@ -2,6 +2,8 @@
     <link rel="stylesheet" href="../../SocialDistribution/static/posts/css/postDetail.css">
 </head> -->
 
+{% load markdownify %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,7 +21,7 @@
             {% endif %}
             <div>Author: {{ post.author.username }}</div>
             {% if post.content != None %}
-                <div>Content: {{ post.content }}</div>
+                <div>Content: {{ post.content  | markdownify}}</div>
             {% endif %}
             <div>Published: {{ post.published }}</div>
         </p>       

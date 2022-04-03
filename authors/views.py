@@ -14,6 +14,7 @@ from common.pagination import CustomPageNumberPagination
 from inboxes.models import InboxItem, Inbox
 from . import serializers
 from .models import *
+from posts.models import Post
 from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
@@ -175,12 +176,14 @@ def friendRequests(request):
     friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="follow")
     likeInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="like")
     commentInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="comment")
+    unlistedPosts = Post.objects.filter(author__username=currentUser.username, unlisted = True).all()
     context = {
         'currentUser_uuid': currentAuthor.id.split('/')[-1],
         'currentUser_displayName': currentAuthor.displayName,
         'likes': [item.item for item in likeInboxItems],
         'friendRequests': [item.item for item in friendFollowInboxItems],
         'comments': [item.item for item in commentInboxItems],
+        'unlistedPosts': unlistedPosts,
     }
     return render(request, 'friendRequests.html', context)
 
