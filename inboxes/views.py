@@ -34,6 +34,7 @@ class PostListView(View):
         responsePosts = []
         for post in posts:
             post_obj = post.item
+            # display only if it is not unlisted
             if not post_obj.unlisted:
                 post_obj.uuid = post_obj.id.split('/')[-1]
                 responsePosts.append(post_obj)

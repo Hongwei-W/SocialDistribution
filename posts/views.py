@@ -4,7 +4,7 @@ import json
 import requests
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -24,8 +24,8 @@ from inboxes.models import Inbox, InboxItem
 from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
-from common.views import localHostList
 from django.template.loader import render_to_string
+from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -51,6 +51,7 @@ class NewPostView(View):
             newPost = form.save(commit=False)
 
             newPost.author = Author.objects.get(username=request.user.username)
+
             newPost.id = f"{request.build_absolute_uri('/')}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
 
             # deal with unlisted post
@@ -68,7 +69,6 @@ class NewPostView(View):
                 newCat.save()
                 newPost.categories.add(newCat)
                 newPost.save()
-
 
             newPost.source = newPost.id
             newPost.origin = newPost.id
@@ -99,8 +99,7 @@ class NewPostView(View):
                 else:
                     newImagePost.contentType = "application/base64"
                 newImagePost.url = newPost.author.host + "post/unlisted/" + str(newImagePost.uuid)
-                newImagePost.id = request.get_host() + "/authors/" + str(
-                    newImagePost.author.uuid) + "/posts/" + str(newImagePost.uuid)
+                newImagePost.id = f"{newPost.author.host}authors/{str(newPost.author.uuid)}/posts/{str(newImagePost.uuid)}"
                 # print(newPost.image_b64[:20])
                 newImagePost.save()
                 newPost.contentType = "text/markdown"
@@ -112,6 +111,18 @@ class NewPostView(View):
                 newPost.contentType = "text/plain"
                 if newPost.textType != None:
                     newPost.contentType = newPost.textType
+
+
+            # adding categories to post
+            unparsedCat = newPost.unparsedCategories
+            catList = unparsedCat.split()
+            newPost.save()
+            for cat in catList:
+                newCat = Category()
+                newCat.cat = cat
+                newCat.save()
+                newPost.categories.add(newCat)
+                newPost.save()
 
             if newPost.visibility == 'PRIVATE':
                 # context = {
@@ -126,7 +137,6 @@ class NewPostView(View):
                     inbox_item_type="post",
                     item=newPost,
                 )
-
                 user = Author.objects.get(username=request.user.username)
                 try:
                     followersID = Followers.objects.filter(
@@ -145,7 +155,6 @@ class NewPostView(View):
                         else:
                             # if author is not local make post request to add to other user inbox
                             serializer = serializers.PostSerializer(newPost)
-
                             # get follower node object
                             followerNode = connectionNodes.filter(
                                 url=f"{follower.host}service/").first()
@@ -154,7 +163,7 @@ class NewPostView(View):
                                 f"{followerNode.url}authors/{follower.username}/inbox",
                                 data=json.dumps(serializer.data),
                                 auth=HTTPBasicAuth(followerNode.auth_username,
-                                                   followerNode.auth_password),
+                                                followerNode.auth_password),
                                 headers={'Content-Type': 'application/json'})
 
                             prepared = req.prepare()
@@ -286,13 +295,24 @@ class PostDetailView(View):
 
         return render(request, 'postDetail.html', context)
 
+
+class UnlistedPostDetailView(View):
+
+    def get(self, request, pk, *args, **kwargs):
+        post = Post.objects.filter(uuid=pk).first()
+        if post.image_b64 != None:
+            image_b64 = post.image_b64.decode('utf-8')
+        else:
+            image_b64 = None
+        context = {
+            'post': post,
+            'image_b64': image_b64,
+        }
+        rendered = render_to_string('unlistedPostDetail.html', context)
+        return HttpResponse(rendered)
+
+
 @method_decorator(login_required, name='dispatch')
-# def selectPerson(request):
-#     author_list = Author.objects.all()
-#     context = {
-#             'author_list':author_list,
-#         }
-#     return render(request, 'selectPerson.html', context)
 class selectPersonView(View):
     def get(self, request, *args, **kwargs):
         form = PostForm()
@@ -449,6 +469,8 @@ class selectPersonView(View):
         # }
         # return render(request,'myapp/newpost.html', context)
         return redirect('inboxes:postList')
+
+
 class UnlistedPostDetailView(View):
 
     def get(self, request, pk, *args, **kwargs):
@@ -646,9 +668,9 @@ class ShareDetailView(View):
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
-        source_post = Post.objects.get(id__contains=f'posts/{source_post_id}')
+        source_post = Post.objects.filter(id__contains=f'posts/{source_post_id}').first()
         original_post_id = post.origin.split('/')[-1]
-        original_post = Post.objects.get(id__contains=f'posts/{original_post_id}')
+        original_post = Post.objects.filter(id__contains=f'posts/{original_post_id}').first()
         if source_post == None:
             source_deleted = True
         else:
