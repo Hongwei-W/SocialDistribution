@@ -12,6 +12,7 @@ from common.models import *
 from common.pagination import CustomPageNumberPagination
 from inboxes.models import InboxItem, Inbox
 from . import serializers
+from posts.serializers import PostSerializer
 from .models import *
 from common.views import localHostList
 
@@ -150,6 +151,7 @@ def friendRequests(request):
     currentAuthor = Author.objects.filter(username=currentUser.username).first()
     currentInbox = Inbox.objects.filter(
         author__username=currentUser.username).first()
+    author_list = Author.objects.all()
 
     friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="follow")
     likeInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="like")
@@ -160,6 +162,7 @@ def friendRequests(request):
         'likes': [item.item for item in likeInboxItems],
         'friendRequests': [item.item for item in friendFollowInboxItems],
         'comments': [item.item for item in commentInboxItems],
+        'author_list': author_list,
     }
     return render(request, 'friendRequests.html', context)
 
@@ -169,10 +172,10 @@ def friendRequests(request):
 def acceptFriendRequest(request, actor_id):
     objectName = request.user.username
     object = Author.objects.get(username=objectName)
-    actor = Author.objects.get(username=actor_id)
+    actor = Author.objects.get(id__contains=actor_id)
     if request.method == 'GET':
-        friendRequest_accept = FriendFollowRequest.objects.get(actor=actor,
-                                                               object=object)
+        friendRequest_accept = FriendFollowRequest.objects.filter(actor=actor,
+                                                               object=object).first()
         if friendRequest_accept:
             Followers.objects.get(user=object).items.add(actor)
 
@@ -202,7 +205,7 @@ def acceptFriendRequest(request, actor_id):
                 else:
                     # if author is not local make post request to add to other user inbox
                     for post in responsePosts:
-                        serializer = serializers.PostSerializer(post)
+                        serializer = PostSerializer(post)
                         # get follower node object
                         followerNode = connectionNodes.filter(
                             url=f"{actor.host}service/").first()
@@ -213,7 +216,22 @@ def acceptFriendRequest(request, actor_id):
                             auth=HTTPBasicAuth(followerNode.auth_username,
                                             followerNode.auth_password),
                             headers={'Content-Type': 'application/json'})
+                        
+                        def pretty_print_POST(req):
+                            """
+                            At this point it is completely built and ready
+                            to be fired; it is "prepared".
 
+                            However pay attention at the formatting used in 
+                            this function because it is programmed to be pretty 
+                            printed and may differ from the actual request.
+                            """
+                            print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+                                '-----------START-----------',
+                                req.method + ' ' + req.url,
+                                '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+                                req.body,
+                            ))
                         prepared = req.prepare()
                         s = requests.Session()
                         resp = s.send(prepared)
