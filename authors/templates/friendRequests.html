@@ -46,9 +46,9 @@
                     <div class="singlePost position-relative">
                             <!-- <div class="postActions" style="text-align: left; color: black;"> <span style="font-weight: bold; color: #F28482; font-size: 18px;">{{post.author.username}}</span> shared post from <a a style="color: rgb(135, 172, 228); font-style: italic; font-size: 15px;" href="{{post.source}}">{{post.source}}</a></div> -->                            
                         {% if currentUser_uuid in comment.id%}
-                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 12px; text-align: right;">{{comment.author.displayName}} commented on your post:</div>
+                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 12px; text-align: left;">{{comment.author.displayName}} commented on your post:</div>
                         {% else %}
-                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 12px; text-align: right;">You commented on {{currentUser_displayName}}'s post:</div>
+                            <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 12px; text-align: left;">You commented on {{currentUser_displayName}}'s post:</div>
                         {% endif %}
                             <div class="postBody" style="font-weight: bold; color: #F28482; font-size: 18px;">{{comment.comment}}</div>
                             <!-- pip install django-markdownify -->
