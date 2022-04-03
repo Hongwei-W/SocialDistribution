@@ -79,7 +79,9 @@ class OneToOneView(View):
         posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
         responsePosts = []
         for post in posts:
-            responsePosts.append(post.item)
+            post_obj = post.item
+            post_obj.uuid = post_obj.id.split('/')[-1]
+            responsePosts.append(post_obj)
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 

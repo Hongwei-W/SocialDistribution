@@ -540,7 +540,7 @@ class LikeHandlerView(View):
             new_like = Like(author=commenter, object=object_id, summary=summary)
             if host not in localHostList:
                 if "comments" not in object_id:
-                    post = Post.objects.filter(id__contains=f'/posts/{object_uuid}')
+                    post = Post.objects.filter(id__contains=f'/posts/{object_uuid}').first()
                     post.likes += 1
                 new_like.save()
             serializer = serializers.LikesSerializer(new_like)
