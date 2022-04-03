@@ -173,23 +173,26 @@ class PostDetailView(View):
         author_list = Author.objects.all()
         if form.is_valid():
             newComment = form.save(commit=False)
-            print(newComment.uuid)
+            # print("newComment id is ",newComment.uuid)
             newComment.author = Author.objects.get(
                 username=request.user.username)
+            # print("newComment author is ",newComment.author.username)
             newComment.comment = form['comment'].value()
             newComment.contentType = form['contentType'].value()
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
+            newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
             post_author = newComment.post.author.id.split('/')[-1]
             comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
             post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
-        
+            # For testing purpose, if connectionNode is empty
+            if post_node is not None:
             #comment json for commenter
-            comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
+                comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
             
             # # push to commenters inbox
             # comment_author_req = requests.Request(
@@ -207,20 +210,20 @@ class PostDetailView(View):
             #         print('Error has occured while sending things')
    
             # push to post authors inbox
-            post_author_req = requests.Request(
-                'POST',
-                f"{post_node.url}authors/{post_author}/inbox",
-                data = comment_json,
-                auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
-                headers={'Content-Type': 'application/json'},
-            )
+                post_author_req = requests.Request(
+                    'POST',
+                    f"{post_node.url}authors/{post_author}/inbox",
+                    data = comment_json,
+                    auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                    headers={'Content-Type': 'application/json'},
+                )
 
-            post_prep = post_author_req.prepare()
-            post_session = requests.Session()
-            post_resp = post_session.send(post_prep)
-            
-            if post_resp.status_code >= 400:
-                print('Error has occured while sending things')
+                post_prep = post_author_req.prepare()
+                post_session = requests.Session()
+                post_resp = post_session.send(post_prep)
+                
+                if post_resp.status_code >= 400:
+                    print('Error has occured while sending things')
             
 
             form = CommentForm()
@@ -637,7 +640,7 @@ def liked(request, post_id):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','contentType','categories']
+    fields = ['title','content','contentType']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
