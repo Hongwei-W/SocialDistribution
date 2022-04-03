@@ -435,7 +435,7 @@ class SharedPostView(View):
 
     def post(self, request, pk, *args, **kwargs):
         # source_post is the currently selected post to be shared
-        source_post = Post.objects.get(pk=pk)
+        source_post = Post.objects.get(id__contains=f'posts/{pk}')
         # TODO: SU: please confirm that this is accepted behaviour.
         source_post_id = source_post.id.split('/')[-1]
         original_post_id = source_post.origin.split('/')[-1]
@@ -449,8 +449,8 @@ class SharedPostView(View):
                 type='post',
                 title=self.request.POST.get('title'),
                 origin=original_post.origin,
-                description=Post.objects.get(pk=pk).description,
-                content=Post.objects.get(pk=pk).content,
+                description=original_post.description,
+                content=original_post.content,
                 contentType=original_post.contentType,
                 author=Author.objects.get(username=request.user.username),
                 visibility=original_post.visibility,
@@ -476,13 +476,31 @@ class SharedPostView(View):
             # followersID = FollowerCount.objects.filter(user=request.user.username)
             for follower in followers:
                 # follower is <author> object
-                InboxItem.objects.create(
-                    inbox=Inbox.objects.filter(
-                        author__username=follower.username).first(),
-                    inbox_item_type='post',
-                    item=new_post,
-                )
-                # TODO: darren make this work for remote authors too (just call API or something lol)
+                if follower.host in localHostList:
+                    InboxItem.objects.create(
+                        inbox=Inbox.objects.filter(
+                            author__username=follower.username).first(),
+                        inbox_item_type='post',
+                        item=new_post,
+                    )
+                else:
+                    serializer = serializers.PostSerializer(new_post)
+                    # get follower node object
+                    followerNode = connectionNodes.filter(
+                        url=f"{follower.host}service/").first()
+                    req = requests.Request(
+                        'POST',
+                        f"{followerNode.url}authors/{follower.username}/inbox",
+                        data=json.dumps(serializer.data),
+                        auth=HTTPBasicAuth(followerNode.auth_username,
+                                        followerNode.auth_password),
+                        headers={'Content-Type': 'application/json'})
+
+                    prepared = req.prepare()
+                    s = requests.Session()
+                    resp = s.send(prepared)
+
+                    print("status code, ", resp.status_code)
         except Exception as e:
             print(e, 'No followers for this author')
 
