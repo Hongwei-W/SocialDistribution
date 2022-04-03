@@ -25,6 +25,7 @@ from . import serializers, renderers
 from .forms import PostForm, CommentForm, ShareForm
 from .models import Post, Comment, Category, Like
 from django.template.loader import render_to_string
+from common.views import localHostList
 
 
 connectionNodes = ConnectionNode.objects.all()

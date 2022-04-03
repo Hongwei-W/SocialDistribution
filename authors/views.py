@@ -36,7 +36,7 @@ def profile(request, user_id):
     current_author_original_uuid = current_author_info.id.split('/')[-1]
 
     for node in connectionNodes:
-        print(node)
+        print(node, '\n', node.url)
         response = requests.get(
             f"{node.url}authors/{current_author_original_uuid}/posts/",
             params=request.GET,
