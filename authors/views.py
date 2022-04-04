@@ -183,6 +183,10 @@ def follow(request):
                     ''' matching T11's node (floored) '''
                     objectNode = connectionNodes.filter(
                         url=f"{object.host}").first()
+                else:
+                    ''' probably our own clone'''
+                    objectNode = connectionNodes.filter(
+                        url=f"{object.host}service/").first()
                     
                 # finish matching, push to their inboxes
                 # some need inboxes, some don't
