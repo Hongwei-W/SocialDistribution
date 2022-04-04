@@ -212,7 +212,7 @@ class PostDetailView(View):
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
-            newComment.save()
+            # newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
