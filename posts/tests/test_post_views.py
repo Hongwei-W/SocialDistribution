@@ -88,22 +88,7 @@ class TestViews (TestCase):
         self.assertEquals(response.status_code, 200)
 
         self.assertTemplateUsed(response, "postDetail.html")
-    
-    def test_post_detail_POST(self):
-        author = Author.objects.get(username='johnny')
-        newPost = Post(title='testpost', description="This is a new post", content="testpost", contentType="text/plain", unparsedCategories="test", author=author)
-        newPost.id = f"{author.host}authors/{str(newPost.author.uuid)}/posts/{str(newPost.uuid)}"
-        newPost.save()
 
-        # Posting a comment
-        response = self.c.post(reverse('posts:postDetail', kwargs={'pk':newPost.uuid}),{
-            'comment': 'Test comment',
-            'contentType': 'text/plain',
-        })
-        self.assertEquals(response.status_code, 200)
-        author = Author.objects.get(username='johnny')
-        newComment = Comment.objects.get(author=author)
-        self.assertEquals(newComment.comment, "Test comment")
     
     def test_post_edit(self):
         author = Author.objects.get(username='johnny')
