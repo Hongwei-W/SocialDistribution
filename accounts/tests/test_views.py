@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from myapp.models import Author
+from authors.models import Author
+from common.models import ServerSetting
+
 
 # Create your tests here.
 
@@ -10,6 +12,11 @@ class TestViews(TestCase):
         self.c = Client()
         self.signup_url = reverse('signup')
         self.login_url = '/accounts/login/'
+
+        ServerSetting.objects.create(
+            type='Social Distribution Settings',
+            allow_independent_user_login= True,
+        )
 
         self.signup_correct_info = {
             'username': 'johnny',
@@ -100,7 +107,7 @@ class SignupTest(TestViews):
         self.c.post(self.signup_url, self.signup_correct_info)
         author = Author.objects.first()
 
-        self.assertEquals(author.id, 'johnny')
+        self.assertEquals(author.username, 'johnny')
 
 
 class LoginTest(TestViews):

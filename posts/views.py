@@ -4,7 +4,7 @@ import json
 import requests
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
-from django.http import HttpResponseRedirect, HttpResponseNotFound
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -212,6 +212,7 @@ class PostDetailView(View):
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
+            newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
@@ -219,8 +220,9 @@ class PostDetailView(View):
             comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
             post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
 
-            #comment json for commenter
-            comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
+            # For testing purpose, if connectionNode is empty
+            if post_node is not None:
+                comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
 
             # # push to commenters inbox
             # comment_author_req = requests.Request(
@@ -238,20 +240,20 @@ class PostDetailView(View):
             #         print('Error has occured while sending things')
 
             # push to post authors inbox
-            post_author_req = requests.Request(
-                'POST',
-                f"{post_node.url}authors/{post_author}/inbox",
-                data=comment_json,
-                auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
-                headers={'Content-Type': 'application/json'},
-            )
+                post_author_req = requests.Request(
+                    'POST',
+                    f"{post_node.url}authors/{post_author}/inbox",
+                    data=comment_json,
+                    auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                    headers={'Content-Type': 'application/json'},
+                )
 
-            post_prep = post_author_req.prepare()
-            post_session = requests.Session()
-            post_resp = post_session.send(post_prep)
+                post_prep = post_author_req.prepare()
+                post_session = requests.Session()
+                post_resp = post_session.send(post_prep)
 
-            if post_resp.status_code >= 400:
-                print('Error has occured while sending things')
+                if post_resp.status_code >= 400:
+                    print('Error has occured while sending things')
 
             form = CommentForm()
 
@@ -370,9 +372,7 @@ class selectPersonView(View):
                                 item=post,
                             )
                         except AttributeError as e:
-                            print(
-                                e,
-                                'Cannot add to my 1to1. Something went wrong!')
+                            print(e, 'Cannot add to my 1to1. Something went wrong!')
                     except:
                         context = {
                             'username': username,
@@ -736,7 +736,7 @@ def liked(request, post_id):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title','description','contentType','categories']
+    fields = ['title','content','contentType']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
