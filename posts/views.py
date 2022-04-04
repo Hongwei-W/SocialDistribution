@@ -223,7 +223,7 @@ class PostDetailView(View):
             if post_node is not None:
                 comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
 
-                if post_author.host not in localHostList:
+                if newComment.post.author.host not in localHostList:
                     newComment.save()
 
                 # push to post authors inbox
