@@ -43,24 +43,46 @@ class PostListView(View):
         # make get request to other nodes, to get remote authors
         # TODO: This is going to change once the other groups implement pagination
         for node in connectionNodes:
-            response = requests.get(f"{node.url}authors/",
+            if 'project-socialdistribution.herokuapp.com' in node.url:
+                '''adapter for team Ma'''
+                tempNodeURL = 'https://project-socialdistribution.herokuapp.com/'
+                response = requests.get(f"{tempNodeURL}authors/",
                                     params=request.GET,
                                     auth=HTTPBasicAuth(node.auth_username,
                                                        node.auth_password))
-            if response.status_code == 200:
-                authors = response.json()['items']
-                for author in authors:
-                    if not (Author.objects.filter(id=author['id']).exists()):
-                        Author.objects.create(
-                            id=author['id'],
-                            # username = remote_author.uuid
-                            username=author['id'].split('/')[-1],
-                            displayName=author['displayName'],
-                            profileImage=author['profileImage'],
-                            github=author['github'],
-                            host=author['host'])
+                if response.status_code == 200:
+                    authors = response.json()['items']
+                    for author in authors:
+                        authorID = author['id']
+                        tempAuthorID = authorID[:4]+'s'+authorID[4:]
+                        if not (Author.objects.filter(id=tempAuthorID).exists()):
+                            Author.objects.create(
+                                id=tempAuthorID,
+                                # username = remote_author.uuid
+                                username=tempAuthorID.split('/')[-2],
+                                displayName=author['displayName'],
+                                profileImage=author['profileImage'],
+                                github=author['github'],
+                                host=author['host'])
             else:
-                print(response)
+                response = requests.get(f"{node.url}authors/",
+                                    params=request.GET,
+                                    auth=HTTPBasicAuth(node.auth_username,
+                                                       node.auth_password))
+                if response.status_code == 200:
+                    authors = response.json()['items']
+                    for author in authors:
+                        if not (Author.objects.filter(id=author['id']).exists()):
+                            Author.objects.create(
+                                id=author['id'],
+                                # username = remote_author.uuid
+                                username=author['id'].split('/')[-1],
+                                displayName=author['displayName'],
+                                profileImage=author['profileImage'],
+                                github=author['github'],
+                                host=author['host'])
+                else:
+                    print(response)
 
         author_list = Author.objects.all()
         context = {

@@ -38,17 +38,33 @@ def profile(request, user_id):
     currentNode = None
     for node in connectionNodes:
         print('this node is: ', node.url)
-        response = requests.get(
-            f"{node.url}authors/{current_author_original_uuid}/posts/",
-            params=request.GET,
-            auth=HTTPBasicAuth(node.auth_username, node.auth_password))
-        if response.status_code == 200:
-            # TODO: Might have to accommodate for pagination once that is implemented
-            posts = response.json()['items']
-            currentNode = node.url
-            break
+        if 'project-socialdistribution.herokuapp.com' in node.url:
+            # adapter for team Ma
+            tempNodeURL = 'https://project-socialdistribution.herokuapp.com/'
+            response = requests.get(f"{tempNodeURL}authors/{current_author_original_uuid}/posts/",
+                                    params=request.GET,
+                                    auth=HTTPBasicAuth(node.auth_username, node.auth_password))
+            if response.status_code == 200:
+                # TODO: Might have to accommodate for pagination once that is implemented
+                posts = response.json()['items']
+                currentNode = node.url
+                break
+            else:
+                pass
         else:
-            pass
+            print('local host...')
+            response = requests.get(
+                f"{node.url}authors/{current_author_original_uuid}/posts/",
+                params=request.GET,
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password))
+            if response.status_code == 200:
+                # TODO: Might have to accommodate for pagination once that is implemented
+                posts = response.json()['items']
+                currentNode = node.url
+                break
+            else:
+                pass
+        
     # add UUID to posts object
     for post in posts:
         post['uuid'] = post['id'].split('/')[-1]
@@ -130,19 +146,36 @@ def follow(request):
 
                 objectNode = connectionNodes.filter(
                     url=f"{object.host}service/").first()
-                req = requests.Request(
-                    'POST',
-                    f"{objectNode.url}authors/{object.username}/inbox",
-                    data=json.dumps(serializer.data),
-                    auth=HTTPBasicAuth(objectNode.auth_username,
+                if 'project-socialdistribution.herokuapp.com' in objectNode.url:
+                    print('following team 08...')
+                    # adapter for team Ma
+                    tempNodeURL = 'https://project-socialdistribution.herokuapp.com/' 
+                    req = requests.Request(
+                        'POST',
+                        f"{tempNodeURL}authors/{object.username}/inbox",
+                        data=json.dumps(serializer.data),
+                        auth=HTTPBasicAuth(objectNode.auth_username,
                                        objectNode.auth_password),
-                    headers={'Content-Type': 'application/json'})
-                prepared = req.prepare()
+                        headers={'Content-Type': 'application/json'})
+                    prepared = req.prepare()
 
-                s = requests.Session()
-                resp = s.send(prepared)
+                    s = requests.Session()
+                    breakpoint()
+                    resp = s.send(prepared)
+                    print("remote request status code, ", resp.status_code)
+                else:    
+                    req = requests.Request(
+                        'POST',
+                        f"{objectNode.url}authors/{object.username}/inbox",
+                        data=json.dumps(serializer.data),
+                        auth=HTTPBasicAuth(objectNode.auth_username,
+                                       objectNode.auth_password),
+                        headers={'Content-Type': 'application/json'})
+                    prepared = req.prepare()
 
-                print("remote request status code, ", resp.status_code)
+                    s = requests.Session()
+                    resp = s.send(prepared)
+                    print("remote request status code, ", resp.status_code)
         return redirect('authors:profile', user_id=objectName)
     else:
         return redirect('/')
