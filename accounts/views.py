@@ -38,6 +38,7 @@ def signup(request):
             author.save()
             author.id = author.host + "authors/" + str(author.uuid)
             print("author id is " + author.id)
+            author.url = author.id
             author.save()
             inbox = Inbox(author=author)
             inbox.save()

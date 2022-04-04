@@ -16,7 +16,7 @@ from . import serializers
 from posts.serializers import PostSerializer
 from .models import *
 from posts.models import Post
-from common.views import localHostList
+from common.views import localHostList, node_matching
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -35,18 +35,41 @@ def profile(request, user_id):
     response_contents = None
     # original UUID from Original server for current_author_info
     current_author_original_uuid = current_author_info.id.split('/')[-1]
+    tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/'
 
+    currentNode = None
     for node in connectionNodes:
-        print(node, '\n', node.url)
-        response = requests.get(
-            f"{node.url}authors/{current_author_original_uuid}/posts/",
-            params=request.GET,
-            auth=HTTPBasicAuth(node.auth_username, node.auth_password))
-        if response.status_code == 200:
-            # TODO: Might have to accommodate for pagination once that is implemented
-            posts = response.json()['items']
-        else:
-            pass
+        print('this is node - ', node.url)
+        if str(object.host)[7:] in tempNodeURL:
+            print('checking team 08')
+            ''' adapter for Team08 (Ruilin Ma) '''      
+            response = requests.get(f"{tempNodeURL}authors/{current_author_info.id.split('/')[-2]}/posts/",
+                                    params=request.GET,
+                                    auth=HTTPBasicAuth(node.auth_username, node.auth_password))
+            if response.status_code == 200:
+                # TODO: Might have to accommodate for pagination once that is implemented
+                posts = response.json()['items']
+                currentNode = node.url
+                break
+            else:
+                pass
+            ''' end of adapter '''
+        elif object.host in node.url:
+            ''' Team05 (Kerry Cao) & Team02 (Lefan) & Team11 (Floored)'''
+            print('checking team ', node)
+            print(node, '--', node.url)
+            response = requests.get(
+                f"{node.url}authors/{current_author_original_uuid}/posts/",
+                params=request.GET,
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password))
+            if response.status_code == 200:
+                # TODO: Might have to accommodate for pagination once that is implemented
+                posts = response.json()['items']
+                print('posts: ', posts)
+                currentNode = node.url
+                break
+            else:
+                pass
 
     # add UUID to posts object
     for post in posts:
@@ -72,6 +95,7 @@ def profile(request, user_id):
         'count_followers': count_followers,
         'github_username': github_username,
         'posts': posts,
+        'currentNode': currentNode,
         'author_list': author_list,
     }
     return render(request, 'profile.html', context)
@@ -105,13 +129,15 @@ def follow(request):
         # objectName = object.displayName
 
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
+            # delete friend request
+            delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
+            delete_request.delete()
             if object.host in localHostList:
                 print("canceling requets to local users...", object.username)
-                delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
                 InboxItem.objects.filter(inbox_item_type='follow', object_id=delete_request.id).first().delete()
-                delete_request.delete()
-            if actor in Followers.objects.get(user=object).items.all():
-                Followers.objects.get(user=object).items.remove(actor)
+            if Followers.objects.filter(user=object).first():
+                if actor in Followers.objects.filter(user=object).first().items.all():
+                    Followers.objects.get(user=object).items.remove(actor)
 
         else:
             if object.host in localHostList:
@@ -125,9 +151,9 @@ def follow(request):
 
                 # when created, also push into recepients inbox
                 InboxItem.objects.create(inbox=Inbox.objects.filter(
-                    author__username=objectName).first(),
-                                         item=friendRequest,
-                                         inbox_item_type='follow')
+                        author__username=objectName).first(),
+                        item=friendRequest,
+                        inbox_item_type='follow')
 
                 friendRequest.save()
             else:
@@ -143,22 +169,44 @@ def follow(request):
                 # since author is not local, make request to remote inbox
                 serializer = serializers.FriendFollowRequestSerializer(
                     friendRequest)
+                
+                objectNode = node_matching(object.host)
+                    
+                # finish matching, push to their inboxes
+                # some need inboxes, some don't
+                # if 'project-socialdistribution.herokuapp.com' in objectNode.url:
+                #     ''' adapter for T08 (Ruilin Ma) '''
+                #     print('following team 08...')
+                #     # adapter for team Ma
+                #     # why? they use http... in their front end
+                #     tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/'
+                #     req = requests.Request(
+                #         'POST',
+                #         f"{tempNodeURL}authors/{object.username}/inbox/",
+                #         data=json.dumps(serializer.data),
+                #         auth=HTTPBasicAuth(objectNode.auth_username,
+                #                        objectNode.auth_password),
+                #         headers={'Content-Type': 'application/json'})
+                #     prepared = req.prepare()
+                #
+                #     s = requests.Session()
+                #     resp = s.send(prepared)
+                #     print("remote request status code, ", resp.status_code)
+                # else:
+                # ''' all other conditions '''
 
-                objectNode = connectionNodes.filter(
-                    url=f"{object.host}service/").first()
-                req = requests.Request(
-                    'POST',
-                    f"{objectNode.url}authors/{object.username}/inbox",
-                    data=json.dumps(serializer.data),
-                    auth=HTTPBasicAuth(objectNode.auth_username,
+                if objectNode:
+                    req = requests.Request(
+                        'POST',
+                        f"{objectNode.url}authors/{object.username}/inbox/",
+                        data=json.dumps(serializer.data),
+                        auth=HTTPBasicAuth(objectNode.auth_username,
                                        objectNode.auth_password),
-                    headers={'Content-Type': 'application/json'})
-                prepared = req.prepare()
-
-                s = requests.Session()
-                resp = s.send(prepared)
-
-                print("remote request status code, ", resp.status_code)
+                        headers={'Content-Type': 'application/json'})
+                    prepared = req.prepare()
+                    s = requests.Session()
+                    resp = s.send(prepared)
+                    print("remote request status code, ", resp.status_code)
         return redirect('authors:profile', user_id=objectName)
     else:
         return redirect('/')

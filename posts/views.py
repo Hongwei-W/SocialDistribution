@@ -5,7 +5,7 @@ from pkg_resources import split_sections
 import requests
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
-from django.http import HttpResponseRedirect, HttpResponseNotFound
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -112,6 +112,7 @@ class NewPostView(View):
                 if newPost.textType != None:
                     newPost.contentType = newPost.textType
 
+
             if newPost.visibility == 'PRIVATE':
                 # context = {
                 #     'newPost': newPost,
@@ -136,8 +137,7 @@ class NewPostView(View):
                             # add it to inbox of follower
                             InboxItem.objects.create(
                                 inbox=Inbox.objects.filter(
-                                    author__username=follower.username).first(
-                                    ),
+                                    author__username=follower.username).first(),
                                 inbox_item_type="post",
                                 item=newPost,
                             )
@@ -176,7 +176,7 @@ class PostDetailView(View):
         form = CommentForm()
         # if post is a friend post and current user is not the author of the post, then only show comments of current user
         if post.visibility == 'FRIENDS' and post.author.username != request.user.username:
-            comments = Comment.objects.filter(post=post).order_by('-published')
+            comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
             for comment in comments:
                 if comment.author.username != request.user.username:
                     comments = comments.exclude(
@@ -185,79 +185,7 @@ class PostDetailView(View):
             comments = comments.order_by('-published')
         # else, show all comments
         else:
-            # get all related local comments, and convert them to json
-            comments = Comment.objects.filter(
-                id__contains=post_uuid).order_by('-published')
-            import ast
-            comments_json = [
-                ast.literal_eval(
-                    json.dumps(serializers.CommentsSerializer(comment).data))
-                for comment in comments
-            ]
-            # for comment in comments:
-            #     comments_json.append(
-            #         json.dumps(serializers.CommentsSerializer(comment).data))
-            comments = comments_json
-            # get all related remote comments
-            remote_comment_pagination = 0
-            while True:
-                split_comment_url = post.comments.split('/')
-                split_comment_url.insert(split_comment_url.index('authors'),
-                                         'service')
-                comment_url = '/'.join(split_comment_url)
-
-                post_host = post.id.split('/')[2]
-                post_node = connectionNodes.filter(
-                    url__contains=post_host).first()
-
-                try:
-                    response = requests.get(
-                        f'{comment_url}?page={remote_comment_pagination}',
-                        params=request.GET,
-                        auth=HTTPBasicAuth(post_node.auth_username,
-                                           post_node.auth_password))
-                    # check dictionary key since its kinda fked
-                    if 'comments' in response.json():
-                        key = 'comments'
-                    elif 'items' in response.json():
-                        key = 'items'
-                    else:
-                        raise Exception('Invalid Keys in Response')
-                        break
-                    if response.ok and len(response.json()[key]) > 0:
-                        print(len(response.json()[key]))
-                        remote_comment_pagination += 1
-                        remote_comments = response.json()[key]
-
-                        # check if already added in remote_comments list, if so that means
-                        # the server does not support pagination, hence the same results
-                        comment_duplication = False
-                        for comment in remote_comments:
-                            if comment in comments:
-                                comment_duplication = True
-                            else:
-                                comments.append(comment)
-
-                        if comment_duplication:
-                            break
-                    else:
-                        # either post request is bad or no more comments
-                        if response.ok:
-                            print(
-                                f'No more remote comments for post "{post.__str__()}"'
-                            )
-                        else:
-                            print(f'Bad request for post "{post.__str__()}"')
-                        break
-                except Exception as e:
-                    print(
-                        f'Error while getting comments for post "{post.__str__()}": {e}'
-                    )
-                    break
-
-            # order list of dict by published date
-            comments = sorted(comments, key=lambda k: k['published'])
-
+            comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         author_list = Author.objects.all()
         if post.post_image:
@@ -292,50 +220,35 @@ class PostDetailView(View):
             # url
             comment_author = newComment.author.id.split('/')[-1]
             post_author = newComment.post.author.id.split('/')[-1]
-            comment_node = ConnectionNode.objects.filter(
-                url__contains=newComment.author.host).first()
-            post_node = ConnectionNode.objects.filter(
-                url__contains=newComment.post.author.host).first()
+            comment_node = ConnectionNode.objects.filter(url__contains=newComment.author.host).first()
+            post_node = ConnectionNode.objects.filter(url__contains=newComment.post.author.host).first()
 
-            #comment json for commenter
-            comment_json = json.dumps(
-                serializers.CommentsSerializer(newComment).data)
+            # For testing purpose, if connectionNode is empty
+            if post_node is not None:
+                comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
 
-            # # push to commenters inbox
-            # comment_author_req = requests.Request(
-            #     'POST',
-            #     f"{comment_node.url}authors/{comment_author}/inbox",
-            #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
-            #     headers={'Content-Type': 'application/json'},
-            #     data=comment_json,
-            # )
-            # comment_prepare = comment_author_req.prepare()
-            # comment_s = requests.Session()
-            # comment_resp= comment_s.send(comment_prepare)
+                if newComment.post.author.host not in localHostList:
+                    newComment.save()
 
-            # if comment_resp.status_code >= 400:
-            #         print('Error has occured while sending things')
+                # push to post authors inbox
+                post_author_req = requests.Request(
+                    'POST',
+                    f"{post_node.url}authors/{post_author}/inbox",
+                    data=comment_json,
+                    auth=HTTPBasicAuth(post_node.auth_username, post_node.auth_password),
+                    headers={'Content-Type': 'application/json'},
+                )
 
-            # push to post authors inbox
-            post_author_req = requests.Request(
-                'POST',
-                f"{post_node.url}authors/{post_author}/inbox",
-                data=comment_json,
-                auth=HTTPBasicAuth(post_node.auth_username,
-                                   post_node.auth_password),
-                headers={'Content-Type': 'application/json'},
-            )
+                post_prep = post_author_req.prepare()
+                post_session = requests.Session()
+                post_resp = post_session.send(post_prep)
 
-            post_prep = post_author_req.prepare()
-            post_session = requests.Session()
-            post_resp = post_session.send(post_prep)
-
-            if post_resp.status_code >= 400:
-                print('Error has occured while sending things')
+                if post_resp.status_code >= 400:
+                    print('Error has occured while sending things')
 
             form = CommentForm()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
         if post.image_b64 != None:
@@ -377,6 +290,7 @@ class UnlistedPostDetailView(View):
         rendered = render_to_string('unlistedPostDetail.html', context)
         return HttpResponse(rendered)
 
+
 @method_decorator(login_required, name='dispatch')
 class selectPersonView(View):
 
@@ -406,8 +320,7 @@ class selectPersonView(View):
             return render(request, 'personNotFound.html', context)
 
         try:
-            post = Post.objects.filter(author__username=request.user.username
-                                       ).order_by('-published').first()
+            post = Post.objects.filter(author__username=request.user.username).order_by('-published').first()
             # print(Post.objects.filter(author__username=request.user.username))
             # print(post)
         except:
@@ -487,9 +400,11 @@ class selectPersonView(View):
                     }
                     return render(request, 'notFriend.html', context)
                 else:
+                    found = False
                     for follower in hisfollowers:
                         if user.id in follower.values():
                             # You are TRUE friends
+                            found = True
                             try:
                                 serializer = serializers.PostSerializer(post)
                                 # get follower node object
@@ -521,11 +436,11 @@ class selectPersonView(View):
                                     'username':username,
                                 }
                                 return render(request, 'authors/profileNotFound.html', context)
-                        else:
-                            context = {
-                                'username': username,
-                            }
-                            return render(request, 'notFriend.html', context)
+                    if not found:
+                        context = {
+                            'username': username,
+                        }
+                        return render(request, 'notFriend.html', context)
         else:
             context = {
                 'username': username,
@@ -542,7 +457,7 @@ class selectPersonView(View):
         # return render(request,'myapp/newpost.html', context)
         return redirect('inboxes:postList')
 
-      
+
 class UnlistedPostDetailView(View):
 
     def get(self, request, pk, *args, **kwargs):
@@ -557,6 +472,7 @@ class UnlistedPostDetailView(View):
         }
         rendered = render_to_string('unlistedPostDetail.html', context)
         return HttpResponse(rendered)
+
 
 @method_decorator(login_required, name='dispatch')
 class SharedPostView(View):
@@ -669,8 +585,7 @@ class SharedPostView(View):
 class LikeHandlerView(View):
 
     def post(self, request):
-        commenter = Author.objects.filter(
-            username=request.user.username).first()
+        commenter = Author.objects.filter(username=request.user.username).first()
         author_id = request.POST['author_id']
         author_uuid = author_id.split('/')[-1]
         author = Author.objects.get(id=author_id)
@@ -710,9 +625,7 @@ class LikeHandlerView(View):
         else:
             # send the like object into the inbox, local or foreign, whatever, I am using API!
 
-            new_like = Like(author=commenter,
-                            object=object_id,
-                            summary=summary)
+            new_like = Like(author=commenter, object=object_id, summary=summary)
             if host not in localHostList:
                 if "comments" not in object_id:
                     post = Post.objects.filter(id__contains=f'/posts/{object_uuid}').first()
@@ -742,7 +655,7 @@ class ShareDetailView(View):
         post = Post.objects.get(id__contains=f'posts/{pk}')
 
         form = CommentForm()
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
@@ -784,7 +697,7 @@ class ShareDetailView(View):
             post.count += 1
             post.save()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
 
@@ -844,7 +757,7 @@ def liked(request, post_id):
 @method_decorator(login_required, name='dispatch')
 class PostEditView(UpdateView):
     model = Post
-    fields = ['title', 'description', 'contentType', 'categories']
+    fields = ['title','content','contentType']
     template_name = 'postEdit.html'
 
     def get_success_url(self):
@@ -1056,7 +969,7 @@ class CommentsAPIView(CreateModelMixin, ListAPIView):
     def list(self, request, *args, **kwargs):
         post_id = self.kwargs['post']
         serializer = serializers.CommentsSerializer(
-            Comment.objects.filter(post=post_id), many=True)
+            Comment.objects.filter(id__contains=post_id), many=True)
         return Response({"type": "comments", "items": serializer.data})
 
     def post(self, request, *args, **kwargs):

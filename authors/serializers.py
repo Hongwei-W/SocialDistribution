@@ -1,4 +1,5 @@
 from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 
 from . import models
 
@@ -7,10 +8,10 @@ class AuthorSerializer(ModelSerializer):
 
     class Meta:
         model = models.Author
-        fields = ('type', 'id', "host", "displayName", "github",
+        fields = ('type', 'id', "host", "displayName", "github", "url",
                   "profileImage")
 
-
+        
 class FollowersSerializer(ModelSerializer):
 
     class Meta:
@@ -19,6 +20,8 @@ class FollowersSerializer(ModelSerializer):
 
 
 class FriendFollowRequestSerializer(ModelSerializer):
+    actor = AuthorSerializer()
+    object = AuthorSerializer()
 
     class Meta:
         model = models.FriendFollowRequest

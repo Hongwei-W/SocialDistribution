@@ -14,6 +14,7 @@ class Author(models.Model):
     displayName = models.CharField(max_length=200, null=True)
     github = models.CharField(max_length=200, null=True)
     profileImage = models.CharField(max_length=500, null=True, blank=True)
+    url = models.CharField(max_length=200)
 
     def __str__(self):
         return self.username
@@ -26,7 +27,8 @@ class Author(models.Model):
             'host': self.host,
             'displayName': self.displayName,
             'github': self.github,
-            'profileImage': self.profileImage
+            'profileImage': self.profileImage,
+            'url': self.url,
         }
 
 

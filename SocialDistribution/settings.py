@@ -97,6 +97,8 @@ MIDDLEWARE = [
     # 'middleware.LoginRequiredMiddleware',
 ]
 
+CSRF_TRUSTED_ORIGINS = ["https://c404-social-distribution.herokuapp.com"]
+
 ROOT_URLCONF = 'SocialDistribution.urls'
 
 TEMPLATES = [
@@ -170,4 +172,4 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-django_on_heroku.settings(locals())
+# django_on_heroku.settings(locals())
