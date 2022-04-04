@@ -174,7 +174,7 @@ class PostDetailView(View):
         form = CommentForm()
         # if post is a friend post and current user is not the author of the post, then only show comments of current user
         if post.visibility == 'FRIENDS' and post.author.username != request.user.username:
-            comments = Comment.objects.filter(post=post).order_by('-published')
+            comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
             for comment in comments:
                 if comment.author.username != request.user.username:
                     comments = comments.exclude(
@@ -244,7 +244,7 @@ class PostDetailView(View):
 
             form = CommentForm()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
         if post.image_b64 != None:
@@ -652,7 +652,7 @@ class ShareDetailView(View):
         post = Post.objects.get(id__contains=f'posts/{pk}')
 
         form = CommentForm()
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
@@ -694,7 +694,7 @@ class ShareDetailView(View):
             post.count += 1
             post.save()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
 
