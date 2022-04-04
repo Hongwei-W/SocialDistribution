@@ -126,13 +126,15 @@ def follow(request):
         # objectName = object.displayName
 
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
+            # delete friend request
+            delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
+            delete_request.delete()
             if object.host in localHostList:
                 print("canceling requets to local users...", object.username)
-                delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
                 InboxItem.objects.filter(inbox_item_type='follow', object_id=delete_request.id).first().delete()
-                delete_request.delete()
-            if actor in Followers.objects.filter(user=object).first().items.all():
-                Followers.objects.get(user=object).items.remove(actor)
+            if Followers.objects.filter(user=object).first():
+                if actor in Followers.objects.filter(user=object).first().items.all():
+                    Followers.objects.get(user=object).items.remove(actor)
 
         else:
             if object.host in localHostList:
