@@ -97,6 +97,8 @@ MIDDLEWARE = [
     # 'middleware.LoginRequiredMiddleware',
 ]
 
+CSRF_TRUSTED_ORIGINS = ["https://c404-social-distribution.herokuapp.com"]
+
 ROOT_URLCONF = 'SocialDistribution.urls'
 
 TEMPLATES = [
