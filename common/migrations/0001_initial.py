@@ -15,20 +15,36 @@ class Migration(migrations.Migration):
         """
         ConnectionNode = apps.get_model('common', 'ConnectionNode')
         ConnectionNode.objects.create(
-            name='Team 2 - Lefan',
+            name='T7Self',
             url='https://social-dist-wed.herokuapp.com/service/',
             auth_username='team02admin',
             auth_password='admin')
         ConnectionNode.objects.create(
-            name='Team 5 - Kerry',
-            url='https://cmput404-w22-project-backend.herokuapp.com/service/',
+            name='T2Lefan',
+            url='https://social-dist-wed.herokuapp.com/service/',
+            auth_username='team02admin',
+            auth_password='admin')
+        ConnectionNode.objects.create(
+            name='T5Kerry',
+            url='https://cmput404-w22-project-backend.herokuapp.com/service/server_api/',
             auth_username='proxy',
             auth_password='proxy123!')
         ConnectionNode.objects.create(
-            name='Self Connection - Team 7',
+            name='T11Floored',
+            url="https://psdt11.herokuapp.com/",
+            auth_username='team07',
+            auth_password='team07')
+        ConnectionNode.objects.create(
+            name='T7SelfClone',
             url="https://cmput4042ndnetwork.herokuapp.com/service/",
             auth_username='admin',
             auth_password='admin')
+        # remain this order! put them at the back
+        ConnectionNode.objects.create(
+            name='T8Ruilin',
+            url="https://project-socialdistribution.herokuapp.com/api/",
+            auth_username='team7',
+            auth_password='t8H3f@F2')
 
     operations = [
         migrations.CreateModel(

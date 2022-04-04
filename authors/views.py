@@ -16,7 +16,7 @@ from . import serializers
 from posts.serializers import PostSerializer
 from .models import *
 from posts.models import Post
-from common.views import localHostList
+from common.views import localHostList, node_matching
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -164,52 +164,32 @@ def follow(request):
                 serializer = serializers.FriendFollowRequestSerializer(
                     friendRequest)
                 
-                # match node in our db
-                if "project-socialdistribution" in object.host:
-                    ''' matching T08's node (Ruilin Ma) '''
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}api/").first()
-                elif "cmput404-w22-project-backend" in object.host:
-                    ''' matching T05's node (Kerry Cao) '''
-                    pass
-                    # TODO match karry's api
-                    # objectNode = connectionNodes.filter(
-                    #     url=f"{object.host}api/").first()
-                    # )
-                elif "social-dist-wed" in object.host:
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}service/").first()
-                elif "psdt11.herokuapp.com" in object.host:
-                    ''' matching T11's node (floored) '''
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}").first()
-                else:
-                    ''' probably our own clone'''
-                    objectNode = connectionNodes.filter(
-                        url=f"{object.host}service/").first()
+                objectNode = node_matching(object.host)
                     
                 # finish matching, push to their inboxes
                 # some need inboxes, some don't
-                if 'project-socialdistribution.herokuapp.com' in objectNode.url:
-                    ''' adapter for T08 (Ruilin Ma) '''
-                    print('following team 08...')
-                    # adapter for team Ma
-                    # why? they use http... in their front end
-                    tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/' 
-                    req = requests.Request(
-                        'POST',
-                        f"{tempNodeURL}authors/{object.username}/inbox/",
-                        data=json.dumps(serializer.data),
-                        auth=HTTPBasicAuth(objectNode.auth_username,
-                                       objectNode.auth_password),
-                        headers={'Content-Type': 'application/json'})
-                    prepared = req.prepare()
+                # if 'project-socialdistribution.herokuapp.com' in objectNode.url:
+                #     ''' adapter for T08 (Ruilin Ma) '''
+                #     print('following team 08...')
+                #     # adapter for team Ma
+                #     # why? they use http... in their front end
+                #     tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/'
+                #     req = requests.Request(
+                #         'POST',
+                #         f"{tempNodeURL}authors/{object.username}/inbox/",
+                #         data=json.dumps(serializer.data),
+                #         auth=HTTPBasicAuth(objectNode.auth_username,
+                #                        objectNode.auth_password),
+                #         headers={'Content-Type': 'application/json'})
+                #     prepared = req.prepare()
+                #
+                #     s = requests.Session()
+                #     resp = s.send(prepared)
+                #     print("remote request status code, ", resp.status_code)
+                # else:
+                # ''' all other conditions '''
 
-                    s = requests.Session()
-                    resp = s.send(prepared)
-                    print("remote request status code, ", resp.status_code)
-                else:
-                    ''' all other conditions '''    
+                if objectNode:
                     req = requests.Request(
                         'POST',
                         f"{objectNode.url}authors/{object.username}/inbox",

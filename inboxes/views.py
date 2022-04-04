@@ -80,16 +80,19 @@ class PostListView(View):
                 if response.status_code == 200:
                     authors = response.json()['items']
                     for author in authors:
-                        if not (Author.objects.filter(id=author['id']).exists()):
-                            Author.objects.create(
-                                id=author['id'],
-                                # username = remote_author.uuid
-                                username=author['id'].split('/')[-1],
-                                displayName=author['displayName'],
-                                profileImage=author['profileImage'],
-                                github=author['github'],
-                                host=author['host'],
-                                url=author['url'])
+                        try:
+                            if not (Author.objects.filter(id=author['id']).exists()):
+                                Author.objects.create(
+                                    id=author['id'],
+                                    # username = remote_author.uuid
+                                    username=author['id'].split('/')[-1],
+                                    displayName=author['displayName'],
+                                    profileImage=author['profileImage'],
+                                    github=author['github'],
+                                    host=author['host'],
+                                    url=author['url'])
+                        except Exception as e:
+                            print(f"error occurs: {e}, maybe missing")
                 else:
                     print(response)
 
