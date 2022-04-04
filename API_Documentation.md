@@ -407,7 +407,7 @@ publish a post, if the person who send the post is the author_id's follower, aut
 
 
 
-#### <a name="inbox_friend_follow">POST a friend/follow request (N/A)</a>
+#### <a name="inbox_friend_follow">POST a friend/follow request </a>
 
 send a friend/follow request to another author's inbox
 
