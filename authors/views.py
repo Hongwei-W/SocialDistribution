@@ -58,7 +58,6 @@ def profile(request, user_id):
             ''' Team05 (Kerry Cao) & Team02 (Lefan) & Team11 (Floored)'''
             print('checking team ', node)
             print(node, '--', node.url)
-            breakpoint()
             response = requests.get(
                 f"{node.url}authors/{current_author_original_uuid}/posts/",
                 params=request.GET,
