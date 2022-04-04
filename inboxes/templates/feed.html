@@ -52,13 +52,20 @@
                                 <!-- <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{{ post.origin }}">link to the original post</a></div> -->
                             {% else %}
                                 <div class="authorName">Author: {{ post.author.displayName }}</div>
-                                <div class="postTitle">{{ post.title }}</div>
+                                <div class="postTitle">
+                                    {% if post.title != None %}
+                                        {{ post.title }}
+                                    {% endif %}
+                                </div>
                                 <!-- pip install django-markdownify -->
-                                {% if post.contentType == "text/markdown" %}
-                                    <div class="postBody">{{ post.content | markdownify}}</div>
-                                {% else %}
-                                    <div class="postBody">{{ post.content}}</div>
+                                {% if post.content != None %}
+                                    {% if post.contentType == "text/markdown" %}
+                                        <div class="postBody">{{ post.content | markdownify}}</div>
+                                    {% else %}
+                                        <div class="postBody">{{ post.content}}</div>
+                                    {% endif %}
                                 {% endif %}
+
                                 {% if post.post_image %}
                                     <img src="{{ post.post_image.url }}" width="100%">
                                 {% endif %}

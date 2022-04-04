@@ -4,21 +4,19 @@ import requests
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from requests.auth import HTTPBasicAuth
-from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.renderers import JSONRenderer
+from django.contrib import messages
 from rest_framework.response import Response
-
+from .forms import UpdateProfileForm
 from common.models import *
 from common.pagination import CustomPageNumberPagination
 from inboxes.models import InboxItem, Inbox
 from . import serializers
+from posts.serializers import PostSerializer
 from .models import *
-
-localHostList = [
-    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
-    'http://localhost:8000', 'http://localhost:8000/',
-    'https://c404-social-distribution.herokuapp.com/'
-]
+from posts.models import Post
+from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -39,6 +37,7 @@ def profile(request, user_id):
     current_author_original_uuid = current_author_info.id.split('/')[-1]
 
     for node in connectionNodes:
+        print(node, '\n', node.url)
         response = requests.get(
             f"{node.url}authors/{current_author_original_uuid}/posts/",
             params=request.GET,
@@ -77,6 +76,20 @@ def profile(request, user_id):
     }
     return render(request, 'profile.html', context)
 
+@login_required(login_url='/accounts/login')
+def editProfile(request, user_id):
+    if request.method == 'POST':
+        username = request.user.username
+        profile_form = UpdateProfileForm(request.POST, instance=Author.objects.filter(username=user_id).first())
+
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, 'Your profile is updated successfully')
+            return redirect('authors:profile', user_id=username)
+    else:
+        profile_form = UpdateProfileForm(instance=Author.objects.filter(username=user_id).first())
+
+    return render(request, 'editProfile.html', {'profile_form': profile_form})
 
 @login_required(login_url='/accounts/login')
 def follow(request):
@@ -92,10 +105,14 @@ def follow(request):
         # objectName = object.displayName
 
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
-            pass
-            # delete_follower = FriendFollowRequest.objects.get(actor=actor, object=object)
-            # delete_follower.delete()
-            # raise Exception('Friend request canceled')
+            if object.host in localHostList:
+                print("canceling requets to local users...", object.username)
+                delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
+                InboxItem.objects.filter(inbox_item_type='follow', object_id=delete_request.id).first().delete()
+                delete_request.delete()
+            if actor in Followers.objects.get(user=object).items.all():
+                Followers.objects.get(user=object).items.remove(actor)
+
         else:
             if object.host in localHostList:
                 print("following local users...", object.username)
@@ -103,14 +120,14 @@ def follow(request):
                     actor=actor,
                     object=object,
                     summary=
-                    f'created request: {actorName} wants to follow {objectName}'
+                    f'created request: {actor.displayName} wants to follow {object.displayName}'
                 )
 
                 # when created, also push into recepients inbox
                 InboxItem.objects.create(inbox=Inbox.objects.filter(
-                        author__username=objectName).first(),
-                        item=friendRequest,
-                        inbox_item_type='friendfollowrequest')
+                    author__username=objectName).first(),
+                                         item=friendRequest,
+                                         inbox_item_type='follow')
 
                 friendRequest.save()
             else:
@@ -118,7 +135,7 @@ def follow(request):
                     actor=actor,
                     object=object,
                     summary=
-                    f'created request: {actorName} wants to follow {objectName}'
+                    f'created request: {actor.displayName} wants to follow {object.displayName}'
                 )
                 friendRequest.save()
                 print(f'following remote author {object.username}')
@@ -140,8 +157,6 @@ def follow(request):
 
                 s = requests.Session()
                 resp = s.send(prepared)
-                print(f"sending remote friend request to: "\
-                    f"{object.host}/service/authors/{object.username}/inbox")
 
                 print("remote request status code, ", resp.status_code)
         return redirect('authors:profile', user_id=objectName)
@@ -156,16 +171,20 @@ def friendRequests(request):
     currentAuthor = Author.objects.filter(username=currentUser.username).first()
     currentInbox = Inbox.objects.filter(
         author__username=currentUser.username).first()
+    author_list = Author.objects.all()
 
-    friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="friendfollowrequest")
+    friendFollowInboxItems = currentInbox.inboxitem_set.all().filter(inbox_item_type="follow")
     likeInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="like")
     commentInboxItems = currentInbox.inboxitem_set.filter(inbox_item_type="comment")
+    unlistedPosts = Post.objects.filter(author__username=currentUser.username, unlisted = True).all()
     context = {
         'currentUser_uuid': currentAuthor.id.split('/')[-1],
         'currentUser_displayName': currentAuthor.displayName,
         'likes': [item.item for item in likeInboxItems],
         'friendRequests': [item.item for item in friendFollowInboxItems],
         'comments': [item.item for item in commentInboxItems],
+        'author_list': author_list,
+        'unlistedPosts': unlistedPosts,
     }
     return render(request, 'friendRequests.html', context)
 
@@ -177,14 +196,10 @@ def acceptFriendRequest(request, actor_id):
     object = Author.objects.get(username=objectName)
     actor = Author.objects.get(username=actor_id)
     if request.method == 'GET':
-        friendRequest_accept = FriendFollowRequest.objects.get(actor=actor,
-                                                               object=object)
+        friendRequest_accept = FriendFollowRequest.objects.filter(actor=actor,
+                                                               object=object).first()
         if friendRequest_accept:
-            if Followers.objects.filter(user=object):
-                Followers.objects.get(user=object).items.add(actor)
-            else:
-                Followers.objects.create(user=object)
-                Followers.objects.get(user=object).items.add(actor)
+            Followers.objects.get(user=object).items.add(actor)
 
             # Add posts to the followers' Inbox
             currentInbox = Inbox.objects.filter(author__username=object.username).first()
@@ -212,7 +227,7 @@ def acceptFriendRequest(request, actor_id):
                 else:
                     # if author is not local make post request to add to other user inbox
                     for post in responsePosts:
-                        serializer = serializers.PostSerializer(post)
+                        serializer = PostSerializer(post)
                         # get follower node object
                         followerNode = connectionNodes.filter(
                             url=f"{actor.host}service/").first()
@@ -234,7 +249,7 @@ def acceptFriendRequest(request, actor_id):
                 print(e, 'No followers for this author')
 
 
-            return render(request, 'feed.html')
+            return render(request, 'friendRequests.html')
 
 
 @login_required(login_url='/accounts/login')

@@ -24,20 +24,28 @@
                         {% endif%}
                             <div class="postBody">
                                 <div class="singlePost" style="background-color: rgba(193, 199, 201, 0.283); margin-left: 6%; margin-top: 0%; border-radius: 4%;">   
-                                    <div class="authorName" style="left: 2%; text-indent: 0%;" >{{source_post.author.displayName}}</div>      
-                                    {% if source_post.title != None %}             
-                                        <div class="postTitle">{{ source_post.title }}</div> 
-                                    {% endif %}
-                                    {% if source_post.contentType == "text/markdown" %}
-                                        <div class="postBody">{{ source_post.content | markdownify}}</div>
+                                    {% if source_deleted == False %}
+                                        <div class="authorName" style="left: 2%; text-indent: 0%;" >{{source_post.author.displayName}}</div>      
+                                        {% if source_post.title != None %}             
+                                            <div class="postTitle">{{ source_post.title }}</div> 
+                                        {% endif %}
+                                        {% if source_post.contentType == "text/markdown" %}
+                                            <div class="postBody">{{ source_post.content | markdownify}}</div>
+                                        {% else %}
+                                            <div class="postBody">{{ source_post.content }}</div>
+                                        {% endif %}
+                                        <div class="postTime" style="font-size: small;">{{ source_post.published }}<div class="postVis" style="font-size: 12px;">Visibility: {{ post.visibility}}</div></div>
                                     {% else %}
-                                        <div class="postBody">{{ source_post.content }}</div>
+                                        <div class="postBody" style="left: 2%; text-indent: 0%;" >The share has been deleted the share.</div>
                                     {% endif %}
-                                    <div class="postTime" style="font-size: small;">{{ source_post.published }}<div class="postVis" style="font-size: 12px;">Visibility: {{ post.visibility}}</div></div>  
                                 </div>
                             </div>
                         <div>
-                            <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{% url 'posts:postDetail' original_post.uuid %}">link to the original post</a></div>
+                            {% if original_deleted == True %}
+                                <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="">The original post has been deleted</a></div>
+                            {% else %}
+                                <div class="postActions" style="float: left; margin-left: 7%; font-size: 12px;"><a style="color: rgb(135, 172, 228); font-style: italic;" href="{% url 'posts:postDetail' original_post.uuid %}">link to the original post</a></div>
+                            {% endif %}
                         </div>      
                         <div class="postTime">{{ post.published }}<div class="postVis">Visibility: {{ post.visibility}}</div></div>  
                         <div class="postActions"><a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;

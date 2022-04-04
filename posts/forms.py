@@ -6,6 +6,7 @@ from .models import Post, Comment
 # Reference: https://www.youtube.com/watch?v=USVjTtApVDM&list=PLPSM8rIid1a3TkwEmHyDALNuHhqiUiU5A&index=2
 class PostForm(forms.ModelForm):
     title = forms.CharField(label='title', 
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Enter your title here...',
             'rows':1,
@@ -13,6 +14,7 @@ class PostForm(forms.ModelForm):
         })
     )
     description = forms.CharField(label='description', 
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Give a brief description of the post.',
             'rows':1,
@@ -20,6 +22,7 @@ class PostForm(forms.ModelForm):
         })
     )
     content = forms.CharField(label='content', 
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Type something...',
             # 'rows':5,
@@ -28,6 +31,7 @@ class PostForm(forms.ModelForm):
         })
     )
     unparsedCategories = forms.CharField(label='categories',
+        required = False,
         widget=forms.Textarea(attrs={
             'placeholder': 'Separate your categories with space e.g. web_dev CMPUT404',
             'rows':2,
@@ -37,7 +41,7 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ['title', 'description', 'content', 'contentType', 'unparsedCategories', 'visibility', 'post_image']
+        fields = ['title', 'description', 'content', 'textType', 'unparsedCategories', 'visibility', 'unlisted','post_image']
 
 
 class CommentForm(forms.ModelForm):

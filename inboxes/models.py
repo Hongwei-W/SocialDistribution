@@ -28,7 +28,7 @@ class InboxItem(models.Model):
     inbox = models.ForeignKey(to=Inbox, on_delete=models.CASCADE)
     # model field in choices {like, post, comment, friendfollowrequest}
     choices = [("like", "like"), ("post", "post"), ("comment", "comment"),
-               ("friendfollowrequest", "friendfollowrequest")]
+               ("follow", "follow")]
     inbox_item_type = models.CharField(max_length=20, choices=choices)
 
     # if inbox item is read

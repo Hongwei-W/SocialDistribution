@@ -16,12 +16,7 @@ from common.pagination import CustomPageNumberPagination
 from posts.models import Post, Category, Like, Comment
 from . import serializers
 from .models import Inbox, InboxItem
-
-localHostList = [
-    'http://127.0.0.1:7070/', 'http://127.0.0.1:8000/',
-    'http://localhost:8000', 'http://localhost:8000/',
-    'https://c404-social-distribution.herokuapp.com/'
-]
+from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
 
@@ -39,8 +34,10 @@ class PostListView(View):
         responsePosts = []
         for post in posts:
             post_obj = post.item
-            post_obj.uuid = post_obj.id.split('/')[-1]
-            responsePosts.append(post_obj)
+            # display only if it is not unlisted
+            if not post_obj.unlisted:
+                post_obj.uuid = post_obj.id.split('/')[-1]
+                responsePosts.append(post_obj)
 
         # update comment count and like count
         for post in responsePosts:
@@ -125,7 +122,9 @@ class OneToOneView(View):
         posts = currentInbox.inboxitem_set.filter(inbox_item_type="post")
         responsePosts = []
         for post in posts:
-            responsePosts.append(post.item)
+            post_obj = post.item
+            post_obj.uuid = post_obj.id.split('/')[-1]
+            responsePosts.append(post_obj)
         # sort responsePosts by published
         responsePosts.sort(key=lambda x: x.published, reverse=True)
 
@@ -167,22 +166,43 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
         # 1. publish a post
         # don't care if these two have a friend relation,
         # just push the post into its follower's inbox
-        if data["type"] == "post":
+        if data["type"].lower() == "post":
             # check if user in the body (who post the post) exists
             author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
                 return HttpResponseNotFound("author (in body) not exist")
-
-            # creating new post
-            new_post = Post.objects.create(
-                title=data["title"],
-                description=data["description"],
-                content=data["content"],
-                contentType=data["contentType"],
-                author=author,
-                unparsedCategories=data["categories"],
-                visibility=data["visibility"],
-                image_b64=data["image_b64"])
+            if data['published']:
+                new_post = Post.objects.create(
+                    title=data["title"],
+                    description=data["description"],
+                    content=data["content"],
+                    contentType=data["contentType"],
+                    author=author,
+                    unparsedCategories=data["categories"],
+                    visibility=data["visibility"],
+                    image_b64=data["image_b64"],
+                    id=data['id'],
+                    source=data['source'],
+                    origin=data['origin'],
+                    comments=data['comments'],
+                    published=data['published']
+                )
+            else:
+                # creating new post
+                new_post = Post.objects.create(
+                    title=data["title"],
+                    description=data["description"],
+                    content=data["content"],
+                    contentType=data["contentType"],
+                    author=author,
+                    unparsedCategories=data["categories"],
+                    visibility=data["visibility"],
+                    image_b64=data["image_b64"],
+                    id=data['id'],
+                    source=data['source'],
+                    origin=data['origin'],
+                    comments=data['comments']
+                )
 
             unparsed_cat = new_post.unparsedCategories
             for cat in unparsed_cat:
@@ -191,15 +211,6 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 new_cat.save()
                 new_post.categories.add(new_cat)
                 new_post.save()
-
-            new_post.id = request.get_host() + "/authors/" + str(
-                new_post.author.uuid) + "/posts/" + str(new_post.uuid)
-            new_post.source = request.get_host() + "/post/" + str(
-                new_post.uuid)
-            new_post.origin = request.get_host() + "/post/" + str(
-                new_post.uuid)
-            new_post.comments = request.get_host() + "/post/" + str(
-                new_post.uuid) + '/comments'
 
             try:
                 new_post.save()
@@ -234,14 +245,14 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 inbox=Inbox.objects.filter(
                     author__username=current_user.username).first(),
                 item=friend_request,
-                inbox_item_type="friend_follow_request",
+                inbox_item_type="follow",
             )
 
             serializer = serializers.FriendFollowRequestSerializer(
                 friend_request)
             return Response(serializer.data)
 
-        elif data["type"] == "like":
+        elif data["type"].lower() == "like":
             # check if this is a comment or a post
             if "comment" in data["object"]:
                 # check if the comment exists
@@ -292,7 +303,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             serializer = serializers.LikesSerializer(new_like)
             return Response(serializer.data)
 
-        elif data["type"] == "comment":
+        elif data["type"].lower() == "comment":
             split_contents = data['id'].split('/')
             # post id
             post_id = split_contents[split_contents.index('posts') + 1]

@@ -55,7 +55,7 @@
                             <!-- <div>UUID: {{ post.id }}</div> -->
                             <div class="postActions">
                                 <!-- <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp; -->
-                                <a href="/like?post_id={{post.uuid}}"><i class="fa-solid fa-heart"></i>&ensp;{{post.likes}}</a>&emsp;
+                                <i class="fa-solid fa-heart like_btn" onclick="like_handler('{{ post.id }}','{{ post.author.host }}', '{{ post.author.id }}', '{{ post.likes }}')" style="cursor: pointer;"></i>&ensp;<span id="{{ post.id }}">{{ post.likes }}</span>
                                 <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a>
                             </div>
                             {% if post.type == 'post'%}
@@ -70,6 +70,8 @@
         </div>
         {% include "sidebarRight.html" %}
     </div>
+    {% load static %}
+    <script src="{% static 'inboxes/js/like_handler.js' %}"></script>
 
     {% else %}
     <p>You are not logged in</p>
