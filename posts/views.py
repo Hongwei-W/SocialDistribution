@@ -174,7 +174,7 @@ class PostDetailView(View):
         form = CommentForm()
         # if post is a friend post and current user is not the author of the post, then only show comments of current user
         if post.visibility == 'FRIENDS' and post.author.username != request.user.username:
-            comments = Comment.objects.filter(post=post).order_by('-published')
+            comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
             for comment in comments:
                 if comment.author.username != request.user.username:
                     comments = comments.exclude(
@@ -212,7 +212,6 @@ class PostDetailView(View):
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
-            newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
@@ -224,22 +223,10 @@ class PostDetailView(View):
             if post_node is not None:
                 comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
 
-            # # push to commenters inbox
-            # comment_author_req = requests.Request(
-            #     'POST',
-            #     f"{comment_node.url}authors/{comment_author}/inbox",
-            #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
-            #     headers={'Content-Type': 'application/json'},
-            #     data=comment_json,
-            # )
-            # comment_prepare = comment_author_req.prepare()
-            # comment_s = requests.Session()
-            # comment_resp= comment_s.send(comment_prepare)
+                if newComment.post.author.host not in localHostList:
+                    newComment.save()
 
-            # if comment_resp.status_code >= 400:
-            #         print('Error has occured while sending things')
-
-            # push to post authors inbox
+                # push to post authors inbox
                 post_author_req = requests.Request(
                     'POST',
                     f"{post_node.url}authors/{post_author}/inbox",
@@ -257,7 +244,7 @@ class PostDetailView(View):
 
             form = CommentForm()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
         if post.image_b64 != None:
@@ -665,7 +652,7 @@ class ShareDetailView(View):
         post = Post.objects.get(id__contains=f'posts/{pk}')
 
         form = CommentForm()
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
 
         source_post_id = post.source.split('/')[-1]
@@ -707,7 +694,7 @@ class ShareDetailView(View):
             post.count += 1
             post.save()
 
-        comments = Comment.objects.filter(post=post).order_by('-published')
+        comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
         likes = Like.objects.filter(object=post)
         likes_count = len(Like.objects.filter(object=post))
 

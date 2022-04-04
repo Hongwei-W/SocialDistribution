@@ -30,11 +30,6 @@ class Migration(migrations.Migration):
             auth_username='proxy',
             auth_password='proxy123!')
         ConnectionNode.objects.create(
-            name='T11Floored',
-            url="https://psdt11.herokuapp.com/",
-            auth_username='team07',
-            auth_password='team07')
-        ConnectionNode.objects.create(
             name='T7SelfClone',
             url="https://cmput4042ndnetwork.herokuapp.com/service/",
             auth_username='admin',
