@@ -131,7 +131,7 @@ def follow(request):
                 delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
                 InboxItem.objects.filter(inbox_item_type='follow', object_id=delete_request.id).first().delete()
                 delete_request.delete()
-            if actor in Followers.objects.get(user=object).items.all():
+            if actor in Followers.objects.filter(user=object).first().items.all():
                 Followers.objects.get(user=object).items.remove(actor)
 
         else:
@@ -193,12 +193,30 @@ def follow(request):
                 if objectNode:
                     req = requests.Request(
                         'POST',
-                        f"{objectNode.url}authors/{object.username}/inbox",
+                        f"{objectNode.url}authors/{object.username}/inbox/",
                         data=json.dumps(serializer.data),
                         auth=HTTPBasicAuth(objectNode.auth_username,
                                        objectNode.auth_password),
                         headers={'Content-Type': 'application/json'})
                     prepared = req.prepare()
+
+                    def pretty_print_POST(req):
+                        """
+                        At this point it is completely built and ready
+                        to be fired; it is "prepared".
+
+                        However pay attention at the formatting used in 
+                        this function because it is programmed to be pretty 
+                        printed and may differ from the actual request.
+                        """
+                        print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+                            '-----------START-----------',
+                            req.method + ' ' + req.url,
+                            '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+                            req.body,
+                        ))
+
+                    pretty_print_POST(prepared)
 
                     s = requests.Session()
                     resp = s.send(prepared)
