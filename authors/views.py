@@ -146,21 +146,40 @@ def follow(request):
 
                 objectNode = connectionNodes.filter(
                     url=f"{object.host}service/").first()
+                if objectNode == None:
+                    objectNode = connectionNodes.filter(
+                    url=f"{object.host}api/").first()
                 if 'project-socialdistribution.herokuapp.com' in objectNode.url:
                     print('following team 08...')
                     # adapter for team Ma
-                    tempNodeURL = 'https://project-socialdistribution.herokuapp.com/' 
+                    tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/' 
                     req = requests.Request(
                         'POST',
-                        f"{tempNodeURL}authors/{object.username}/inbox",
+                        f"{tempNodeURL}authors/{object.username}/inbox/",
                         data=json.dumps(serializer.data),
                         auth=HTTPBasicAuth(objectNode.auth_username,
                                        objectNode.auth_password),
                         headers={'Content-Type': 'application/json'})
                     prepared = req.prepare()
 
+                    # def pretty_print_POST(req):
+                    #     """
+                    #     At this point it is completely built and ready
+                    #     to be fired; it is "prepared".
+
+                    #     However pay attention at the formatting used in 
+                    #     this function because it is programmed to be pretty 
+                    #     printed and may differ from the actual request.
+                    #     """
+                    #     print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+                    #         '-----------START-----------',
+                    #         req.method + ' ' + req.url,
+                    #         '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+                    #         req.body,
+                    #     ))
+
+                    # pretty_print_POST(prepared)
                     s = requests.Session()
-                    breakpoint()
                     resp = s.send(prepared)
                     print("remote request status code, ", resp.status_code)
                 else:    

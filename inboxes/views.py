@@ -43,6 +43,7 @@ class PostListView(View):
         # make get request to other nodes, to get remote authors
         # TODO: This is going to change once the other groups implement pagination
         for node in connectionNodes:
+            print(node, '-', node.url)
             if 'project-socialdistribution.herokuapp.com' in node.url:
                 '''adapter for team Ma'''
                 tempNodeURL = 'https://project-socialdistribution.herokuapp.com/'
@@ -53,9 +54,12 @@ class PostListView(View):
                 if response.status_code == 200:
                     authors = response.json()['items']
                     for author in authors:
+                        if 'project-socialdistribution.herokuapp.com' not in author['host']:
+                            continue
                         authorID = author['id']
                         tempAuthorID = authorID[:4]+'s'+authorID[4:]
                         if not (Author.objects.filter(id=tempAuthorID).exists()):
+                            print(tempAuthorID.split('/'))
                             Author.objects.create(
                                 id=tempAuthorID,
                                 # username = remote_author.uuid
@@ -63,12 +67,14 @@ class PostListView(View):
                                 displayName=author['displayName'],
                                 profileImage=author['profileImage'],
                                 github=author['github'],
-                                host=author['host'])
+                                host=author['host'],
+                                url=author['url'])
             else:
                 response = requests.get(f"{node.url}authors/",
                                     params=request.GET,
                                     auth=HTTPBasicAuth(node.auth_username,
                                                        node.auth_password))
+                # breakpoint()
                 if response.status_code == 200:
                     authors = response.json()['items']
                     for author in authors:
@@ -80,7 +86,8 @@ class PostListView(View):
                                 displayName=author['displayName'],
                                 profileImage=author['profileImage'],
                                 github=author['github'],
-                                host=author['host'])
+                                host=author['host'],
+                                url=author['url'])
                 else:
                     print(response)
 
