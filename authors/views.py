@@ -65,7 +65,6 @@ def profile(request, user_id):
             if response.status_code == 200:
                 # TODO: Might have to accommodate for pagination once that is implemented
                 posts = response.json()['items']
-                print('posts: ', posts)
                 currentNode = node.url
                 break
             else:
@@ -131,10 +130,10 @@ def follow(request):
         if FriendFollowRequest.objects.filter(actor=actor, object=object):
             # delete friend request
             delete_request = FriendFollowRequest.objects.get(actor=actor,object=object)
-            delete_request.delete()
             if object.host in localHostList:
                 print("canceling requets to local users...", object.username)
                 InboxItem.objects.filter(inbox_item_type='follow', object_id=delete_request.id).first().delete()
+            delete_request.delete()
             if Followers.objects.filter(user=object).first():
                 if actor in Followers.objects.filter(user=object).first().items.all():
                     Followers.objects.get(user=object).items.remove(actor)
@@ -172,38 +171,26 @@ def follow(request):
                 
                 objectNode = node_matching(object.host)
                     
-                # finish matching, push to their inboxes
-                # some need inboxes, some don't
-                # if 'project-socialdistribution.herokuapp.com' in objectNode.url:
-                #     ''' adapter for T08 (Ruilin Ma) '''
-                #     print('following team 08...')
-                #     # adapter for team Ma
-                #     # why? they use http... in their front end
-                #     tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/'
-                #     req = requests.Request(
-                #         'POST',
-                #         f"{tempNodeURL}authors/{object.username}/inbox/",
-                #         data=json.dumps(serializer.data),
-                #         auth=HTTPBasicAuth(objectNode.auth_username,
-                #                        objectNode.auth_password),
-                #         headers={'Content-Type': 'application/json'})
-                #     prepared = req.prepare()
-                #
-                #     s = requests.Session()
-                #     resp = s.send(prepared)
-                #     print("remote request status code, ", resp.status_code)
-                # else:
-                # ''' all other conditions '''
 
                 if objectNode:
-                    req = requests.Request(
-                        'POST',
-                        f"{objectNode.url}authors/{object.username}/inbox/",
-                        data=json.dumps(serializer.data),
-                        auth=HTTPBasicAuth(objectNode.auth_username,
-                                       objectNode.auth_password),
-                        headers={'Content-Type': 'application/json'})
+                    if 'project-socialdistribution' in objectNode.url:
+                        req = requests.Request(
+                            'POST',
+                            f"{objectNode.url}authors/{object.username}/inbox/",
+                            data=json.dumps(serializer.data),
+                            auth=HTTPBasicAuth(objectNode.auth_username,
+                                        objectNode.auth_password),
+                            headers={'Content-Type': 'application/json'})
+                    else:
+                        req = requests.Request(
+                            'POST',
+                            f"{objectNode.url}authors/{object.username}/inbox",
+                            data=json.dumps(serializer.data),
+                            auth=HTTPBasicAuth(objectNode.auth_username,
+                                        objectNode.auth_password),
+                            headers={'Content-Type': 'application/json'})
                     prepared = req.prepare()
+
                     s = requests.Session()
                     resp = s.send(prepared)
                     print("remote request status code, ", resp.status_code)
