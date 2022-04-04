@@ -56,6 +56,24 @@ class Post(models.Model):
     image_b64 = models.BinaryField(blank=True, null=True)
     inbox = GenericRelation("inboxes.InboxItem")
 
+    def __str__(self):
+        return f"{self.title} by {self.author}"
+
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "author": self.author.username,
+            "description": self.description,
+            "content": self.content,
+            "contentType": self.contentType,
+            "published": self.published.strftime("%Y-%m-%d %H:%M:%S"),
+            "visibility": self.visibility,
+            "unlisted": self.unlisted,
+            "likes": self.likes,
+            "comments": self.comments,
+            "categories": [category.cat for category in self.categories.all()]
+        }
+
 class Like(models.Model):
     type = models.CharField(default='like', max_length=200)
     summary = models.TextField()

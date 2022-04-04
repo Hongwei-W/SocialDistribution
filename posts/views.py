@@ -1,5 +1,6 @@
 import base64
 import json
+from pkg_resources import split_sections
 
 import requests
 from django.contrib.auth.decorators import login_required
@@ -28,6 +29,7 @@ from django.template.loader import render_to_string
 from common.views import localHostList
 
 connectionNodes = ConnectionNode.objects.all()
+
 
 @method_decorator(login_required, name='dispatch')
 class NewPostView(View):
@@ -179,6 +181,8 @@ class PostDetailView(View):
                 if comment.author.username != request.user.username:
                     comments = comments.exclude(
                         author__username=comment.author.username)
+            # sort comments by published date
+            comments = comments.order_by('-published')
         # else, show all comments
         else:
             comments = Comment.objects.filter(id__contains=f'posts/{pk}').order_by('-published')
@@ -359,7 +363,9 @@ class selectPersonView(View):
                                 item=post,
                             )
                         except AttributeError as e:
-                            print(e, 'Cannot add to my 1to1. Something went wrong!')
+                            print(
+                                e,
+                                'Cannot add to my 1to1. Something went wrong!')
                     except:
                         context = {
                             'username': username,
@@ -387,6 +393,7 @@ class selectPersonView(View):
                         hisfollowers = []
                 except:
                     hisfollowers = []
+
                 if hisfollowers == []:
                     context = {
                         'username': username,
@@ -429,7 +436,7 @@ class selectPersonView(View):
                                     'username':username,
                                 }
                                 return render(request, 'authors/profileNotFound.html', context)
-                    if not found:    
+                    if not found:
                         context = {
                             'username': username,
                         }
@@ -593,16 +600,14 @@ class LikeHandlerView(View):
             req = requests.Request(
                 'GET',
                 f"{node.url}authors/{author_uuid}/posts/{post_uuid}/comments/{object_uuid}/likes",
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
             )
         else:
             summary = commenter.displayName + ' likes your post'
             req = requests.Request(
                 'GET',
                 f"{node.url}authors/{author_uuid}/posts/{object_uuid}/likes",
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
             )
 
         prepared = req.prepare()
@@ -631,10 +636,8 @@ class LikeHandlerView(View):
                 'POST',
                 f"{node.url}authors/{author_uuid}/inbox",
                 data=json.dumps(serializer.data),
-                auth=HTTPBasicAuth(node.auth_username,
-                                   node.auth_password),
-                headers={'Content-Type': 'application/json'}
-            )
+                auth=HTTPBasicAuth(node.auth_username, node.auth_password),
+                headers={'Content-Type': 'application/json'})
             prepared = req.prepare()
             s = requests.Session()
             resp = s.send(prepared)
@@ -715,11 +718,40 @@ class ShareDetailView(View):
 def liked(request, post_id):
     post = Post.objects.get(id__contains=f'posts/{post_id}')
     username = request.user.username
-    likes_list = Like.objects.filter(object=post)
+
+    # getting local likes
+    likes_list = list(Like.objects.filter(object=post))
+
+    # getting remote likes
+    node = ConnectionNode.objects.filter(
+        url__contains=request.get_host()).first()
+    url = f"{node.url}authors/{username}/posts/{post_id}/likes"
+    response = requests.get(url,
+                            params=request.GET,
+                            auth=HTTPBasicAuth(node.auth_username,
+                                               node.auth_password))
+
+    if response.ok:
+        response_json = response.json()
+        #check what kind of format the likes are in
+        if 'items' in response_json:
+            key = 'items'
+        elif 'likes' in response_json:
+            key = 'likes'
+        else:
+            raise Exception(
+                'Invalid response key. Required "items" or "likes"')
+        # append likes to likes_list
+        # likes_list.append(response_json[key])
+        for like in response_json[key]:
+            likes_list.append(like)
+    else:
+        print(f"error while getting remote likes at {url}")
+
+    # breakpoint()
+    print(likes_list)
     context = {'likes_list': likes_list}
     return render(request, 'liked.html', context)
-    # if
-    # like_text = 'Like'
 
 
 @method_decorator(login_required, name='dispatch')
@@ -982,7 +1014,7 @@ class CommentLikesAPIView(ListAPIView):
     serializer_class = serializers.LikesSerializer
     pagination_class = CustomPageNumberPagination
     # renderer_classes = (renderers.LikesRenderer,)
-    lookup_fields = ('object',)
+    lookup_fields = ('object', )
 
     def get_queryset(self):
         post_id = self.kwargs['post']
