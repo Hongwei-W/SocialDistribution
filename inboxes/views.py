@@ -125,7 +125,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
         # 1. publish a post
         # don't care if these two have a friend relation,
         # just push the post into its follower's inbox
-        if data["type"] == "post":
+        if data["type"].lower() == "post":
             # check if user in the body (who post the post) exists
             author = Author.objects.filter(id=data["author"]["id"]).first()
             if author is None:
@@ -211,7 +211,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
                 friend_request)
             return Response(serializer.data)
 
-        elif data["type"] == "like":
+        elif data["type"].lower() == "like":
             # check if this is a comment or a post
             if "comment" in data["object"]:
                 # check if the comment exists
@@ -258,7 +258,7 @@ class InboxAPIView(CreateModelMixin, RetrieveDestroyAPIView):
             serializer = serializers.LikesSerializer(new_like)
             return Response(serializer.data)
 
-        elif data["type"] == "comment":
+        elif data["type"].lower() == "comment":
             split_contents = data['id'].split('/')
             # post id
             post_id = split_contents[split_contents.index('posts') + 1]

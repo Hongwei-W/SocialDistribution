@@ -46,7 +46,7 @@ class InboxSerializer(ModelSerializer):
                     .filter(id=item.object_id).first()
                 itemArray.append(LikesSerializer(likeObject).data)
 
-            elif item.inbox_item_type == "friend_follow_request":
+            elif item.inbox_item_type == "follow":
                 friendFollowRequestObject = FriendFollowRequest.objects\
                     .filter(id=item.object_id).first()
                 itemArray.append(
