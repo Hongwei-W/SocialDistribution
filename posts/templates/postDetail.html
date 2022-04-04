@@ -61,10 +61,10 @@
                             {% if post.visibility != 'PRIVATE' %}
                             <a href="{% url 'posts:sharePost' post.uuid %}"><i class="fa-solid fa-share"></i>&ensp;Share</a>&emsp;
                             <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Liked by</a>&emsp;
-                            <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>
+                           <i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</div>
                             {% else %}
                                 <a href="{% url 'posts:liked' post.uuid %}"><i class="fa-solid fa-heart"></i>&ensp;Liked by</a>&emsp;
-                                <a href="{% url 'posts:postDetail' post.uuid %}"><i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</a></div>
+                                <i class="fa-solid fa-comment"></i>&ensp;{{ post.count }}&emsp;</div>
                             {% endif %}
                     </div>
                     <form method="POST">
