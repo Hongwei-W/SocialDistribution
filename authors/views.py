@@ -171,28 +171,6 @@ def follow(request):
                 
                 objectNode = node_matching(object.host)
                     
-                # finish matching, push to their inboxes
-                # some need inboxes, some don't
-                # if 'project-socialdistribution.herokuapp.com' in objectNode.url:
-                #     ''' adapter for T08 (Ruilin Ma) '''
-                #     print('following team 08...')
-                #     # adapter for team Ma
-                #     # why? they use http... in their front end
-                #     tempNodeURL = 'https://project-socialdistribution.herokuapp.com/api/'
-                #     req = requests.Request(
-                #         'POST',
-                #         f"{tempNodeURL}authors/{object.username}/inbox/",
-                #         data=json.dumps(serializer.data),
-                #         auth=HTTPBasicAuth(objectNode.auth_username,
-                #                        objectNode.auth_password),
-                #         headers={'Content-Type': 'application/json'})
-                #     prepared = req.prepare()
-                #
-                #     s = requests.Session()
-                #     resp = s.send(prepared)
-                #     print("remote request status code, ", resp.status_code)
-                # else:
-                # ''' all other conditions '''
 
                 if objectNode:
                     if 'project-socialdistribution' in objectNode.url:
@@ -212,24 +190,6 @@ def follow(request):
                                         objectNode.auth_password),
                             headers={'Content-Type': 'application/json'})
                     prepared = req.prepare()
-
-                    def pretty_print_POST(req):
-                        """
-                        At this point it is completely built and ready
-                        to be fired; it is "prepared".
-
-                        However pay attention at the formatting used in 
-                        this function because it is programmed to be pretty 
-                        printed and may differ from the actual request.
-                        """
-                        print('{}\n{}\r\n{}\r\n\r\n{}'.format(
-                            '-----------START-----------',
-                            req.method + ' ' + req.url,
-                            '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
-                            req.body,
-                        ))
-
-                    pretty_print_POST(prepared)
 
                     s = requests.Session()
                     resp = s.send(prepared)
