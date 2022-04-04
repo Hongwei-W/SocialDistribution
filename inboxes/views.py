@@ -1,6 +1,5 @@
 import requests
 from django.contrib.auth.decorators import login_required
-from django.forms import model_to_dict
 from django.http import HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -50,14 +49,16 @@ class PostListView(View):
             post_origin_node = connectionNodes.filter(
                 url__contains=post_origin_host).first()
 
+            current = Post.objects.filter(id=post.id).first()
             response = requests.get(service_post_url,
                                     params=request.GET,
                                     auth=HTTPBasicAuth(
                                         post_origin_node.auth_username,
                                         post_origin_node.auth_password))
             if response.ok:
+                current.count = response.json()['count']
+                current.save()
                 post.count = response.json()['count']
-                post.save()
 
             # updating like count (not paginated so no need to check if it is paginated)
             like_url = service_post_url + '/likes'
@@ -73,7 +74,9 @@ class PostListView(View):
                         key = 'items'
                     elif 'likes' in response.json():
                         key = 'likes'
-                    # since we have no fucking idea what likes endpoints returns
+                    # since we have no idea what likes endpoints returns
+                    current.likes = len(response.json()[key])
+                    current.save()
                     post.likes = len(response.json()[key])
                 except Exception as e:
                     print(e)
