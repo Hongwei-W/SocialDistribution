@@ -249,7 +249,7 @@ def acceptFriendRequest(request, actor_id):
                 print(e, 'No followers for this author')
 
 
-            return render(request, 'feed.html')
+            return render(request, 'friendRequests.html')
 
 
 @login_required(login_url='/accounts/login')
