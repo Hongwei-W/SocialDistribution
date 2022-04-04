@@ -40,6 +40,11 @@ class Migration(migrations.Migration):
             url="https://project-socialdistribution.herokuapp.com/api/",
             auth_username='team7',
             auth_password='t8H3f@F2')
+        ConnectionNode.objects.create(
+            name='local',
+            url="http://testserver/service/",
+            auth_username='admin',
+            auth_password='admin')
 
     operations = [
         migrations.CreateModel(

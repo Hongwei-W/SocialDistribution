@@ -216,6 +216,7 @@ class PostDetailView(View):
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
+            # newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
@@ -363,9 +364,7 @@ class selectPersonView(View):
                                 item=post,
                             )
                         except AttributeError as e:
-                            print(
-                                e,
-                                'Cannot add to my 1to1. Something went wrong!')
+                            print(e, 'Cannot add to my 1to1. Something went wrong!')
                     except:
                         context = {
                             'username': username,

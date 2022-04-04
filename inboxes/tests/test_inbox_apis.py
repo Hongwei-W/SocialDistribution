@@ -73,11 +73,11 @@ class TestInboxAPIViews(APITestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.data['comment'], sample_comment.comment)
 
-        # # Test posting a like
-        # sample_like = Like(author=author, object=sample_post.id)
+        # Test posting a like
+        sample_like = Like(author=author, object=sample_post.id, summary="Johnny likes this post")
         # sample_like.save()
-        # serializer = LikesSerializer(sample_like)
-        # headerInfo = {'Content-Type': 'application/json' }
-        # response = self.client.post(reverse('service-Inbox', kwargs={'author':author.uuid}), headers=headerInfo, auth=HTTPBasicAuth("admin", "admin"), data=serializer.data, format='json')
-        # # print("response data: ", response.data)
-        # self.assertEqual(response.status_code,200)
+        serializer = LikesSerializer(sample_like)
+        headerInfo = {'Content-Type': 'application/json' }
+        response = self.client.post(reverse('service-Inbox', kwargs={'author':author.uuid}), headers=headerInfo, auth=HTTPBasicAuth("admin", "admin"), data=serializer.data, format='json')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.data['summary'], sample_like.summary)
