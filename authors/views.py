@@ -35,7 +35,8 @@ def profile(request, user_id):
     response_contents = None
     # original UUID from Original server for current_author_info
     current_author_original_uuid = current_author_info.id.split('/')[-1]
-    
+
+    currentNode = None
     for node in connectionNodes:
         print('this node is: ', node.url)
         if 'project-socialdistribution.herokuapp.com' in node.url:

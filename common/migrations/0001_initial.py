@@ -16,8 +16,8 @@ class Migration(migrations.Migration):
         ConnectionNode = apps.get_model('common', 'ConnectionNode')
         ConnectionNode.objects.create(
             name='T7Self',
-            url='https://social-dist-wed.herokuapp.com/service/',
-            auth_username='team02admin',
+            url='https://c404-social-distribution.herokuapp.com/service/',
+            auth_username='admin',
             auth_password='admin')
         ConnectionNode.objects.create(
             name='T2Lefan',
