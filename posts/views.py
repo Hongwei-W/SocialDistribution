@@ -113,17 +113,6 @@ class NewPostView(View):
                     newPost.contentType = newPost.textType
 
 
-            # adding categories to post
-            unparsedCat = newPost.unparsedCategories
-            catList = unparsedCat.split()
-            newPost.save()
-            for cat in catList:
-                newCat = Category()
-                newCat.cat = cat
-                newCat.save()
-                newPost.categories.add(newCat)
-                newPost.save()
-
             if newPost.visibility == 'PRIVATE':
                 # context = {
                 #     'newPost': newPost,
