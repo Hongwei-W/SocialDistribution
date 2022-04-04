@@ -406,9 +406,11 @@ class selectPersonView(View):
                     }
                     return render(request, 'notFriend.html', context)
                 else:
+                    found = False
                     for follower in hisfollowers:
                         if user.id in follower.values():
                             # You are TRUE friends
+                            found = True
                             try:
                                 serializer = serializers.PostSerializer(post)
                                 # get follower node object
@@ -440,11 +442,11 @@ class selectPersonView(View):
                                     'username':username,
                                 }
                                 return render(request, 'authors/profileNotFound.html', context)
-                        else:
-                            context = {
-                                'username': username,
-                            }
-                            return render(request, 'notFriend.html', context)
+                    if not found:    
+                        context = {
+                            'username': username,
+                        }
+                        return render(request, 'notFriend.html', context)
         else:
             context = {
                 'username': username,
