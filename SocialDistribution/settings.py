@@ -31,7 +31,7 @@ SECRET_KEY = 'qyb0(d(ay@v&^+w!ly3!#@e0vxgpeo9u$q#5$&92r1w-rhma7g'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['cmput4042ndnetwork.herokuapp.com', 'c404-social-distribution.herokuapp.com']
 
 # LOGIN_URL = '/accounts/login/'
 
