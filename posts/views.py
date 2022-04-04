@@ -212,7 +212,6 @@ class PostDetailView(View):
             newComment.id = post.id + "/comments/" + str(
                     newComment.uuid)
             newComment.post = post
-            newComment.save()
 
             # url
             comment_author = newComment.author.id.split('/')[-1]
@@ -224,22 +223,10 @@ class PostDetailView(View):
             if post_node is not None:
                 comment_json = json.dumps(serializers.CommentsSerializer(newComment).data)
 
-            # # push to commenters inbox
-            # comment_author_req = requests.Request(
-            #     'POST',
-            #     f"{comment_node.url}authors/{comment_author}/inbox",
-            #     auth=HTTPBasicAuth(comment_node.auth_username, comment_node.auth_password),
-            #     headers={'Content-Type': 'application/json'},
-            #     data=comment_json,
-            # )
-            # comment_prepare = comment_author_req.prepare()
-            # comment_s = requests.Session()
-            # comment_resp= comment_s.send(comment_prepare)
+                if post_author.host not in localHostList:
+                    newComment.save()
 
-            # if comment_resp.status_code >= 400:
-            #         print('Error has occured while sending things')
-
-            # push to post authors inbox
+                # push to post authors inbox
                 post_author_req = requests.Request(
                     'POST',
                     f"{post_node.url}authors/{post_author}/inbox",
