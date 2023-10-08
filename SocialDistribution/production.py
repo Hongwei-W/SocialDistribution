@@ -40,5 +40,8 @@ DATABASES = {
         'PORT': '',
         'USER': os.getenv('DBUSER'),
         'PASSWORD': os.getenv('DBPASS'),
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        }
     }
 }
