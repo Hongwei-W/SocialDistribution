@@ -1,11 +1,14 @@
 import os
 
+from dotenv import load_dotenv
 from .settings import *  # noqa
 from .settings import BASE_DIR
 
+load_dotenv()
+
 # Configure the domain name using the environment variable
 # that Azure automatically creates for us.
-ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
+# ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
 CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
 DEBUG = False
 
@@ -32,10 +35,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DATABASES = {
     'default': {
         'ENGINE': 'sql_server.pyodbc',
-        'NAME': os.environ['DBNAME'],
-        'HOST': os.environ['DBHOST'],
+        'NAME': os.getenv('DBNAME'),
+        'HOST': os.getenv('DBHOST'),
         'PORT': '',
-        'USER': os.environ['DBUSER'],
-        'PASSWORD': os.environ['DBPASS'],
+        'USER': os.getenv('DBUSER'),
+        'PASSWORD': os.getenv('DBPASS'),
     }
 }
