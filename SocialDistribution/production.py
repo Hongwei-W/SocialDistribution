@@ -37,7 +37,7 @@ DATABASES = {
         'ENGINE': 'sql_server.pyodbc',
         'NAME': os.getenv('DBNAME'),
         'HOST': os.getenv('DBHOST'),
-        'PORT': '',
+        'PORT': '1433',
         'USER': os.getenv('DBUSER'),
         'PASSWORD': os.getenv('DBPASS'),
         'OPTIONS': {
